@@ -232,17 +232,22 @@ const DiscGolfApp = () => {
     setView('matches');
     setError('');
   };
-
   const startMatch = async (match) => {
     setSelectedMatch(match);
     const hasProgress = await loadMatchProgress(match.id);
-    
-    if (!hasProgress) {
-      const initScores = Array(18).fill(null).map(() => ({
-        p1: 0,
-        p2: 0,
-        scored: false
-      }));
+	  
+      if (!hasProgress) {
+      // Get course pars
+      const course = courses.find(c => c.name === match.venue);
+      const initScores = Array(18).fill(null).map((_, idx) => {
+        const holeNumber = idx + 1;
+        const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
+        return {
+          p1: par,
+          p2: par,
+          scored: false
+        };
+      });
       setScores(initScores);
       setCurrentHole(0);
       setShowStartHoleModal(true);
