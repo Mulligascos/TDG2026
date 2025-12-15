@@ -811,7 +811,6 @@ const DiscGolfApp = () => {
       </div>
     );
   }
-);
   if (view === 'review') {
     const status = calculateMatchStatus();
     
