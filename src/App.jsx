@@ -1,6 +1,5 @@
-export default DiscGolfApp;
 import React, { useState, useEffect } from 'react';
-import { Trophy, User, LogOut, ChevronRight, Edit, Save, X, Clock, MapPin, Calendar, Plus, Minus, Check } from 'lucide-react';
+import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check } from 'lucide-react';
 
 const SHEET_ID = '1Bwv9h3gayde4Qvb7lk9NarOZop9JlmlnnMZQEYkGrzQ';
 const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
@@ -326,17 +325,6 @@ const DiscGolfApp = () => {
     setView('review');
   };
 
-  const adjustScore = (amount) => {
-    const newScores = [...scores];
-    const currentScore = newScores[currentHole]?.p1 || 0;
-    newScores[currentHole] = {
-      ...newScores[currentHole],
-      p1: Math.max(1, currentScore + amount)
-    };
-    setScores(newScores);
-  };
-
-  // LOGIN VIEW
   if (view === 'login') {
     return (
       <div className="min-h-screen bg-white">
@@ -405,7 +393,6 @@ const DiscGolfApp = () => {
     );
   }
 
-  // CHANGE PIN VIEW
   if (view === 'changePin') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -464,7 +451,6 @@ const DiscGolfApp = () => {
     );
   }
 
-  // MATCHES LIST VIEW
   if (view === 'matches') {
     const userMatches = matches.filter(m => 
       m.player1 === currentUser.name || m.player2 === currentUser.name
@@ -526,7 +512,7 @@ const DiscGolfApp = () => {
                   <div 
                     key={match.id}
                     onClick={() => startMatch(match)}
-                    className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all active:scale-98"
+                    className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center text-sm text-gray-500">
@@ -537,15 +523,13 @@ const DiscGolfApp = () => {
                       </div>
                       <ChevronRight className="text-blue-600" size={20} />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-gray-900 text-lg mb-1">
-                          {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
-                        </p>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin size={14} className="mr-1" />
-                          {match.venue}
-                        </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-lg mb-1">
+                        {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
+                      </p>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin size={14} className="mr-1" />
+                        {match.venue}
                       </div>
                     </div>
                   </div>
@@ -588,7 +572,6 @@ const DiscGolfApp = () => {
           </div>
         </div>
 
-        {/* Start Hole Modal */}
         {showStartHoleModal && (
           <div className="fixed inset-0 bg-black/50 flex items-end z-50">
             <div className="bg-white w-full rounded-t-3xl p-6 max-w-md mx-auto">
@@ -615,7 +598,6 @@ const DiscGolfApp = () => {
     );
   }
 
-  // SCORING VIEW
   if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
@@ -635,13 +617,11 @@ const DiscGolfApp = () => {
             >
               ← Matches
             </button>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
-                <div className="flex items-center text-sm text-gray-600 mt-1">
-                  <MapPin size={14} className="mr-1" />
-                  {selectedMatch.venue}
-                </div>
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
+              <div className="flex items-center text-sm text-gray-600 mt-1">
+                <MapPin size={14} className="mr-1" />
+                {selectedMatch.venue}
               </div>
             </div>
             
@@ -682,7 +662,6 @@ const DiscGolfApp = () => {
             </div>
             
             <div className="space-y-6">
-              {/* Player 1 Score */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">{selectedMatch.player1}</label>
                 <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
@@ -693,42 +672,6 @@ const DiscGolfApp = () => {
                       newScores[currentHole] = {
                         ...newScores[currentHole],
                         p1: Math.max(1, current - 1)
-                      };
-                      setScores(newScores);
-                    }}
-                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
-                  >
-                    <Minus size={20} />
-                  </button>
-                  <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p1 || 0}</div>
-                  <button 
-                    onClick={() => {
-                      const newScores = [...scores];
-                      const current = newScores[currentHole]?.p1 || 0;
-                      newScores[currentHole] = {
-                        ...newScores[currentHole],
-                        p1: current + 1
-                      };
-                      setScores(newScores);
-                    }}
-                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
-                  >
-                    <Plus size={20} />
-                  </button>
-                </div>
-              </div>
-              
-              {/* Player 2 Score */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">{selectedMatch.player2}</label>
-                <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
-                  <button 
-                    onClick={() => {
-                      const newScores = [...scores];
-                      const current = newScores[currentHole]?.p2 || 0;
-                      newScores[currentHole] = {
-                        ...newScores[currentHole],
-                        p2: Math.max(1, current - 1)
                       };
                       setScores(newScores);
                     }}
@@ -768,7 +711,6 @@ const DiscGolfApp = () => {
             </button>
           </div>
           
-          {/* Scorecard */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h3 className="font-bold text-gray-900 mb-4">Scorecard</h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -832,7 +774,237 @@ const DiscGolfApp = () => {
     );
   }
 
-  // REVIEW VIEW
+  if (view === 'review') {
+    const status = calculateMatchStatus();
+    
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm sticky top-0 z-10">
+          <div className="max-w-md mx-auto px-4 py-4">
+            <button 
+              onClick={() => {
+                setView('matches');
+                setSelectedMatch(null);
+              }}
+              className="text-blue-600 font-semibold mb-3"
+            >
+              ← Back
+            </button>
+            <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
+            <div className="flex items-center text-sm text-gray-600 mt-1">
+              <MapPin size={14} className="mr-1" />
+              {selectedMatch.venue}
+            </div>
+            <div className="mt-3">
+              <span className="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <Check size={16} className="mr-1" />
+                {selectedMatch.winner} won
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="max-w-md mx-auto px-4 py-6">
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
+            <div className="flex items-center justify-center space-x-8 mb-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">{status.p1Holes}</div>
+                <div className="text-sm text-gray-600 mt-1">{selectedMatch.player1}</div>
+              </div>
+              <div className="text-gray-300 text-2xl font-bold">-</div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">{status.p2Holes}</div>
+                <div className="text-sm text-gray-600 mt-1">{selectedMatch.player2}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h3 className="font-bold text-gray-900 mb-4">Final Scorecard</h3>
+            <div className="space-y-2">
+              {scores.map((score, idx) => (
+                <div key={idx} className="flex items-center justify-between py-3 border-b border-gray-100">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="font-bold text-gray-700">
+                        {idx < 18 ? idx + 1 : `P${idx - 17}`}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-3">
+                        <span className={`font-semibold ${score.p1 < score.p2 ? 'text-blue-600' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-400'}`}>
+                          {selectedMatch.player1.split(' ')[0]}: {score.p1}
+                        </span>
+                        <span className={`font-semibold ${score.p2 < score.p1 ? 'text-blue-600' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-400'}`}>
+                          {selectedMatch.player2.split(' ')[0]}: {score.p2}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {score.p1 !== score.p2 && (
+                    <div className="text-xs font-semibold text-blue-600">
+                      {score.p1 < score.p2 ? selectedMatch.player1.split(' ')[0] : selectedMatch.player2.split(' ')[0]}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-600">Holes Won</p>
+                  <p className="text-2xl font-bold text-gray-900">{status.p1Holes} - {status.p2Holes}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Winner</p>
+                  <p className="text-xl font-bold text-green-600">{selectedMatch.winner}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+export default DiscGolfApp;gray-200 text-gray-600 active:bg-gray-100"
+                  >
+                    <Minus size={20} />
+                  </button>
+                  <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p1 || 0}</div>
+                  <button 
+                    onClick={() => {
+                      const newScores = [...scores];
+                      const current = newScores[currentHole]?.p1 || 0;
+                      newScores[currentHole] = {
+                        ...newScores[currentHole],
+                        p1: current + 1
+                      };
+                      setScores(newScores);
+                    }}
+                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
+                  >
+                    <Plus size={20} />
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">{selectedMatch.player2}</label>
+                <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
+                  <button 
+                    onClick={() => {
+                      const newScores = [...scores];
+                      const current = newScores[currentHole]?.p2 || 0;
+                      newScores[currentHole] = {
+                        ...newScores[currentHole],
+                        p2: Math.max(1, current - 1)
+                      };
+                      setScores(newScores);
+                    }}
+                 className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
+                  >
+                    <Minus size={20} />
+                  </button>
+                  <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p2 || 0}</div>
+                  <button 
+                    onClick={() => {
+                      const newScores = [...scores];
+                      const current = newScores[currentHole]?.p2 || 0;
+                      newScores[currentHole] = {
+                        ...newScores[currentHole],
+                        p2: current + 1
+                      };
+                      setScores(newScores);
+                    }}
+                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
+                  >
+                    <Plus size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => {
+                if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
+                  recordScore(currentHole, scores[currentHole].p1, scores[currentHole].p2);
+                }
+              }}
+              disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
+              className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors mt-6 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+            >
+              {currentHole < scores.length - 1 ? 'Next Hole' : 'Record Score'}
+            </button>
+          </div>
+          
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h3 className="font-bold text-gray-900 mb-4">Scorecard</h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {scores.map((score, idx) => (
+                score.scored && (
+                  <div key={idx} className="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                        <span className="font-bold text-gray-700">
+                          {idx < 18 ? ((idx + startingHole - 1) % 18) + 1 : `P${idx - 17}`}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-3">
+                          <span className={`font-semibold ${score.p1 < score.p2 ? 'text-blue-600' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-400'}`}>
+                            {selectedMatch.player1.split(' ')[0]}: {score.p1}
+                          </span>
+                          <span className={`font-semibold ${score.p2 < score.p1 ? 'text-blue-600' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-400'}`}>
+                            {selectedMatch.player2.split(' ')[0]}: {score.p2}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {score.p1 !== score.p2 && (
+                      <div className="text-xs font-semibold text-blue-600">
+                        {score.p1 < score.p2 ? selectedMatch.player1.split(' ')[0] : selectedMatch.player2.split(' ')[0]}
+                      </div>
+                    )}
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+          
+          {status.needsPlayoff && currentHole >= 17 && scores[currentHole]?.scored && (
+            <button 
+              onClick={addPlayoffHole}
+              className="w-full bg-orange-600 text-white py-4 rounded-xl font-semibold hover:bg-orange-700 transition-colors mt-4"
+            >
+              Add Playoff Hole
+            </button>
+          )}
+          
+          {status.isComplete && (
+            <button 
+              onClick={completeMatch}
+              disabled={loading}
+              className="w-full bg-green-600 text-white py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors mt-4 disabled:bg-gray-400 shadow-lg shadow-green-500/20"
+            >
+              {loading ? 'Submitting...' : '✓ Complete Match'}
+            </button>
+          )}
+          
+          {error && (
+            <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r mt-4">
+              <p className="text-sm text-orange-800">{error}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'review') {
     const status = calculateMatchStatus();
     
