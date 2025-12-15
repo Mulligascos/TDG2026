@@ -605,7 +605,7 @@ const DiscGolfApp = () => {
     );
   }
 
-  if (view === 'scoring') {
+ if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
     const actualHoleNumber = currentHole < 18 ? ((currentHole + startingHole - 1) % 18) + 1 : currentHole - 17;
@@ -624,13 +624,11 @@ const DiscGolfApp = () => {
             >
               ← Matches
             </button>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
-                <div className="flex items-center text-sm text-gray-600 mt-1">
-                  <MapPin size={14} className="mr-1" />
-                  {selectedMatch.venue}
-                </div>
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
+              <div className="flex items-center text-sm text-gray-600 mt-1">
+                <MapPin size={14} className="mr-1" />
+                {selectedMatch.venue}
               </div>
             </div>
             
@@ -688,42 +686,7 @@ const DiscGolfApp = () => {
                   >
                     <Minus size={20} />
                   </button>
-                  <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p1 || 0}</div>
-                  <button 
-                    onClick={() => {
-                      const newScores = [...scores];
-                      const current = newScores[currentHole]?.p1 || 0;
-                      newScores[currentHole] = {
-                        ...newScores[currentHole],
-                        p1: current + 1
-                      };
-                      setScores(newScores);
-                    }}
-                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
-                  >
-                    <Plus size={20} />
-                  </button>
-                </div>
-              </div>
-			    <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">{selectedMatch.player2}</label>
-                <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
-                  <button 
-                    onClick={() => {
-                      const newScores = [...scores];
-                      const current = newScores[currentHole]?.p2 || 0;
-                      newScores[currentHole] = {
-                        ...newScores[currentHole],
-                        p2: Math.max(1, current - 1)
-                      };
-                      setScores(newScores);
-                    }}
-                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
-                  >
-                    <Minus size={20} />
-                  </button>
-        
-					<div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p2 || 0}</div>
+                  <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p2 || 0}</div>
                   <button 
                     onClick={() => {
                       const newScores = [...scores];
@@ -741,7 +704,8 @@ const DiscGolfApp = () => {
                 </div>
               </div>
             </div>
-			  <button 
+            
+            <button 
               onClick={() => {
                 if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
                   recordScore(currentHole, scores[currentHole].p1, scores[currentHole].p2);
@@ -756,35 +720,57 @@ const DiscGolfApp = () => {
           
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h3 className="font-bold text-gray-900 mb-4">Scorecard</h3>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {scores.map((score, idx) => (
-                score.scored && (
-                  <div key={idx} className="flex items-center justify-between py-3 border-b border-gray-100">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-                        <span className="font-bold text-gray-700">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="sticky left-0 bg-white text-left py-2 pr-4 font-semibold text-gray-700 min-w-[100px]">Player</th>
+                    {scores.map((_, idx) => (
+                      scores[idx].scored && (
+                        <th key={idx} className="px-2 py-2 text-center font-semibold text-gray-700 min-w-[50px]">
                           {idx < 18 ? ((idx + startingHole - 1) % 18) + 1 : `P${idx - 17}`}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-3">
-                          <span className={`font-semibold ${score.p1 < score.p2 ? 'text-blue-600' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-400'}`}>
-                            {selectedMatch.player1.split(' ')[0]}: {score.p1}
-                          </span>
-                          <span className={`font-semibold ${score.p2 < score.p1 ? 'text-blue-600' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-400'}`}>
-                            {selectedMatch.player2.split(' ')[0]}: {score.p2}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    {score.p1 !== score.p2 && (
-                      <div className="text-xs font-semibold text-blue-600">
-                        {score.p1 < score.p2 ? selectedMatch.player1.split(' ')[0] : selectedMatch.player2.split(' ')[0]}
-                      </div>
-                    )}
-                  </div>
-                )
-              ))}
+                        </th>
+                      )
+                    ))}
+                    <th className="sticky right-0 bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Total</th>
+                    <th className="sticky right-[60px] bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Holes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-100">
+                    <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player1.split(' ')[0]}</td>
+                    {scores.map((score, idx) => (
+                      score.scored && (
+                        <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                          {score.p1}
+                        </td>
+                      )
+                    ))}
+                    <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
+                      {scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0)}
+                    </td>
+                    <td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
+                      {status.p1Holes}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player2.split(' ')[0]}</td>
+                    {scores.map((score, idx) => (
+                      score.scored && (
+                        <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                          {score.p2}
+                        </td>
+                      )
+                    ))}
+                    <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
+                      {scores.filter(s => s.scored).reduce((sum, s) => sum + s.p2, 0)}
+                    </td>
+                    <td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
+                      {status.p2Holes}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
           
@@ -816,6 +802,7 @@ const DiscGolfApp = () => {
       </div>
     );
   }
+
   if (view === 'review') {
     const status = calculateMatchStatus();
     
@@ -863,39 +850,57 @@ const DiscGolfApp = () => {
           
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h3 className="font-bold text-gray-900 mb-4">Final Scorecard</h3>
-            <div className="space-y-2">
-              {scores.map((score, idx) => (
-                <div key={idx} className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
-                      <span className="font-bold text-gray-700">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="sticky left-0 bg-white text-left py-2 pr-4 font-semibold text-gray-700 min-w-[100px]">Player</th>
+                    {scores.map((_, idx) => (
+                      <th key={idx} className="px-2 py-2 text-center font-semibold text-gray-700 min-w-[50px]">
                         {idx < 18 ? idx + 1 : `P${idx - 17}`}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`font-semibold ${score.p1 < score.p2 ? 'text-blue-600' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-400'}`}>
-                          {selectedMatch.player1.split(' ')[0]}: {score.p1}
-                        </span>
-                        <span className={`font-semibold ${score.p2 < score.p1 ? 'text-blue-600' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-400'}`}>
-                          {selectedMatch.player2.split(' ')[0]}: {score.p2}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  {score.p1 !== score.p2 && (
-                    <div className="text-xs font-semibold text-blue-600">
-                      {score.p1 < score.p2 ? selectedMatch.player1.split(' ')[0] : selectedMatch.player2.split(' ')[0]}
-                    </div>
-                  )}
-                </div>
-              ))}
+                      </th>
+                    ))}
+                    <th className="sticky right-0 bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Total</th>
+                    <th className="sticky right-[60px] bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Holes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-100">
+                    <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player1.split(' ')[0]}</td>
+                    {scores.map((score, idx) => (
+                      <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        {score.p1}
+                      </td>
+                    ))}
+                    <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
+                      {scores.reduce((sum, s) => sum + s.p1, 0)}
+                    </td>
+                    <td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
+                      {status.p1Holes}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player2.split(' ')[0]}</td>
+                    {scores.map((score, idx) => (
+                      <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        {score.p2}
+                      </td>
+                    ))}
+                    <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
+                      {scores.reduce((sum, s) => sum + s.p2, 0)}
+                    </td>
+                    <td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
+                      {status.p2Holes}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
             
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-gray-600">Holes Won</p>
+                  <p className="text-sm text-gray-600">Match Result</p>
                   <p className="text-2xl font-bold text-gray-900">{status.p1Holes} - {status.p2Holes}</p>
                 </div>
                 <div className="text-right">
