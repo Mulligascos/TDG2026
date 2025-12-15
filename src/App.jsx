@@ -512,7 +512,7 @@ const DiscGolfApp = () => {
                   <div 
                     key={match.id}
                     onClick={() => startMatch(match)}
-                    className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
+                    className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all active:scale-98"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center text-sm text-gray-500">
@@ -523,13 +523,15 @@ const DiscGolfApp = () => {
                       </div>
                       <ChevronRight className="text-blue-600" size={20} />
                     </div>
-                    <div>
-                      <p className="font-bold text-gray-900 text-lg mb-1">
-                        {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
-                      </p>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <MapPin size={14} className="mr-1" />
-                        {match.venue}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-gray-900 text-lg mb-1">
+                          {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
+                        </p>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <MapPin size={14} className="mr-1" />
+                          {match.venue}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -617,11 +619,13 @@ const DiscGolfApp = () => {
             >
               ← Matches
             </button>
-            <div className="mb-4">
-              <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
-              <div className="flex items-center text-sm text-gray-600 mt-1">
-                <MapPin size={14} className="mr-1" />
-                {selectedMatch.venue}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
+                <div className="flex items-center text-sm text-gray-600 mt-1">
+                  <MapPin size={14} className="mr-1" />
+                  {selectedMatch.venue}
+                </div>
               </div>
             </div>
             
@@ -679,14 +683,14 @@ const DiscGolfApp = () => {
                   >
                     <Minus size={20} />
                   </button>
-                  <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p2 || 0}</div>
+                  <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p1 || 0}</div>
                   <button 
                     onClick={() => {
                       const newScores = [...scores];
-                      const current = newScores[currentHole]?.p2 || 0;
+                      const current = newScores[currentHole]?.p1 || 0;
                       newScores[currentHole] = {
                         ...newScores[currentHole],
-                        p2: current + 1
+                        p1: current + 1
                       };
                       setScores(newScores);
                     }}
@@ -696,9 +700,8 @@ const DiscGolfApp = () => {
                   </button>
                 </div>
               </div>
-            </div>
-            
-            <button 
+			  
+			  <button 
               onClick={() => {
                 if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
                   recordScore(currentHole, scores[currentHole].p1, scores[currentHole].p2);
