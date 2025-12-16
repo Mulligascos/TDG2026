@@ -238,7 +238,6 @@ const DiscGolfApp = () => {
     const hasProgress = await loadMatchProgress(match.id);
     
     if (!hasProgress) {
-      // Get course pars
       const course = courses.find(c => c.name === match.venue);
       const initScores = Array(18).fill(null).map((_, idx) => {
         const holeNumber = idx + 1;
@@ -271,32 +270,30 @@ const DiscGolfApp = () => {
   };
 
   const calculateMatchStatus = () => {
-  let p1Holes = 0;
-  let p2Holes = 0;
-  let holesPlayed = 0;
-  
-  scores.forEach((score) => {
-    if (score.scored) {
-      holesPlayed++;
-      if (score.p1 < score.p2) p1Holes++;
-      else if (score.p2 < score.p1) p2Holes++;
-    }
-  });
-  
-  const holesRemaining = Math.max(0, 18 - holesPlayed);
-  const lead = Math.abs(p1Holes - p2Holes);
-  const leader = p1Holes > p2Holes ? selectedMatch.player1 : 
-                 p2Holes > p1Holes ? selectedMatch.player2 : null;
-  
-  const isDormie = lead > 0 && lead >= holesRemaining && holesPlayed <= 18;
-  
-  const isComplete = (holesPlayed >= 18 && p1Holes !== p2Holes) || (holesPlayed > 18 && leader !== null);
-  
-  const needsPlayoff = holesPlayed === 18 && p1Holes === p2Holes;
-  
-  return { p1Holes, p2Holes, holesPlayed, lead, leader, isDormie, isComplete, needsPlayoff };
-};
+    let p1Holes = 0;
+    let p2Holes = 0;
+    let holesPlayed = 0;
     
+    scores.forEach((score) => {
+      if (score.scored) {
+        holesPlayed++;
+        if (score.p1 < score.p2) p1Holes++;
+        else if (score.p2 < score.p1) p2Holes++;
+      }
+    });
+    
+    const holesRemaining = Math.max(0, 18 - holesPlayed);
+    const lead = Math.abs(p1Holes - p2Holes);
+    const leader = p1Holes > p2Holes ? selectedMatch.player1 : 
+                   p2Holes > p1Holes ? selectedMatch.player2 : null;
+    
+    const isDormie = lead > 0 && lead >= holesRemaining && holesPlayed <= 18;
+    const isComplete = (holesPlayed >= 18 && p1Holes !== p2Holes) || (holesPlayed > 18 && leader !== null);
+    const needsPlayoff = holesPlayed === 18 && p1Holes === p2Holes;
+    
+    return { p1Holes, p2Holes, holesPlayed, lead, leader, isDormie, isComplete, needsPlayoff };
+  };
+
   const recordScore = (hole, p1Score, p2Score) => {
     const newScores = [...scores];
     newScores[hole] = { p1: p1Score, p2: p2Score, scored: true };
@@ -309,7 +306,7 @@ const DiscGolfApp = () => {
 
   const addPlayoffHole = () => {
     const course = courses.find(c => c.name === selectedMatch.venue);
-    const playoffPar = course && course.pars[1] ? course.pars[1] : 3; // Use hole 1 par for playoff
+    const playoffPar = course && course.pars[1] ? course.pars[1] : 3;
     setScores([...scores, { p1: playoffPar, p2: playoffPar, scored: false }]);
     setCurrentHole(scores.length);
   };
@@ -603,12 +600,23 @@ const DiscGolfApp = () => {
                   <option key={h} value={h}>Hole {h}</option>
                 ))}
               </select>
-              <button 
-                onClick={confirmStartHole}
-                className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Start Match
-              </button>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    setShowStartHoleModal(false);
+                    cancelMatch();
+                  }}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmStartHole}
+                  className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Start Match
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -626,15 +634,24 @@ const DiscGolfApp = () => {
       <div className="min-h-screen bg-gray-50 pb-20">
         <div className="bg-white shadow-sm sticky top-0 z-10">
           <div className="max-w-md mx-auto px-4 py-4">
-            <button 
-              onClick={() => {
-                setView('matches');
-                setSelectedMatch(null);
-              }}
-              className="text-blue-600 font-semibold mb-3"
-            >
-              ← Matches
-            </button>
+            <div className="flex items-center justify-between mb-3">
+              <button 
+                onClick={cancelMatch}
+                className="text-blue-600 font-semibold"
+              >
+                ← Cancel Match
+              </button>
+              <button 
+                onClick={() => {
+                  if (confirm('Are you sure you want to cancel this match? All progress will be saved.')) {
+                    cancelMatch();
+                  }
+                }}
+                className="text-red-600 font-semibold text-sm"
+              >
+                Exit
+              </button>
+            </div>
             <div className="mb-4">
               <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
               <div className="flex items-center text-sm text-gray-600 mt-1">
