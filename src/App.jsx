@@ -463,8 +463,8 @@ const DiscGolfApp = () => {
     const userMatches = matches.filter(m => 
       m.player1 === currentUser.name || m.player2 === currentUser.name
     );
-    const upcomingMatches = userMatches.filter(m => m.status !== 'completed');
-    const completedMatches = matches.filter(m => m.status === 'completed');
+    const upcomingMatches = userMatches.filter(m => m.status !== 'Completed');
+    const completedMatches = matches.filter(m => m.status === 'Completed');
     
     return (
       <div className="min-h-screen bg-gray-50">
@@ -687,6 +687,40 @@ const DiscGolfApp = () => {
                   >
                     <Minus size={20} />
                   </button>
+                  <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p1 || 0}</div>
+                  <button 
+                    onClick={() => {
+                      const newScores = [...scores];
+                      const current = newScores[currentHole]?.p1 || 0;
+                      newScores[currentHole] = {
+                        ...newScores[currentHole],
+                        p1: current + 1
+                      };
+                      setScores(newScores);
+                    }}
+                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
+                  >
+                    <Plus size={20} />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">{selectedMatch.player2}</label>
+                <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
+                  <button 
+                    onClick={() => {
+                      const newScores = [...scores];
+                      const current = newScores[currentHole]?.p2 || 0;
+                      newScores[currentHole] = {
+                        ...newScores[currentHole],
+                        p2: Math.max(1, current - 1)
+                      };
+                      setScores(newScores);
+                    }}
+                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600 active:bg-gray-100"
+                  >
+                    <Minus size={20} />
+                  </button>
                   <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p2 || 0}</div>
                   <button 
                     onClick={() => {
@@ -704,6 +738,9 @@ const DiscGolfApp = () => {
                   </button>
                 </div>
               </div>
+
+
+              
             </div>
             
             <button 
