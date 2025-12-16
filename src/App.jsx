@@ -766,14 +766,15 @@ const DiscGolfApp = () => {
                       )
                     ))}
                     <th className="sticky right-0 bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Total</th>
-                    <th className="sticky right-[60px] bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Holes</th>
+                    //<th className="sticky right-[60px] bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Holes</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100">
                     <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player1.split(' ')[0]}</td>
                     {scores.map((score, idx) => (
-                      score.scored && (
+                      score.scored 
+		  				&& (
                         <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                           {score.p1}
                         </td>
@@ -782,9 +783,9 @@ const DiscGolfApp = () => {
                     <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
                       {scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0)}
                     </td>
-                    <td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
-                      {status.p1Holes}
-                    </td>
+                    //<td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
+                    //  {status.p1Holes}
+                    //</td>
                   </tr>
                   <tr>
                     <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player2.split(' ')[0]}</td>
@@ -798,9 +799,9 @@ const DiscGolfApp = () => {
                     <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
                       {scores.filter(s => s.scored).reduce((sum, s) => sum + s.p2, 0)}
                     </td>
-                    <td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
-                      {status.p2Holes}
-                    </td>
+                    //<td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
+                    //  {status.p2Holes}
+                    //</td>
                   </tr>
                 </tbody>
               </table>
