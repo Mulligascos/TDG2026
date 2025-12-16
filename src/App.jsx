@@ -262,18 +262,40 @@ const DiscGolfApp = () => {
     setView('scoring');
   };
 
+  const cancelMatch = () => {
+    setSelectedMatch(null);
+    setScores([]);
+    setCurrentHole(0);
+    setStartingHole(1);
+    setView('matches');
+  };
+
   const calculateMatchStatus = () => {
-    let p1Holes = 0;
-    let p2Holes = 0;
-    let holesPlayed = 0;
-    
-    scores.forEach((score) => {
-      if (score.scored) {
-        holesPlayed++;
-        if (score.p1 < score.p2) p1Holes++;
-        else if (score.p2 < score.p1) p2Holes++;
-      }
-    });
+  let p1Holes = 0;
+  let p2Holes = 0;
+  let holesPlayed = 0;
+  
+  scores.forEach((score) => {
+    if (score.scored) {
+      holesPlayed++;
+      if (score.p1 < score.p2) p1Holes++;
+      else if (score.p2 < score.p1) p2Holes++;
+    }
+  });
+  
+  const holesRemaining = Math.max(0, 18 - holesPlayed);
+  const lead = Math.abs(p1Holes - p2Holes);
+  const leader = p1Holes > p2Holes ? selectedMatch.player1 : 
+                 p2Holes > p1Holes ? selectedMatch.player2 : null;
+  
+  const isDormie = lead > 0 && lead >= holesRemaining && holesPlayed <= 18;
+  
+  const isComplete = (holesPlayed >= 18 && p1Holes !== p2Holes) || (holesPlayed > 18 && leader !== null);
+  
+  const needsPlayoff = holesPlayed === 18 && p1Holes === p2Holes;
+  
+  return { p1Holes, p2Holes, holesPlayed, lead, leader, isDormie, isComplete, needsPlayoff };
+};
     
     const holesRemaining = 18 - holesPlayed;
     const lead = Math.abs(p1Holes - p2Holes);
