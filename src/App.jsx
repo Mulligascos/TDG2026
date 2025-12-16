@@ -297,18 +297,6 @@ const DiscGolfApp = () => {
   return { p1Holes, p2Holes, holesPlayed, lead, leader, isDormie, isComplete, needsPlayoff };
 };
     
-    const holesRemaining = 18 - holesPlayed;
-    const lead = Math.abs(p1Holes - p2Holes);
-    const leader = p1Holes > p2Holes ? selectedMatch.player1 : 
-                   p2Holes > p1Holes ? selectedMatch.player2 : null;
-    
-    const isDormie = lead > 0 && lead >= holesRemaining;
-    const isComplete = holesPlayed === 18 && p1Holes !== p2Holes;
-    const needsPlayoff = holesPlayed === 18 && p1Holes === p2Holes;
-    
-    return { p1Holes, p2Holes, holesPlayed, lead, leader, isDormie, isComplete, needsPlayoff };
-  };
-
   const recordScore = (hole, p1Score, p2Score) => {
     const newScores = [...scores];
     newScores[hole] = { p1: p1Score, p2: p2Score, scored: true };
