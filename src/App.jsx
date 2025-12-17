@@ -349,7 +349,7 @@ const DiscGolfApp = () => {
               <Trophy className="text-white" size={40} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Timaru Disc Golf</h1>
-            <h2>classname="text-3x1 text-gray-750">Summer 2025-2026</h2>
+            <h2 className="text-3x1 text-gray-750">Summer 2025-2026</h2>
             <p className="text-gray-500">Match Play Scoring</p>
           </div>
           
