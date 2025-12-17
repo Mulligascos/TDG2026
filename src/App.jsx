@@ -21,6 +21,7 @@ const DiscGolfApp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showStartHoleModal, setShowStartHoleModal] = useState(false);
+  const [pools, setPools] = useState([]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -89,6 +90,16 @@ const DiscGolfApp = () => {
         status: row[9] || 'scheduled'
       }));
       setMatches(matchesData);
+
+      const poolsData = data.valueRanges[3]?.values.slice(1).map(row => ({
+        pool: row[0],
+        player: row[1],
+        played: parseInt(row[2]) || 0,
+        win: parseInt(row[3]) || 0,
+        loss: parseInt(row[4]) || 0,
+        points: parseInt(row[5]) || 0
+      })) || [];
+      setPools(poolsData);
       
       const stored = await window.storage.get('sheet-data');
       if (!stored) {
@@ -107,6 +118,7 @@ const DiscGolfApp = () => {
           setPlayers(data.players || []);
           setCourses(data.courses || []);
           setMatches(data.matches || []);
+          setPools(data.pools || []);
         }
       } catch (e) {
         setError('Unable to load data. Please check your connection.');
@@ -340,6 +352,63 @@ const DiscGolfApp = () => {
     setView('review');
   };
 
+  const calculateStandings = (poolName) => {
+    const poolPlayers = pools.filter(p => p.pool === poolName);
+    
+    const standings = poolPlayers.map(player => {
+      const poolMatches = matches.filter(m => 
+        m.status === 'Completed' && 
+        (m.player1 === player.player || m.player2 === player.player)
+      );
+
+      let holesWon = 0;
+      let holesLost = 0;
+
+      poolMatches.forEach(match => {
+        const isPlayer1 = match.player1 === player.player;
+        
+        let p1Holes = 0;
+        let p2Holes = 0;
+        
+        if (match.scoresJson && match.scoresJson.length > 0) {
+          match.scoresJson.forEach(score => {
+            if (score.scored) {
+              if (score.p1 < score.p2) p1Holes++;
+              else if (score.p2 < score.p1) p2Holes++;
+            }
+          });
+        }
+
+        if (isPlayer1) {
+          holesWon += p1Holes;
+          holesLost += p2Holes;
+        } else {
+          holesWon += p2Holes;
+          holesLost += p1Holes;
+        }
+      });
+
+      return {
+        name: player.player,
+        points: player.points,
+        holesWon,
+        holesLost,
+        holeDiff: holesWon - holesLost
+      };
+    });
+
+    standings.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return b.holeDiff - a.holeDiff;
+    });
+
+    return standings;
+  };
+
+  const getPoolNames = () => {
+    return [...new Set(pools.map(p => p.pool))].sort();
+  };
+  
   if (view === 'login') {
     return (
       <div className="min-h-screen bg-white">
@@ -625,6 +694,148 @@ const DiscGolfApp = () => {
     );
   }
 
+if (view === 'standings') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
+          <div className="max-w-md mx-auto px-4 py-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                  <User size={20} />
+                </div>
+                <div>
+                  <p className="text-sm opacity-90">Signed in as</p>
+                  <p className="font-bold">{currentUser.name}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setView('changePin')}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <Edit size={20} />
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <LogOut size={20} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setView('matches')}
+                className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
+                  view === 'matches' 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-white/5 text-white/70 hover:bg-white/10'
+                }`}
+              >
+                Matches
+              </button>
+              <button
+                onClick={() => setView('standings')}
+                className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
+                  view === 'standings' 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-white/5 text-white/70 hover:bg-white/10'
+                }`}
+              >
+                Standings
+              </button>
+            </div>
+            
+            {!isOnline && (
+              <div className="bg-white/10 px-3 py-2 rounded-lg text-sm flex items-center mt-4">
+                <div className="w-2 h-2 bg-orange-300 rounded-full mr-2"></div>
+                Offline • {pendingUpdates.length} pending updates
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="max-w-md mx-auto px-4 py-6">
+          {pools.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Trophy className="text-gray-400" size={28} />
+              </div>
+              <p className="text-gray-500">No pools configured</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {getPoolNames().map(poolName => {
+                const standings = calculateStandings(poolName);
+                const isPlayoff = poolName.toLowerCase().includes('playoff') || 
+                                 poolName.toLowerCase().includes('cup') || 
+                                 poolName.toLowerCase().includes('shield') || 
+                                 poolName.toLowerCase().includes('plate');
+                
+                return (
+                  <div key={poolName} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div className={`px-4 py-3 ${
+                      isPlayoff 
+                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' 
+                        : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                    }`}>
+                      <h2 className="text-lg font-bold text-white">{poolName}</h2>
+                    </div>
+                    <div className="p-4">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b-2 border-gray-200">
+                            <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-8">#</th>
+                            <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-sm">Player</th>
+                            <th className="text-center py-2 px-2 font-semibold text-gray-700 text-sm">Pts</th>
+                            <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-sm">+/-</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {standings.map((standing, idx) => (
+                            <tr 
+                              key={standing.name} 
+                              className={`border-b border-gray-100 ${standing.name === currentUser.name ? 'bg-blue-50' : ''}`}
+                            >
+                              <td className="py-3 pr-2 text-gray-600 font-semibold text-sm">{idx + 1}</td>
+                              <td className="py-3 pr-2 font-semibold text-gray-900 text-sm">
+                                {standing.name.split(' ')[0]}
+                              </td>
+                              <td className="py-3 px-2 text-center text-gray-900 font-bold text-base">{standing.points}</td>
+                              <td className={`py-3 pl-2 text-center font-bold text-sm ${
+                                standing.holeDiff > 0 ? 'text-green-600' : 
+                                standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
+                              }`}>
+                                {standing.holeDiff > 0 ? '+' : ''}{standing.holeDiff}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      
+                      {isPlayoff && standings.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <p className="text-xs text-gray-500 italic">
+                            {poolName.toLowerCase().includes('cup') && "Top 3 from each pool - #1 gets bye, #2 vs #3 in first round"}
+                            {poolName.toLowerCase().includes('shield') && "Next 3 from each pool - #1 gets bye, #2 vs #3 in first round"}
+                            {poolName.toLowerCase().includes('plate') && "Remaining players - elimination format"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+}
+
+  
   if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
