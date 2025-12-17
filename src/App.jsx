@@ -348,8 +348,9 @@ const DiscGolfApp = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4 shadow-lg">
               <Trophy className="text-white" size={40} />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Matchplay</h1>
-            <p className="text-gray-500">Disc Golf Tournament Tracker</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Timaru Disc Golf</h1>
+            <h2>classname="text-3x1 text-gray-750">Summer 2025-2026</h2>
+            <p className="text-gray-500">Match Play Scoring</p>
           </div>
           
           {!isOnline && (
