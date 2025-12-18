@@ -22,6 +22,9 @@ const DiscGolfApp = () => {
   const [error, setError] = useState('');
   const [showStartHoleModal, setShowStartHoleModal] = useState(false);
   const [pools, setPools] = useState([]);
+  const [matchFilter, setMatchFilter] = useState('all'); // 'all', 'date', 'player'
+  const [selectedFilterDate, setSelectedFilterDate] = useState('');
+  const [selectedFilterPlayer, setSelectedFilterPlayer] = useState('');                 
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
