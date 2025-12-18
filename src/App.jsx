@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check } from 'lucide-react';
 
-const SHEET_ID = '1Bwv9h3gayde4Qvb7lk9NarOZop9JlmlnnMZQEYkGrzQ';
+const SHEET_ID = '1bzJdaMrV7sInlNtMP81hKST8-TTq2UTDujkk68w3IPU';
 const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxW0Sa-T_oBu-5ka0TU6Hf1kkY_VBj40891Xq3Md1LdbuJfaHCRSqAK25xfnebtQXwWmg/exec';
 
 const DiscGolfApp = () => {
   const [view, setView] = useState('login');
@@ -194,10 +195,32 @@ const DiscGolfApp = () => {
       await window.storage.set('sheet-data', JSON.stringify({
         players,
         courses,
-        matches: updatedMatches
+        matches: updatedMatches,
+        pools
       }));
+
+           // Submit to Google Sheets via Apps Script
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          matchId: matchId,
+          scores: finalScores,
+          winner: winner
+        })
+      });
+      
+      console.log('Match successfully submitted to Google Sheets');
+      
     } catch (err) {
       console.error('Error submitting match:', err);
+      // Add to pending updates if API call fails
+      const updates = [...pendingUpdates, { matchId, scores: finalScores, winner }];
+      setPendingUpdates(updates);
+      await window.storage.set('pending-updates', JSON.stringify(updates));
       throw err;
     }
   };
