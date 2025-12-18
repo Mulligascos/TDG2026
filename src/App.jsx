@@ -200,7 +200,7 @@ const DiscGolfApp = () => {
       }));
 
            // Submit to Google Sheets via Apps Script
-      const response = await fetch(APPS_SCRIPT_URL, {
+      const response = await fetch(APPS_SCRIPT_, {
         method: 'POST',
         mode: 'no-cors',
         headers: {
