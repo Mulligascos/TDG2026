@@ -836,7 +836,7 @@ if (view === 'standings') {
 }
 
   
-  if (view === 'scoring') {
+ if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
     const actualHoleNumber = currentHole < 18 ? ((currentHole + startingHole - 1) % 18) + 1 : currentHole - 17;
@@ -977,9 +977,6 @@ if (view === 'standings') {
                   </button>
                 </div>
               </div>
-
-
-              
             </div>
             
             <button 
@@ -1053,7 +1050,7 @@ if (view === 'standings') {
             </button>
           )}
           
-          {status.isComplete && (
+          {(status.isComplete || (currentHole > 18 && scores[currentHole]?.scored && status.leader)) && (
             <button 
               onClick={completeMatch}
               disabled={loading}
