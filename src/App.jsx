@@ -862,7 +862,7 @@ if (view === 'standings') {
 }
 
   
- if (view === 'scoring') {
+if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
     const actualHoleNumber = currentHole < 18 ? ((currentHole + startingHole - 1) % 18) + 1 : currentHole - 17;
@@ -1024,41 +1024,51 @@ if (view === 'standings') {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b-2 border-gray-200">
-                    <th className="sticky left-0 bg-white text-left py-2 pr-4 font-semibold text-gray-700 min-w-[100px]">Player</th>
+                    <th className="sticky left-0 bg-white text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-16">Hole</th>
                     {scores.map((_, idx) => (
                       scores[idx].scored && (
-                        <th key={idx} className="px-2 py-2 text-center font-semibold text-gray-700 min-w-[50px]">
+                        <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[35px]">
                           {idx < 18 ? ((idx + startingHole - 1) % 18) + 1 : `P${idx - 17}`}
                         </th>
                       )
                     ))}
-                    <th className="sticky right-0 bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Total</th>
+                    <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">Tot</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100">
-                    <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player1.split(' ')[0]}</td>
+                    <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                      {selectedMatch.player1.split(' ')[0]}
+                    </td>
+                  </tr>
+                  <tr className="border-b-2 border-gray-200">
+                    <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
                     {scores.map((score, idx) => (
                       score.scored && (
-                        <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                           {score.p1}
                         </td>
                       )
                     ))}
-                    <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold text-gray-900 border-l-2 border-gray-200 text-sm">
                       {scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0)}
                     </td>
                   </tr>
+                  <tr className="border-b border-gray-100">
+                    <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                      {selectedMatch.player2.split(' ')[0]}
+                    </td>
+                  </tr>
                   <tr>
-                    <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player2.split(' ')[0]}</td>
+                    <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
                     {scores.map((score, idx) => (
                       score.scored && (
-                        <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                           {score.p2}
                         </td>
                       )
                     ))}
-                    <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold text-gray-900 border-l-2 border-gray-200 text-sm">
                       {scores.filter(s => s.scored).reduce((sum, s) => sum + s.p2, 0)}
                     </td>
                   </tr>
@@ -1096,7 +1106,7 @@ if (view === 'standings') {
     );
   }
 
-  if (view === 'review') {
+ if (view === 'review') {
     const status = calculateMatchStatus();
     
     return (
@@ -1147,43 +1157,53 @@ if (view === 'standings') {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b-2 border-gray-200">
-                    <th className="sticky left-0 bg-white text-left py-2 pr-4 font-semibold text-gray-700 min-w-[100px]">Player</th>
+                    <th className="sticky left-0 bg-white text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-16">Hole</th>
                     {scores.map((_, idx) => (
-                      <th key={idx} className="px-2 py-2 text-center font-semibold text-gray-700 min-w-[50px]">
+                      <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[35px]">
                         {idx < 18 ? idx + 1 : `P${idx - 17}`}
                       </th>
                     ))}
-                    <th className="sticky right-0 bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Total</th>
-                    <th className="sticky right-[60px] bg-white px-3 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 min-w-[60px]">Holes</th>
+                    <th className="sticky right-[40px] bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-10">Hls</th>
+                    <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">Tot</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100">
-                    <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player1.split(' ')[0]}</td>
+                    <td colSpan={scores.length + 3} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                      {selectedMatch.player1.split(' ')[0]}
+                    </td>
+                  </tr>
+                  <tr className="border-b-2 border-gray-200">
+                    <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
                     {scores.map((score, idx) => (
-                      <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                         {score.p1}
                       </td>
                     ))}
-                    <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
+                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
+                      {status.p1Holes}
+                    </td>
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold text-gray-900 border-l-2 border-gray-200 text-sm">
                       {scores.reduce((sum, s) => sum + s.p1, 0)}
                     </td>
-                    <td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
-                      {status.p1Holes}
+                  </tr>
+                  <tr className="border-b border-gray-100">
+                    <td colSpan={scores.length + 3} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                      {selectedMatch.player2.split(' ')[0]}
                     </td>
                   </tr>
                   <tr>
-                    <td className="sticky left-0 bg-white py-3 pr-4 font-semibold text-gray-900">{selectedMatch.player2.split(' ')[0]}</td>
+                    <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
                     {scores.map((score, idx) => (
-                      <td key={idx} className={`px-2 py-3 text-center font-semibold ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                         {score.p2}
                       </td>
                     ))}
-                    <td className="sticky right-0 bg-white px-3 py-3 text-center font-bold text-gray-900 border-l-2 border-gray-200">
-                      {scores.reduce((sum, s) => sum + s.p2, 0)}
-                    </td>
-                    <td className="sticky right-[60px] bg-white px-3 py-3 text-center font-bold text-blue-600 border-l-2 border-gray-200">
+                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
                       {status.p2Holes}
+                    </td>
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold text-gray-900 border-l-2 border-gray-200 text-sm">
+                      {scores.reduce((sum, s) => sum + s.p2, 0)}
                     </td>
                   </tr>
                 </tbody>
