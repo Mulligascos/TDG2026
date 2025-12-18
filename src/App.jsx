@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check } from 'lucide-react';
 
-const SHEET_ID = '1bzJdaMrV7sInlNtMP81hKST8-TTq2UTDujkk68w3IPU';
+const SHEET_ID = '1Bwv9h3gayde4Qvb7lk9NarOZop9JlmlnnMZQEYkGrzQ';
 const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
 
 const DiscGolfApp = () => {
