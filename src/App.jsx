@@ -1032,7 +1032,7 @@ if (view === 'scoring') {
                         </th>
                       )
                     ))}
-                    <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">Tot</th>
+                    <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">vs Par</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1043,15 +1043,34 @@ if (view === 'scoring') {
                   </tr>
                   <tr className="border-b-2 border-gray-200">
                     <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
-                    {scores.map((score, idx) => (
-                      score.scored && (
+                    {scores.map((score, idx) => {
+                      if (!score.scored) return null;
+                      const holeNum = idx < 18 ? ((idx + startingHole - 1) % 18) + 1 : 1;
+                      const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                      return (
                         <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                           {score.p1}
                         </td>
-                      )
-                    ))}
-                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold text-gray-900 border-l-2 border-gray-200 text-sm">
-                      {scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0)}
+                      );
+                    })}
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                      {(() => {
+                        const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0);
+                        let totalPar = 0;
+                        scores.forEach((score, idx) => {
+                          if (score.scored) {
+                            const holeNum = idx < 18 ? ((idx + startingHole - 1) % 18) + 1 : 1;
+                            const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                            totalPar += par;
+                          }
+                        });
+                        const diff = totalScore - totalPar;
+                        return (
+                          <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                            {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-100">
@@ -1061,15 +1080,32 @@ if (view === 'scoring') {
                   </tr>
                   <tr>
                     <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
-                    {scores.map((score, idx) => (
-                      score.scored && (
+                    {scores.map((score, idx) => {
+                      if (!score.scored) return null;
+                      return (
                         <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                           {score.p2}
                         </td>
-                      )
-                    ))}
-                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold text-gray-900 border-l-2 border-gray-200 text-sm">
-                      {scores.filter(s => s.scored).reduce((sum, s) => sum + s.p2, 0)}
+                      );
+                    })}
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                      {(() => {
+                        const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p2, 0);
+                        let totalPar = 0;
+                        scores.forEach((score, idx) => {
+                          if (score.scored) {
+                            const holeNum = idx < 18 ? ((idx + startingHole - 1) % 18) + 1 : 1;
+                            const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                            totalPar += par;
+                          }
+                        });
+                        const diff = totalScore - totalPar;
+                        return (
+                          <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                            {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 </tbody>
@@ -1106,7 +1142,7 @@ if (view === 'scoring') {
     );
   }
 
- if (view === 'review') {
+  if (view === 'review') {
     const status = calculateMatchStatus();
     
     return (
@@ -1164,7 +1200,7 @@ if (view === 'scoring') {
                       </th>
                     ))}
                     <th className="sticky right-[40px] bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-10">Hls</th>
-                    <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">Tot</th>
+                    <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">vs Par</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1183,8 +1219,23 @@ if (view === 'scoring') {
                     <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
                       {status.p1Holes}
                     </td>
-                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold text-gray-900 border-l-2 border-gray-200 text-sm">
-                      {scores.reduce((sum, s) => sum + s.p1, 0)}
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                      {(() => {
+                        const totalScore = scores.reduce((sum, s) => sum + s.p1, 0);
+                        let totalPar = 0;
+                        scores.forEach((score, idx) => {
+                          const holeNum = idx < 18 ? idx + 1 : 1;
+                          const foundCourse = courses.find(c => c.name === selectedMatch.venue);
+                          const par = foundCourse && foundCourse.pars[holeNum] ? foundCourse.pars[holeNum] : 3;
+                          totalPar += par;
+                        });
+                        const diff = totalScore - totalPar;
+                        return (
+                          <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                            {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-100">
@@ -1202,8 +1253,23 @@ if (view === 'scoring') {
                     <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
                       {status.p2Holes}
                     </td>
-                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold text-gray-900 border-l-2 border-gray-200 text-sm">
-                      {scores.reduce((sum, s) => sum + s.p2, 0)}
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                      {(() => {
+                        const totalScore = scores.reduce((sum, s) => sum + s.p2, 0);
+                        let totalPar = 0;
+                        scores.forEach((score, idx) => {
+                          const holeNum = idx < 18 ? idx + 1 : 1;
+                          const foundCourse = courses.find(c => c.name === selectedMatch.venue);
+                          const par = foundCourse && foundCourse.pars[holeNum] ? foundCourse.pars[holeNum] : 3;
+                          totalPar += par;
+                        });
+                        const diff = totalScore - totalPar;
+                        return (
+                          <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                            {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 </tbody>
