@@ -105,9 +105,9 @@ const DiscGolfApp = () => {
       })) || [];
       setPools(poolsData);
       
-      const stored = await window.storage.get('sheet-data');
+      const stored = await localStorage.getItem('sheet-data');
       if (!stored) {
-        await window.storage.set('sheet-data', JSON.stringify({
+        await localStorage.setItem('sheet-data', JSON.stringify({
           players: playersData,
           courses: coursesData,
           matches: matchesData
@@ -116,7 +116,7 @@ const DiscGolfApp = () => {
     } catch (err) {
       console.error('Error loading sheet data:', err);
       try {
-        const stored = await window.storage.get('sheet-data');
+        const stored = await localStorage.getItem('sheet-data');
         if (stored) {
           const data = JSON.parse(stored.value);
           setPlayers(data.players || []);
@@ -147,7 +147,7 @@ const DiscGolfApp = () => {
 
   const loadMatchProgress = async (matchId) => {
     try {
-      const stored = await window.storage.get(`match-progress-${matchId}`);
+      const stored = await localSstorage.getItem(`match-progress-${matchId}`);
       if (stored) {
         const progress = JSON.parse(stored.value);
         setScores(progress.scores);
@@ -163,7 +163,7 @@ const DiscGolfApp = () => {
 
   const processPendingUpdates = async () => {
     try {
-      const stored = await window.storage.get('pending-updates');
+      const stored = await localStorage.getItem('pending-updates');
       if (stored) {
         const updates = JSON.parse(stored.value);
         for (const update of updates) {
@@ -195,7 +195,7 @@ const DiscGolfApp = () => {
       setMatches(updatedMatches);
       
       // Save to local storage
-      await window.storage.set('sheet-data', JSON.stringify({
+      await localStorage.setItem('sheet-data', JSON.stringify({
         players,
         courses,
         matches: updatedMatches,
@@ -262,7 +262,7 @@ const DiscGolfApp = () => {
     setPlayers(updatedPlayers);
     setCurrentUser({ ...currentUser, pin: newPin });
     
-    await window.storage.set('sheet-data', JSON.stringify({
+    await localStorage.setItem('sheet-data', JSON.stringify({
       players: updatedPlayers,
       courses,
       matches
