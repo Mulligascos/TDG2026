@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
@@ -36,9 +35,9 @@ const DiscGolfApp = () => {
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
     if (darkMode) {
-      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark-mode');
     } else {
-      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark-mode');
     }
   }, [darkMode]);
 
@@ -46,19 +45,106 @@ const DiscGolfApp = () => {
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
-      .dark {
-        color-scheme: dark;
+      * {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
       }
-      .dark select option {
-        background-color: rgb(31, 41, 55);
-        color: white;
+      
+      body.dark-mode {
+        background-color: #111827;
+        color: #f9fafb;
       }
-      .dark input::placeholder {
-        color: rgb(156, 163, 175);
+      
+      .dark-mode .bg-white {
+        background-color: #1f2937 !important;
+      }
+      
+      .dark-mode .bg-gray-50 {
+        background-color: #111827 !important;
+      }
+      
+      .dark-mode .bg-gray-100 {
+        background-color: #374151 !important;
+      }
+      
+      .dark-mode .text-gray-900 {
+        color: #f9fafb !important;
+      }
+      
+      .dark-mode .text-gray-700 {
+        color: #d1d5db !important;
+      }
+      
+      .dark-mode .text-gray-600 {
+        color: #9ca3af !important;
+      }
+      
+      .dark-mode .text-gray-500 {
+        color: #6b7280 !important;
+      }
+      
+      .dark-mode .border-gray-200 {
+        border-color: #374151 !important;
+      }
+      
+      .dark-mode .border-gray-100 {
+        border-color: #1f2937 !important;
+      }
+      
+      .dark-mode select,
+      .dark-mode input,
+      .dark-mode textarea {
+        background-color: #374151 !important;
+        color: #f9fafb !important;
+        border-color: #4b5563 !important;
+      }
+      
+      .dark-mode select option {
+        background-color: #1f2937;
+        color: #f9fafb;
+      }
+      
+      .dark-mode input::placeholder {
+        color: #9ca3af !important;
+      }
+      
+      .dark-mode .bg-red-50 {
+        background-color: rgba(153, 27, 27, 0.2) !important;
+      }
+      
+      .dark-mode .text-red-800 {
+        color: #fca5a5 !important;
+      }
+      
+      .dark-mode .bg-orange-50 {
+        background-color: rgba(154, 52, 18, 0.2) !important;
+      }
+      
+      .dark-mode .text-orange-800 {
+        color: #fdba74 !important;
+      }
+      
+      .dark-mode .bg-blue-50 {
+        background-color: rgba(30, 58, 138, 0.3) !important;
+      }
+      
+      .dark-mode .shadow-sm {
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+      }
+      
+      .dark-mode .shadow-md {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+      }
+      
+      .dark-mode .shadow-lg {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -476,12 +562,12 @@ const DiscGolfApp = () => {
 
   if (view === 'login') {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors">
+      <div className="min-h-screen bg-white transition-colors">
         <div className="max-w-md mx-auto px-4 py-8">
           <div className="absolute top-4 right-4">
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
             >
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
@@ -490,13 +576,13 @@ const DiscGolfApp = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4 shadow-lg">
               <Trophy className="text-white" size={40} />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Matchplay</h1>
-            <p className="text-gray-500 dark:text-gray-400">Disc Golf Tournament Tracker</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Matchplay</h1>
+            <p className="text-gray-500">Disc Golf Tournament Tracker</p>
           </div>
           
           {!isOnline && (
-            <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-400 p-4 mb-6 rounded-r">
-              <p className="text-sm text-orange-800 dark:text-orange-200">You're offline. Data will sync when connected.</p>
+            <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded-r">
+              <p className="text-sm text-orange-800">You're offline. Data will sync when connected.</p>
             </div>
           )}
           
@@ -506,11 +592,11 @@ const DiscGolfApp = () => {
             handleLogin(formData.get('player'), formData.get('pin'));
           }} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Select Player</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Select Player</label>
               <select 
                 name="player" 
                 required
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Choose your name</option>
                 {players.map(p => (
@@ -520,7 +606,7 @@ const DiscGolfApp = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">PIN</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">PIN</label>
               <input 
                 type="password" 
                 name="pin"
@@ -528,13 +614,13 @@ const DiscGolfApp = () => {
                 pattern="[0-9]{4}"
                 placeholder="Enter 4-digit PIN"
                 required
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r">
-                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
+                <p className="text-sm text-red-800">{error}</p>
               </div>
             )}
             
@@ -552,18 +638,18 @@ const DiscGolfApp = () => {
 
   if (view === 'changePin') {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-        <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+      <div className="min-h-screen bg-gray-50 transition-colors">
+        <div className="bg-white shadow-sm sticky top-0 z-10">
           <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center">
               <button onClick={() => setView('matches')} className="mr-4">
-                <X size={24} className="text-gray-600 dark:text-gray-400" />
+                <X size={24} className="text-gray-600" />
               </button>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Change PIN</h2>
+              <h2 className="text-lg font-bold text-gray-900">Change PIN</h2>
             </div>
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
             >
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
@@ -571,9 +657,9 @@ const DiscGolfApp = () => {
         </div>
         
         <div className="max-w-md mx-auto px-4 py-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">New PIN</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">New PIN</label>
               <input 
                 type="password"
                 maxLength="4"
@@ -581,12 +667,12 @@ const DiscGolfApp = () => {
                 placeholder="4 digits"
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Confirm PIN</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm PIN</label>
               <input 
                 type="password"
                 maxLength="4"
@@ -594,13 +680,13 @@ const DiscGolfApp = () => {
                 placeholder="4 digits"
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r">
-                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
+                <p className="text-sm text-red-800">{error}</p>
               </div>
             )}
             
@@ -638,7 +724,7 @@ const DiscGolfApp = () => {
     const uniquePlayers = [...new Set(matches.filter(m => m.status === 'Completed').flatMap(m => [m.player1, m.player2]))].sort();
     
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <div className="min-h-screen bg-gray-50 transition-colors">
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
           <div className="max-w-md mx-auto px-4 py-6">
             <div className="flex justify-between items-center mb-4">
