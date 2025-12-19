@@ -123,7 +123,7 @@ const DiscGolfApp = () => {
         color: #fdba74 !important;
       }
       
-      .dark-mode .bg-#2e8b57-50 {
+      .dark-mode .bg-blue-50 {
         background-color: rgba(30, 58, 138, 0.3) !important;
       }
       
@@ -573,7 +573,7 @@ const DiscGolfApp = () => {
             </button>
           </div>
           <div className="text-center mb-12 mt-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-#2e8b57-500 to-#2e8b57-600 rounded-full mb-4 shadow-lg">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4 shadow-lg">
               <Trophy className="text-white" size={40} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Matchplay</h1>
@@ -596,7 +596,7 @@ const DiscGolfApp = () => {
               <select 
                 name="player" 
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-#2e8b57-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Choose your name</option>
                 {players.map(p => (
@@ -614,7 +614,7 @@ const DiscGolfApp = () => {
                 pattern="[0-9]{4}"
                 placeholder="Enter 4-digit PIN"
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-#2e8b57-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
@@ -626,7 +626,7 @@ const DiscGolfApp = () => {
             
             <button 
               type="submit"
-              className="w-full bg-#2e8b57-600 text-white py-3.5 rounded-xl font-semibold hover:bg-#2e8b57-700 transition-colors shadow-lg shadow-#2e8b57-500/30"
+              className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
             >
               Sign In
             </button>
@@ -667,7 +667,7 @@ const DiscGolfApp = () => {
                 placeholder="4 digits"
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-#2e8b57-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
@@ -680,7 +680,7 @@ const DiscGolfApp = () => {
                 placeholder="4 digits"
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-#2e8b57-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
@@ -692,7 +692,7 @@ const DiscGolfApp = () => {
             
             <button 
               onClick={handleChangePin}
-              className="w-full bg-#2e8b57-600 text-white py-3.5 rounded-xl font-semibold hover:bg-#2e8b57-700 transition-colors"
+              className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
             >
               Update PIN
             </button>
@@ -725,7 +725,7 @@ const DiscGolfApp = () => {
     
     return (
       <div className="min-h-screen bg-gray-50 transition-colors">
-        <div className="bg-gradient-to-br from-#2e8b57-600 to-#2e8b57-700 text-white sticky top-0 z-10 shadow-lg">
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
           <div className="max-w-md mx-auto px-4 py-6">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center">
@@ -816,7 +816,7 @@ const DiscGolfApp = () => {
                         <Clock size={14} className="ml-3 mr-1" />
                         <span>{match.startTime}</span>
                       </div>
-                      <ChevronRight className="text-#2e8b57-600" size={20} />
+                      <ChevronRight className="text-blue-600" size={20} />
                     </div>
                     <div>
                       <p className="font-bold text-gray-900 text-lg mb-1">
@@ -843,7 +843,7 @@ const DiscGolfApp = () => {
                   setSelectedFilterDate('');
                   setSelectedFilterPlayer('');
                 }}
-                className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-#2e8b57-500"
+                className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Matches</option>
                 <option value="date">By Date</option>
@@ -856,7 +856,7 @@ const DiscGolfApp = () => {
                 <select
                   value={selectedFilterDate}
                   onChange={(e) => setSelectedFilterDate(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-#2e8b57-500"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select a date</option>
                   {uniqueDates.map(date => (
@@ -871,7 +871,7 @@ const DiscGolfApp = () => {
                 <select
                   value={selectedFilterPlayer}
                   onChange={(e) => setSelectedFilterPlayer(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-#2e8b57-500"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select a player</option>
                   {uniquePlayers.map(player => (
@@ -925,7 +925,7 @@ const DiscGolfApp = () => {
               <select 
                 value={startingHole}
                 onChange={(e) => setStartingHole(parseInt(e.target.value))}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 mb-4 focus:outline-none focus:ring-2 focus:ring-#2e8b57-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {Array.from({length: 18}, (_, i) => i + 1).map(h => (
                   <option key={h} value={h}>Hole {h}</option>
@@ -943,7 +943,7 @@ const DiscGolfApp = () => {
                 </button>
                 <button 
                   onClick={confirmStartHole}
-                  className="flex-1 bg-#2e8b57-600 text-white py-3.5 rounded-xl font-semibold hover:bg-#2e8b57-700 transition-colors"
+                  className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
                 >
                   Start Match
                 </button>
@@ -958,7 +958,7 @@ const DiscGolfApp = () => {
   if (view === 'standings') {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-br from-#2e8b57-600 to-#2e8b57-700 text-white sticky top-0 z-10 shadow-lg">
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
           <div className="max-w-md mx-auto px-4 py-6">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center">
@@ -1040,7 +1040,7 @@ const DiscGolfApp = () => {
                     <div className={`px-4 py-3 ${
                       isPlayoff 
                         ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' 
-                        : 'bg-gradient-to-r from-#2e8b57-500 to-#2e8b57-600'
+                        : 'bg-gradient-to-r from-blue-500 to-blue-600'
                     }`}>
                       <h2 className="text-lg font-bold text-white">{poolName}</h2>
                     </div>
@@ -1058,7 +1058,7 @@ const DiscGolfApp = () => {
                           {standings.map((standing, idx) => (
                             <tr 
                               key={standing.name} 
-                              className={`border-b border-gray-100 ${standing.name === currentUser.name ? 'bg-#2e8b57-50' : ''}`}
+                              className={`border-b border-gray-100 ${standing.name === currentUser.name ? 'bg-blue-50' : ''}`}
                             >
                               <td className="py-3 pr-2 text-gray-600 font-semibold text-sm">{idx + 1}</td>
                               <td className="py-3 pr-2 font-semibold text-gray-900 text-sm">
@@ -1109,7 +1109,7 @@ const DiscGolfApp = () => {
             <div className="flex items-center justify-between mb-3">
               <button 
                 onClick={cancelMatch}
-                className="text-#2e8b57-600 font-semibold"
+                className="text-blue-600 font-semibold"
               >
                 ← Cancel Match
               </button>
@@ -1134,19 +1134,19 @@ const DiscGolfApp = () => {
             
             <div className="flex items-center justify-center space-x-8">
               <div className="text-center">
-                <div className="text-3xl font-bold text-#2e8b57-600">{status.p1Holes}</div>
+                <div className="text-3xl font-bold text-blue-600">{status.p1Holes}</div>
                 <div className="text-sm text-gray-600 mt-1">{selectedMatch.player1}</div>
               </div>
               <div className="text-gray-300 text-2xl font-bold">-</div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-#2e8b57-600">{status.p2Holes}</div>
+                <div className="text-3xl font-bold text-blue-600">{status.p2Holes}</div>
                 <div className="text-sm text-gray-600 mt-1">{selectedMatch.player2}</div>
               </div>
             </div>
             
             {status.leader && (
               <div className="mt-3 text-center">
-                <span className="inline-block bg-#2e8b57-50 text-#2e8b57-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <span className="inline-block bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
                   {status.leader} {status.lead} {status.isDormie ? 'UP (Dormie)' : 'UP'}
                 </span>
               </div>
@@ -1246,7 +1246,7 @@ const DiscGolfApp = () => {
                 }
               }}
               disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
-              className="w-full bg-#2e8b57-600 text-white py-4 rounded-xl font-semibold hover:bg-#2e8b57-700 transition-colors mt-6 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-#2e8b57-500/20"
+              className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors mt-6 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
             >
               {currentHole < scores.length - 1 ? 'Next Hole' : 'Record Score'}
             </button>
@@ -1271,7 +1271,7 @@ const DiscGolfApp = () => {
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100">
-                    <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-#2e8b57-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                    <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
                       {selectedMatch.player1.split(' ')[0]}
                     </td>
                   </tr>
@@ -1282,7 +1282,7 @@ const DiscGolfApp = () => {
                       const holeNum = idx < 18 ? ((idx + startingHole - 1) % 18) + 1 : 1;
                       const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
                       return (
-                        <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-#2e8b57-600 bg-#2e8b57-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                           {score.p1}
                         </td>
                       );
@@ -1308,7 +1308,7 @@ const DiscGolfApp = () => {
                     </td>
                   </tr>
                   <tr className="border-b border-gray-100">
-                    <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-#2e8b57-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                    <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
                       {selectedMatch.player2.split(' ')[0]}
                     </td>
                   </tr>
@@ -1317,7 +1317,7 @@ const DiscGolfApp = () => {
                     {scores.map((score, idx) => {
                       if (!score.scored) return null;
                       return (
-                        <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-#2e8b57-600 bg-#2e8b57-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                           {score.p2}
                         </td>
                       );
@@ -1388,7 +1388,7 @@ const DiscGolfApp = () => {
                 setView('matches');
                 setSelectedMatch(null);
               }}
-              className="text-#2e8b57-600 font-semibold mb-3"
+              className="text-blue-600 font-semibold mb-3"
             >
               ← Back
             </button>
@@ -1410,12 +1410,12 @@ const DiscGolfApp = () => {
           <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
             <div className="flex items-center justify-center space-x-8 mb-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-#2e8b57-600">{status.p1Holes}</div>
+                <div className="text-3xl font-bold text-blue-600">{status.p1Holes}</div>
                 <div className="text-sm text-gray-600 mt-1">{selectedMatch.player1}</div>
               </div>
               <div className="text-gray-300 text-2xl font-bold">-</div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-#2e8b57-600">{status.p2Holes}</div>
+                <div className="text-3xl font-bold text-blue-600">{status.p2Holes}</div>
                 <div className="text-sm text-gray-600 mt-1">{selectedMatch.player2}</div>
               </div>
             </div>
@@ -1439,18 +1439,18 @@ const DiscGolfApp = () => {
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100">
-                    <td colSpan={scores.length + 3} className="sticky left-0 bg-#2e8b57-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                    <td colSpan={scores.length + 3} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
                       {selectedMatch.player1.split(' ')[0]}
                     </td>
                   </tr>
                   <tr className="border-b-2 border-gray-200">
                     <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
                     {scores.map((score, idx) => (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-#2e8b57-600 bg-#2e8b57-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                         {score.p1}
                       </td>
                     ))}
-                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-#2e8b57-600 border-l-2 border-gray-200 text-sm">
+                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
                       {status.p1Holes}
                     </td>
                     <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
@@ -1473,18 +1473,18 @@ const DiscGolfApp = () => {
                     </td>
                   </tr>
                   <tr className="border-b border-gray-100">
-                    <td colSpan={scores.length + 3} className="sticky left-0 bg-#2e8b57-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                    <td colSpan={scores.length + 3} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
                       {selectedMatch.player2.split(' ')[0]}
                     </td>
                   </tr>
                   <tr>
                     <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
                     {scores.map((score, idx) => (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-#2e8b57-600 bg-#2e8b57-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                         {score.p2}
                       </td>
                     ))}
-                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-#2e8b57-600 border-l-2 border-gray-200 text-sm">
+                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
                       {status.p2Holes}
                     </td>
                     <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
