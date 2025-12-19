@@ -26,7 +26,39 @@ const DiscGolfApp = () => {
   const [matchFilter, setMatchFilter] = useState('all'); // 'all', 'date', 'player'
   const [selectedFilterDate, setSelectedFilterDate] = useState('');
   const [selectedFilterPlayer, setSelectedFilterPlayer] = useState('');                 
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    if (saved !== null) return JSON.parse(saved);
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Add global dark mode styles
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .dark {
+        color-scheme: dark;
+      }
+      .dark select option {
+        background-color: rgb(31, 41, 55);
+        color: white;
+      }
+      .dark input::placeholder {
+        color: rgb(156, 163, 175);
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -438,22 +470,29 @@ const DiscGolfApp = () => {
     return [...new Set(pools.map(p => p.pool))].sort();
   };
   
-  if (view === 'login') {
+ if (view === 'login') {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors">
         <div className="max-w-md mx-auto px-4 py-8">
+          <div className="absolute top-4 right-4">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
           <div className="text-center mb-12 mt-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4 shadow-lg">
               <Trophy className="text-white" size={40} />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Timaru Disc Golf</h1>
-            <h2 className="text-3x1 text-gray-750">Summer 2025-2026</h2>
-            <p className="text-gray-500">Match Play Scoring</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Matchplay</h1>
+            <p className="text-gray-500 dark:text-gray-400">Disc Golf Tournament Tracker</p>
           </div>
           
           {!isOnline && (
-            <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded-r">
-              <p className="text-sm text-orange-800">You're offline. Data will sync when connected.</p>
+            <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-400 p-4 mb-6 rounded-r">
+              <p className="text-sm text-orange-800 dark:text-orange-200">You're offline. Data will sync when connected.</p>
             </div>
           )}
           
@@ -463,11 +502,11 @@ const DiscGolfApp = () => {
             handleLogin(formData.get('player'), formData.get('pin'));
           }} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Select Player</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Select Player</label>
               <select 
                 name="player" 
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Choose your name</option>
                 {players.map(p => (
@@ -477,7 +516,7 @@ const DiscGolfApp = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">PIN</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">PIN</label>
               <input 
                 type="password" 
                 name="pin"
@@ -485,13 +524,13 @@ const DiscGolfApp = () => {
                 pattern="[0-9]{4}"
                 placeholder="Enter 4-digit PIN"
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r">
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
               </div>
             )}
             
@@ -507,22 +546,30 @@ const DiscGolfApp = () => {
     );
   }
 
-  if (view === 'changePin') {
+ if (view === 'changePin') {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white shadow-sm sticky top-0 z-10">
-          <div className="max-w-md mx-auto px-4 py-4 flex items-center">
-            <button onClick={() => setView('matches')} className="mr-4">
-              <X size={24} className="text-gray-600" />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+        <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+          <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <button onClick={() => setView('matches')} className="mr-4">
+                <X size={24} className="text-gray-600 dark:text-gray-400" />
+              </button>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Change PIN</h2>
+            </div>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <h2 className="text-lg font-bold text-gray-900">Change PIN</h2>
           </div>
         </div>
         
         <div className="max-w-md mx-auto px-4 py-6">
-          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">New PIN</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">New PIN</label>
               <input 
                 type="password"
                 maxLength="4"
@@ -530,12 +577,12 @@ const DiscGolfApp = () => {
                 placeholder="4 digits"
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm PIN</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Confirm PIN</label>
               <input 
                 type="password"
                 maxLength="4"
@@ -543,13 +590,13 @@ const DiscGolfApp = () => {
                 placeholder="4 digits"
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r">
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
               </div>
             )}
             
@@ -565,15 +612,30 @@ const DiscGolfApp = () => {
     );
   }
 
-  if (view === 'matches') {
+
+ if (view === 'matches') {
     const userMatches = matches.filter(m => 
       m.player1 === currentUser.name || m.player2 === currentUser.name
     );
     const upcomingMatches = userMatches.filter(m => m.status !== 'Completed');
-    const completedMatches = matches.filter(m => m.status === 'Completed');
+    
+    let completedMatches = matches.filter(m => m.status === 'Completed');
+    
+    // Apply filters
+    if (matchFilter === 'date' && selectedFilterDate) {
+      completedMatches = completedMatches.filter(m => m.date === selectedFilterDate);
+    } else if (matchFilter === 'player' && selectedFilterPlayer) {
+      completedMatches = completedMatches.filter(m => 
+        m.player1 === selectedFilterPlayer || m.player2 === selectedFilterPlayer
+      );
+    }
+    
+    // Get unique dates and players for filter dropdowns
+    const uniqueDates = [...new Set(matches.filter(m => m.status === 'Completed').map(m => m.date))].sort();
+    const uniquePlayers = [...new Set(matches.filter(m => m.status === 'Completed').flatMap(m => [m.player1, m.player2]))].sort();
     
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
           <div className="max-w-md mx-auto px-4 py-6">
             <div className="flex justify-between items-center mb-4">
@@ -587,6 +649,12 @@ const DiscGolfApp = () => {
                 </div>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
                 <button 
                   onClick={() => setView('changePin')}
                   className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
@@ -601,6 +669,30 @@ const DiscGolfApp = () => {
                 </button>
               </div>
             </div>
+            
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setView('matches')}
+                className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
+                  view === 'matches' 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-white/5 text-white/70 hover:bg-white/10'
+                }`}
+              >
+                Matches
+              </button>
+              <button
+                onClick={() => setView('standings')}
+                className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
+                  view === 'standings' 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-white/5 text-white/70 hover:bg-white/10'
+                }`}
+              >
+                Standings
+              </button>
+            </div>
+            
             {!isOnline && (
               <div className="bg-white/10 px-3 py-2 rounded-lg text-sm flex items-center">
                 <div className="w-2 h-2 bg-orange-300 rounded-full mr-2"></div>
@@ -653,10 +745,58 @@ const DiscGolfApp = () => {
           </div>
           
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Completed</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Completed Matches</h2>
+              <select
+                value={matchFilter}
+                onChange={(e) => {
+                  setMatchFilter(e.target.value);
+                  setSelectedFilterDate('');
+                  setSelectedFilterPlayer('');
+                }}
+                className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Matches</option>
+                <option value="date">By Date</option>
+                <option value="player">By Player</option>
+              </select>
+            </div>
+            
+            {matchFilter === 'date' && (
+              <div className="mb-4">
+                <select
+                  value={selectedFilterDate}
+                  onChange={(e) => setSelectedFilterDate(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a date</option>
+                  {uniqueDates.map(date => (
+                    <option key={date} value={date}>{date}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {matchFilter === 'player' && (
+              <div className="mb-4">
+                <select
+                  value={selectedFilterPlayer}
+                  onChange={(e) => setSelectedFilterPlayer(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a player</option>
+                  {uniquePlayers.map(player => (
+                    <option key={player} value={player}>{player}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
             {completedMatches.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-                <p className="text-gray-500">No completed matches yet</p>
+                <p className="text-gray-500">
+                  {matchFilter !== 'all' ? 'No matches found for this filter' : 'No completed matches yet'}
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -666,9 +806,12 @@ const DiscGolfApp = () => {
                     onClick={() => reviewMatch(match)}
                     className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
                   >
-                    <p className="font-bold text-gray-900 mb-1">
-                      {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-bold text-gray-900">
+                        {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
+                      </p>
+                      <span className="text-xs text-gray-500">{match.date}</span>
+                    </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center text-sm text-gray-600">
                         <MapPin size={14} className="mr-1" />
@@ -865,7 +1008,7 @@ if (view === 'standings') {
 }
 
   
-if (view === 'scoring') {
+ if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
     const actualHoleNumber = currentHole < 18 ? ((currentHole + startingHole - 1) % 18) + 1 : currentHole - 17;
