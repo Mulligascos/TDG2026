@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check } from 'lucide-react';
+import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
 const SHEET_ID = '1bzJdaMrV7sInlNtMP81hKST8-TTq2UTDujkk68w3IPU';
 const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
@@ -25,7 +26,7 @@ const DiscGolfApp = () => {
   const [pools, setPools] = useState([]);
   const [matchFilter, setMatchFilter] = useState('all'); // 'all', 'date', 'player'
   const [selectedFilterDate, setSelectedFilterDate] = useState('');
-  const [selectedFilterPlayer, setSelectedFilterPlayer] = useState('');                 
+  const [selectedFilterPlayer, setSelectedFilterPlayer] = useState('');
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved !== null) return JSON.parse(saved);
@@ -59,6 +60,7 @@ const DiscGolfApp = () => {
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
   }, []);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -85,7 +87,7 @@ const DiscGolfApp = () => {
 
   const loadSheetData = async () => {
     try {
-      const ranges = ['Players!A:C', 'Courses!A:E', 'Matches!A:J'];
+      const ranges = ['Players!A:C', 'Courses!A:E', 'Matches!A:J', 'Pools!A:F'];
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${GOOGLE_API_KEY}`
       );
@@ -126,7 +128,7 @@ const DiscGolfApp = () => {
         status: row[9] || 'scheduled'
       }));
       setMatches(matchesData);
-
+      
       const poolsData = data.valueRanges[3]?.values.slice(1).map(row => ({
         pool: row[0],
         player: row[1],
@@ -137,20 +139,21 @@ const DiscGolfApp = () => {
       })) || [];
       setPools(poolsData);
       
-      const stored = await localStorage.getItem('sheet-data');
+      const stored = localStorage.getItem('sheet-data');
       if (!stored) {
-        await localStorage.setItem('sheet-data', JSON.stringify({
+        localStorage.setItem('sheet-data', JSON.stringify({
           players: playersData,
           courses: coursesData,
-          matches: matchesData
+          matches: matchesData,
+          pools: poolsData
         }));
       }
     } catch (err) {
       console.error('Error loading sheet data:', err);
       try {
-        const stored = await localStorage.getItem('sheet-data');
+        const stored = localStorage.getItem('sheet-data');
         if (stored) {
-          const data = JSON.parse(stored.value);
+          const data = JSON.parse(stored);
           setPlayers(data.players || []);
           setCourses(data.courses || []);
           setMatches(data.matches || []);
@@ -171,7 +174,7 @@ const DiscGolfApp = () => {
         startingHole,
         timestamp: Date.now()
       };
-      await window.storage.set(`match-progress-${selectedMatch.id}`, JSON.stringify(progress));
+      localStorage.setItem(`match-progress-${selectedMatch.id}`, JSON.stringify(progress));
     } catch (err) {
       console.error('Error saving match progress:', err);
     }
@@ -179,9 +182,9 @@ const DiscGolfApp = () => {
 
   const loadMatchProgress = async (matchId) => {
     try {
-      const stored = await localSstorage.getItem(`match-progress-${matchId}`);
+      const stored = localStorage.getItem(`match-progress-${matchId}`);
       if (stored) {
-        const progress = JSON.parse(stored.value);
+        const progress = JSON.parse(stored);
         setScores(progress.scores);
         setCurrentHole(progress.currentHole);
         setStartingHole(progress.startingHole);
@@ -195,13 +198,13 @@ const DiscGolfApp = () => {
 
   const processPendingUpdates = async () => {
     try {
-      const stored = await localStorage.getItem('pending-updates');
+      const stored = localStorage.getItem('pending-updates');
       if (stored) {
-        const updates = JSON.parse(stored.value);
+        const updates = JSON.parse(stored);
         for (const update of updates) {
           await submitMatchToSheet(update.matchId, update.scores, update.winner);
         }
-        await window.storage.delete('pending-updates');
+        localStorage.removeItem('pending-updates');
         setPendingUpdates([]);
       }
     } catch (err) {
@@ -209,11 +212,11 @@ const DiscGolfApp = () => {
     }
   };
 
- const submitMatchToSheet = async (matchId, finalScores, winner) => {
+  const submitMatchToSheet = async (matchId, finalScores, winner) => {
     if (!isOnline) {
       const updates = [...pendingUpdates, { matchId, scores: finalScores, winner }];
       setPendingUpdates(updates);
-      await window.storage.set('pending-updates', JSON.stringify(updates));
+      localStorage.setItem('pending-updates', JSON.stringify(updates));
       return;
     }
 
@@ -227,7 +230,7 @@ const DiscGolfApp = () => {
       setMatches(updatedMatches);
       
       // Save to local storage
-      await localStorage.setItem('sheet-data', JSON.stringify({
+      localStorage.setItem('sheet-data', JSON.stringify({
         players,
         courses,
         matches: updatedMatches,
@@ -294,10 +297,11 @@ const DiscGolfApp = () => {
     setPlayers(updatedPlayers);
     setCurrentUser({ ...currentUser, pin: newPin });
     
-    await localStorage.setItem('sheet-data', JSON.stringify({
+    localStorage.setItem('sheet-data', JSON.stringify({
       players: updatedPlayers,
       courses,
-      matches
+      matches,
+      pools
     }));
     
     setNewPin('');
@@ -396,7 +400,7 @@ const DiscGolfApp = () => {
     setLoading(true);
     try {
       await submitMatchToSheet(selectedMatch.id, scores, winner);
-      await window.storage.delete(`match-progress-${selectedMatch.id}`);
+      localStorage.removeItem(`match-progress-${selectedMatch.id}`);
       setView('matches');
       setSelectedMatch(null);
       setScores([]);
@@ -469,8 +473,8 @@ const DiscGolfApp = () => {
   const getPoolNames = () => {
     return [...new Set(pools.map(p => p.pool))].sort();
   };
-  
- if (view === 'login') {
+
+  if (view === 'login') {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors">
         <div className="max-w-md mx-auto px-4 py-8">
@@ -546,7 +550,7 @@ const DiscGolfApp = () => {
     );
   }
 
- if (view === 'changePin') {
+  if (view === 'changePin') {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
         <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
@@ -612,8 +616,7 @@ const DiscGolfApp = () => {
     );
   }
 
-
- if (view === 'matches') {
+  if (view === 'matches') {
     const userMatches = matches.filter(m => 
       m.player1 === currentUser.name || m.player2 === currentUser.name
     );
@@ -866,7 +869,7 @@ const DiscGolfApp = () => {
     );
   }
 
-if (view === 'standings') {
+  if (view === 'standings') {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
@@ -1005,10 +1008,9 @@ if (view === 'standings') {
         </div>
       </div>
     );
-}
+  }
 
-  
- if (view === 'scoring') {
+  if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
     const actualHoleNumber = currentHole < 18 ? ((currentHole + startingHole - 1) % 18) + 1 : currentHole - 17;
