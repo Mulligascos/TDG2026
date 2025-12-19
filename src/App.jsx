@@ -124,7 +124,7 @@ const DiscGolfApp = () => {
       }
       
       .dark-mode .bg-blue-50 {
-        background-color: rgba(30, 58, 138, 0.3) !important;
+        background-color: rgba(46,139,87, 0.3) !important;
       }
       
       .dark-mode .shadow-sm {
