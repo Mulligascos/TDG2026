@@ -1,9 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
 const SHEET_ID = '1bzJdaMrV7sInlNtMP81hKST8-TTq2UTDujkk68w3IPU';
 const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxW0Sa-T_oBu-5ka0TU6Hf1kkY_VBj40891Xq3Md1LdbuJfaHCRSqAK25xfnebtQXwWmg/exec';
+
+// Brand colors
+const BRAND_PRIMARY = '#006400'; // Dark green
+const BRAND_SECONDARY = '#FFD700'; // Gold
+const BRAND_ACCENT = '#228B22'; // Forest green
 
 const DiscGolfApp = () => {
   const [view, setView] = useState('login');
@@ -124,7 +130,7 @@ const DiscGolfApp = () => {
       }
       
       .dark-mode .bg-blue-50 {
-        background-color: rgba(46,139,87, 0.3) !important;
+        background-color: rgba(30, 58, 138, 0.3) !important;
       }
       
       .dark-mode .shadow-sm {
@@ -560,6 +566,103 @@ const DiscGolfApp = () => {
     return [...new Set(pools.map(p => p.pool))].sort();
   };
 
+  const generatePlayoffBrackets = (playoffType) => {
+    // Get pool standings to determine playoff participants
+    const pool1Standings = calculateStandings('Pool 1');
+    const pool2Standings = calculateStandings('Pool 2');
+    const pool3Standings = calculateStandings('Pool 3');
+    const pool4Standings = calculateStandings('Pool 4');
+    
+    let participants = [];
+    
+    if (playoffType === 'Cup') {
+      // Top 3 from each pool (indices 0, 1, 2)
+      participants = [
+        ...pool1Standings.slice(0, 3).map(p => ({...p, pool: 'Pool A'})),
+        ...pool2Standings.slice(0, 3).map(p => ({...p, pool: 'Pool B'})),
+        ...pool3Standings.slice(0, 3).map(p => ({...p, pool: 'Pool C'})),
+        ...pool4Standings.slice(0, 3).map(p => ({...p, pool: 'Pool D'}))
+      ];
+    } else if (playoffType === 'Shield') {
+      // Next 3 from each pool (indices 3, 4, 5)
+      participants = [
+        ...pool1Standings.slice(3, 6).map(p => ({...p, pool: 'Pool A'})),
+        ...pool2Standings.slice(3, 6).map(p => ({...p, pool: 'Pool B'})),
+        ...pool3Standings.slice(3, 6).map(p => ({...p, pool: 'Pool C'})),
+        ...pool4Standings.slice(3, 6).map(p => ({...p, pool: 'Pool D'}))
+      ];
+    } else if (playoffType === 'Plate') {
+      // Remaining players (indices 6+)
+      participants = [
+        ...pool1Standings.slice(6).map(p => ({...p, pool: 'Pool A'})),
+        ...pool2Standings.slice(6).map(p => ({...p, pool: 'Pool B'})),
+        ...pool3Standings.slice(6).map(p => ({...p, pool: 'Pool C'})),
+        ...pool4Standings.slice(6).map(p => ({...p, pool: 'Pool D'}))
+      ];
+    }
+    
+    // Get playoff matches for this type
+    const playoffMatches = matches.filter(m => {
+      const venue = m.venue?.toLowerCase() || '';
+      return venue.includes(playoffType.toLowerCase());
+    });
+    
+    // Build bracket structure
+    const bracket = {
+      r16: [],
+      qf: [],
+      sf: [],
+      final: null
+    };
+    
+    // Round of 16 (only for Cup/Shield with 12 players)
+    playoffMatches.filter(m => m.id.includes('R16')).forEach(match => {
+      bracket.r16.push({
+        id: match.id,
+        player1: match.player1,
+        player2: match.player2,
+        winner: match.winner,
+        status: match.status
+      });
+    });
+    
+    // Quarter Finals
+    playoffMatches.filter(m => m.id.includes('QF')).forEach(match => {
+      bracket.qf.push({
+        id: match.id,
+        player1: match.player1,
+        player2: match.player2,
+        winner: match.winner,
+        status: match.status
+      });
+    });
+    
+    // Semi Finals
+    playoffMatches.filter(m => m.id.includes('SF')).forEach(match => {
+      bracket.sf.push({
+        id: match.id,
+        player1: match.player1,
+        player2: match.player2,
+        winner: match.winner,
+        status: match.status
+      });
+    });
+    
+    // Final
+    const finalMatch = playoffMatches.find(m => m.id.includes('Final'));
+    if (finalMatch) {
+      bracket.final = {
+        id: finalMatch.id,
+        player1: finalMatch.player1,
+        player2: finalMatch.player2,
+        winner: finalMatch.winner,
+        status: finalMatch.status
+      };
+    }
+    
+    return bracket;
+  };
+
   if (view === 'login') {
     return (
       <div className="min-h-screen bg-white transition-colors">
@@ -573,7 +676,7 @@ const DiscGolfApp = () => {
             </button>
           </div>
           <div className="text-center mb-12 mt-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4 shadow-lg">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
               <Trophy className="text-white" size={40} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Matchplay</h1>
@@ -596,7 +699,8 @@ const DiscGolfApp = () => {
               <select 
                 name="player" 
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{focusRingColor: BRAND_PRIMARY}}
               >
                 <option value="">Choose your name</option>
                 {players.map(p => (
@@ -614,7 +718,7 @@ const DiscGolfApp = () => {
                 pattern="[0-9]{4}"
                 placeholder="Enter 4-digit PIN"
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:border-transparent"
               />
             </div>
             
@@ -626,7 +730,13 @@ const DiscGolfApp = () => {
             
             <button 
               type="submit"
-              className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
+              className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
+              style={{
+                backgroundColor: BRAND_PRIMARY,
+                boxShadow: `0 10px 15px -3px ${BRAND_PRIMARY}30`
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = BRAND_ACCENT}
+              onMouseLeave={(e) => e.target.style.backgroundColor = BRAND_PRIMARY}
             >
               Sign In
             </button>
@@ -1028,67 +1138,166 @@ const DiscGolfApp = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {getPoolNames().map(poolName => {
-                const standings = calculateStandings(poolName);
-                const isPlayoff = poolName.toLowerCase().includes('playoff') || 
-                                 poolName.toLowerCase().includes('cup') || 
-                                 poolName.toLowerCase().includes('shield') || 
-                                 poolName.toLowerCase().includes('plate');
-                
-                return (
-                  <div key={poolName} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                    <div className={`px-4 py-3 ${
-                      isPlayoff 
-                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' 
-                        : 'bg-gradient-to-r from-blue-500 to-blue-600'
-                    }`}>
-                      <h2 className="text-lg font-bold text-white">{poolName}</h2>
-                    </div>
-                    <div className="p-4">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b-2 border-gray-200">
-                            <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-8">#</th>
-                            <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-sm">Player</th>
-                            <th className="text-center py-2 px-2 font-semibold text-gray-700 text-sm">Pts</th>
-                            <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-sm">+/-</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {standings.map((standing, idx) => (
-                            <tr 
-                              key={standing.name} 
-                              className={`border-b border-gray-100 ${standing.name === currentUser.name ? 'bg-blue-50' : ''}`}
-                            >
-                              <td className="py-3 pr-2 text-gray-600 font-semibold text-sm">{idx + 1}</td>
-                              <td className="py-3 pr-2 font-semibold text-gray-900 text-sm">
-                                {standing.name.split(' ')[0]}
-                              </td>
-                              <td className="py-3 px-2 text-center text-gray-900 font-bold text-base">{standing.points}</td>
-                              <td className={`py-3 pl-2 text-center font-bold text-sm ${
-                                standing.holeDiff > 0 ? 'text-green-600' : 
-                                standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
-                              }`}>
-                                {standing.holeDiff > 0 ? '+' : ''}{standing.holeDiff}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      
-                      {isPlayoff && standings.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <p className="text-xs text-gray-500 italic">
-                            {poolName.toLowerCase().includes('cup') && "Top 3 from each pool - #1 gets bye, #2 vs #3 in first round"}
-                            {poolName.toLowerCase().includes('shield') && "Next 3 from each pool - #1 gets bye, #2 vs #3 in first round"}
-                            {poolName.toLowerCase().includes('plate') && "Remaining players - elimination format"}
-                          </p>
+              {/* Pool Standings */}
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Pool Standings</h2>
+                <div className="space-y-4">
+                  {getPoolNames().filter(p => !p.toLowerCase().includes('cup') && !p.toLowerCase().includes('shield') && !p.toLowerCase().includes('plate')).map(poolName => {
+                    const standings = calculateStandings(poolName);
+                    
+                    return (
+                      <div key={poolName} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                        <div className="px-4 py-3" style={{background: `linear-gradient(to right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
+                          <h2 className="text-lg font-bold text-white">{poolName}</h2>
                         </div>
-                      )}
+                        <div className="p-4">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b-2 border-gray-200">
+                                <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-8">#</th>
+                                <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-sm">Player</th>
+                                <th className="text-center py-2 px-2 font-semibold text-gray-700 text-sm">Pts</th>
+                                <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-sm">+/-</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {standings.map((standing, idx) => (
+                                <tr 
+                                  key={standing.name} 
+                                  className={`border-b border-gray-100 ${standing.name === currentUser.name ? 'bg-green-50' : ''}`}
+                                >
+                                  <td className="py-3 pr-2 text-gray-600 font-semibold text-sm">{idx + 1}</td>
+                                  <td className="py-3 pr-2 font-semibold text-gray-900 text-sm">
+                                    {standing.name.split(' ')[0]}
+                                  </td>
+                                  <td className="py-3 px-2 text-center text-gray-900 font-bold text-base">{standing.points}</td>
+                                  <td className={`py-3 pl-2 text-center font-bold text-sm ${
+                                    standing.holeDiff > 0 ? 'text-green-600' : 
+                                    standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
+                                  }`}>
+                                    {standing.holeDiff > 0 ? '+' : ''}{standing.holeDiff}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Playoff Brackets */}
+              <div className="mt-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Playoff Brackets</h2>
+                
+                {['Cup', 'Shield', 'Plate'].map(playoffType => {
+                  const bracket = generatePlayoffBrackets(playoffType);
+                  const icon = playoffType === 'Cup' ? '🏆' : playoffType === 'Shield' ? '🛡️' : '🥉';
+                  
+                  return (
+                    <div key={playoffType} className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6" style={{borderTop: `4px solid ${BRAND_SECONDARY}`}}>
+                      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                          <span className="mr-2">{icon}</span>
+                          {playoffType} Final
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {playoffType === 'Cup' && "Top 3 from each pool"}
+                          {playoffType === 'Shield' && "Next 3 from each pool"}
+                          {playoffType === 'Plate' && "Remaining players"}
+                        </p>
+                      </div>
+                      
+                      <div className="p-4 overflow-x-auto">
+                        <div className="flex gap-4 min-w-max">
+                          {/* R16 Column */}
+                          {bracket.r16.length > 0 && (
+                            <div className="flex-shrink-0 w-48">
+                              <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
+                              <div className="space-y-2">
+                                {bracket.r16.map((match, idx) => (
+                                  <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {match.player1 || 'TBD'}
+                                    </div>
+                                    <div className="text-gray-400 text-center my-0.5">vs</div>
+                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {match.player2 || 'TBD'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* QF Column */}
+                          {bracket.qf.length > 0 && (
+                            <div className="flex-shrink-0 w-48">
+                              <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
+                              <div className="space-y-2">
+                                {bracket.qf.map((match, idx) => (
+                                  <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {match.player1 || 'TBD'}
+                                    </div>
+                                    <div className="text-gray-400 text-center my-0.5">vs</div>
+                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {match.player2 || 'TBD'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* SF Column */}
+                          {bracket.sf.length > 0 && (
+                            <div className="flex-shrink-0 w-48">
+                              <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
+                              <div className="space-y-2">
+                                {bracket.sf.map((match, idx) => (
+                                  <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {match.player1 || 'TBD'}
+                                    </div>
+                                    <div className="text-gray-400 text-center my-0.5">vs</div>
+                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {match.player2 || 'TBD'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Final Column */}
+                          {bracket.final && (
+                            <div className="flex-shrink-0 w-48">
+                              <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
+                              <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
+                                <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                  {bracket.final.player1 || 'TBD'}
+                                </div>
+                                <div className="text-gray-400 text-center my-1 font-semibold">vs</div>
+                                <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                  {bracket.final.player2 || 'TBD'}
+                                </div>
+                                {bracket.final.winner && (
+                                  <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
+                                    🏆 {bracket.final.winner}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
