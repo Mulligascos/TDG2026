@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
@@ -567,45 +566,80 @@ const DiscGolfApp = () => {
   };
 
   const generatePlayoffBrackets = (playoffType) => {
-    // Get pool standings to determine playoff participants
-    const pool1Standings = calculateStandings('Pool 1');
-    const pool2Standings = calculateStandings('Pool 2');
-    const pool3Standings = calculateStandings('Pool 3');
-    const pool4Standings = calculateStandings('Pool 4');
+    // Get pool standings
+    const allPools = getPoolNames().filter(p => 
+      !p.toLowerCase().includes('cup') && 
+      !p.toLowerCase().includes('shield') && 
+      !p.toLowerCase().includes('plate')
+    );
+    
+    const poolStandings = allPools.map(poolName => ({
+      pool: poolName,
+      standings: calculateStandings(poolName)
+    }));
     
     let participants = [];
     
     if (playoffType === 'Cup') {
-      // Top 3 from each pool (indices 0, 1, 2)
-      participants = [
-        ...pool1Standings.slice(0, 3).map(p => ({...p, pool: 'Pool A'})),
-        ...pool2Standings.slice(0, 3).map(p => ({...p, pool: 'Pool B'})),
-        ...pool3Standings.slice(0, 3).map(p => ({...p, pool: 'Pool C'})),
-        ...pool4Standings.slice(0, 3).map(p => ({...p, pool: 'Pool D'}))
-      ];
+      // Top 3 from each pool
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(0, 3).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 1
+          });
+        });
+      });
     } else if (playoffType === 'Shield') {
-      // Next 3 from each pool (indices 3, 4, 5)
-      participants = [
-        ...pool1Standings.slice(3, 6).map(p => ({...p, pool: 'Pool A'})),
-        ...pool2Standings.slice(3, 6).map(p => ({...p, pool: 'Pool B'})),
-        ...pool3Standings.slice(3, 6).map(p => ({...p, pool: 'Pool C'})),
-        ...pool4Standings.slice(3, 6).map(p => ({...p, pool: 'Pool D'}))
-      ];
+      // Next 3 from each pool (positions 4-6)
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(3, 6).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 4
+          });
+        });
+      });
     } else if (playoffType === 'Plate') {
-      // Remaining players (indices 6+)
-      participants = [
-        ...pool1Standings.slice(6).map(p => ({...p, pool: 'Pool A'})),
-        ...pool2Standings.slice(6).map(p => ({...p, pool: 'Pool B'})),
-        ...pool3Standings.slice(6).map(p => ({...p, pool: 'Pool C'})),
-        ...pool4Standings.slice(6).map(p => ({...p, pool: 'Pool D'}))
-      ];
+      // Remaining players (position 7+)
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(6).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 7
+          });
+        });
+      });
     }
     
-    // Get playoff matches for this type
+    if (participants.length === 0) {
+      return { bracket: null, hasMatches: false };
+    }
+    
+    // Group participants by pool
+    const poolA = participants.filter(p => p.pool === allPools[0]) || [];
+    const poolB = participants.filter(p => p.pool === allPools[1]) || [];
+    const poolC = participants.filter(p => p.pool === allPools[2]) || [];
+    const poolD = participants.filter(p => p.pool === allPools[3]) || [];
+    
+    // Get completed playoff matches to show winners
     const playoffMatches = matches.filter(m => {
+      const id = m.id?.toLowerCase() || '';
       const venue = m.venue?.toLowerCase() || '';
-      return venue.includes(playoffType.toLowerCase());
+      const type = playoffType.toLowerCase();
+      return (id.includes(type) || venue.includes(type)) && m.status === 'Completed';
     });
+    
+    const findWinner = (p1Name, p2Name) => {
+      const match = playoffMatches.find(m => 
+        (m.player1 === p1Name && m.player2 === p2Name) ||
+        (m.player1 === p2Name && m.player2 === p1Name)
+      );
+      return match?.winner;
+    };
     
     // Build bracket structure
     const bracket = {
@@ -615,52 +649,132 @@ const DiscGolfApp = () => {
       final: null
     };
     
-    // Round of 16 (only for Cup/Shield with 12 players)
-    playoffMatches.filter(m => m.id.includes('R16')).forEach(match => {
+    // Round of 16: #2 vs #3 from each pool (winners advance to play pool #1)
+    if (poolA.length >= 3) {
+      const winner = findWinner(poolA[1].name, poolA[2].name);
       bracket.r16.push({
-        id: match.id,
-        player1: match.player1,
-        player2: match.player2,
-        winner: match.winner,
-        status: match.status
+        id: 'Pool A: 2v3',
+        player1: poolA[1].name,
+        player2: poolA[2].name,
+        winner: winner,
+        poolLabel: allPools[0]
       });
-    });
+    }
+    if (poolB.length >= 3) {
+      const winner = findWinner(poolB[1].name, poolB[2].name);
+      bracket.r16.push({
+        id: 'Pool B: 2v3',
+        player1: poolB[1].name,
+        player2: poolB[2].name,
+        winner: winner,
+        poolLabel: allPools[1]
+      });
+    }
+    if (poolC.length >= 3) {
+      const winner = findWinner(poolC[1].name, poolC[2].name);
+      bracket.r16.push({
+        id: 'Pool C: 2v3',
+        player1: poolC[1].name,
+        player2: poolC[2].name,
+        winner: winner,
+        poolLabel: allPools[2]
+      });
+    }
+    if (poolD.length >= 3) {
+      const winner = findWinner(poolD[1].name, poolD[2].name);
+      bracket.r16.push({
+        id: 'Pool D: 2v3',
+        player1: poolD[1].name,
+        player2: poolD[2].name,
+        winner: winner,
+        poolLabel: allPools[3]
+      });
+    }
     
-    // Quarter Finals
-    playoffMatches.filter(m => m.id.includes('QF')).forEach(match => {
+    // Quarter Finals: Pool #1 vs R16 winner from same pool
+    if (poolA.length >= 1) {
+      const r16Winner = bracket.r16[0]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolA[0].name, r16Winner);
       bracket.qf.push({
-        id: match.id,
-        player1: match.player1,
-        player2: match.player2,
-        winner: match.winner,
-        status: match.status
+        id: 'QF1',
+        player1: poolA[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[0]
       });
-    });
+    }
+    if (poolB.length >= 1) {
+      const r16Winner = bracket.r16[1]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolB[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF2',
+        player1: poolB[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[1]
+      });
+    }
+    if (poolC.length >= 1) {
+      const r16Winner = bracket.r16[2]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolC[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF3',
+        player1: poolC[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[2]
+      });
+    }
+    if (poolD.length >= 1) {
+      const r16Winner = bracket.r16[3]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolD[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF4',
+        player1: poolD[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[3]
+      });
+    }
     
-    // Semi Finals
-    playoffMatches.filter(m => m.id.includes('SF')).forEach(match => {
+    // Semi Finals: Pool 1 vs Pool 4, Pool 2 vs Pool 3
+    if (bracket.qf.length >= 2) {
+      const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
+      const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
+      const winner = findWinner(qf1Winner, qf4Winner);
       bracket.sf.push({
-        id: match.id,
-        player1: match.player1,
-        player2: match.player2,
-        winner: match.winner,
-        status: match.status
+        id: 'SF1',
+        player1: qf1Winner,
+        player2: qf4Winner,
+        winner: winner
       });
-    });
+    }
+    if (bracket.qf.length >= 3) {
+      const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
+      const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
+      const winner = findWinner(qf2Winner, qf3Winner);
+      bracket.sf.push({
+        id: 'SF2',
+        player1: qf2Winner,
+        player2: qf3Winner,
+        winner: winner
+      });
+    }
     
     // Final
-    const finalMatch = playoffMatches.find(m => m.id.includes('Final'));
-    if (finalMatch) {
+    if (bracket.sf.length >= 2) {
+      const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
+      const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
+      const winner = findWinner(sf1Winner, sf2Winner);
       bracket.final = {
-        id: finalMatch.id,
-        player1: finalMatch.player1,
-        player2: finalMatch.player2,
-        winner: finalMatch.winner,
-        status: finalMatch.status
+        id: 'Final',
+        player1: sf1Winner,
+        player2: sf2Winner,
+        winner: winner
       };
     }
     
-    return bracket;
+    return { bracket, hasMatches: true };
   };
 
   if (view === 'login') {
@@ -1193,7 +1307,7 @@ const DiscGolfApp = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Playoff Brackets</h2>
                 
                 {['Cup', 'Shield', 'Plate'].map(playoffType => {
-                  const bracket = generatePlayoffBrackets(playoffType);
+                  const { bracket, hasMatches } = generatePlayoffBrackets(playoffType);
                   const icon = playoffType === 'Cup' ? '🏆' : playoffType === 'Shield' ? '🛡️' : '🥉';
                   
                   return (
@@ -1210,90 +1324,99 @@ const DiscGolfApp = () => {
                         </p>
                       </div>
                       
-                      <div className="p-4 overflow-x-auto">
-                        <div className="flex gap-4 min-w-max">
-                          {/* R16 Column */}
-                          {bracket.r16.length > 0 && (
-                            <div className="flex-shrink-0 w-48">
-                              <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
-                              <div className="space-y-2">
-                                {bracket.r16.map((match, idx) => (
-                                  <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {match.player1 || 'TBD'}
-                                    </div>
-                                    <div className="text-gray-400 text-center my-0.5">vs</div>
-                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {match.player2 || 'TBD'}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* QF Column */}
-                          {bracket.qf.length > 0 && (
-                            <div className="flex-shrink-0 w-48">
-                              <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
-                              <div className="space-y-2">
-                                {bracket.qf.map((match, idx) => (
-                                  <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {match.player1 || 'TBD'}
-                                    </div>
-                                    <div className="text-gray-400 text-center my-0.5">vs</div>
-                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {match.player2 || 'TBD'}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* SF Column */}
-                          {bracket.sf.length > 0 && (
-                            <div className="flex-shrink-0 w-48">
-                              <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
-                              <div className="space-y-2">
-                                {bracket.sf.map((match, idx) => (
-                                  <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {match.player1 || 'TBD'}
-                                    </div>
-                                    <div className="text-gray-400 text-center my-0.5">vs</div>
-                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {match.player2 || 'TBD'}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Final Column */}
-                          {bracket.final && (
-                            <div className="flex-shrink-0 w-48">
-                              <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
-                              <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
-                                <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                  {bracket.final.player1 || 'TBD'}
-                                </div>
-                                <div className="text-gray-400 text-center my-1 font-semibold">vs</div>
-                                <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                  {bracket.final.player2 || 'TBD'}
-                                </div>
-                                {bracket.final.winner && (
-                                  <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
-                                    🏆 {bracket.final.winner}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                      {!hasMatches ? (
+                        <div className="p-6 text-center text-gray-500 text-sm">
+                          <p>Pool play not complete yet.</p>
+                          <p className="text-xs mt-2">Brackets will populate automatically based on pool standings.</p>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="p-4 overflow-x-auto">
+                          <div className="flex gap-4 min-w-max">
+                            {/* R16 Column */}
+                            {bracket.r16.length > 0 && (
+                              <div className="flex-shrink-0 w-48">
+                                <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
+                                <div className="space-y-2">
+                                  {bracket.r16.map((match, idx) => (
+                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                      <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
+                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        #{match.player1.includes('Winner') ? match.player1 : '2 ' + match.player1.split(' ')[0]}
+                                      </div>
+                                      <div className="text-gray-400 text-center my-0.5">vs</div>
+                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        #{match.player2.includes('Winner') ? match.player2 : '3 ' + match.player2.split(' ')[0]}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* QF Column */}
+                            {bracket.qf.length > 0 && (
+                              <div className="flex-shrink-0 w-48">
+                                <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
+                                <div className="space-y-2">
+                                  {bracket.qf.map((match, idx) => (
+                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                      <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
+                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        {match.player1.includes('Winner') ? match.player1 : '#1 ' + match.player1.split(' ')[0]}
+                                      </div>
+                                      <div className="text-gray-400 text-center my-0.5">vs</div>
+                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        {match.player2.includes('Winner') ? 'Winner R16' : match.player2.split(' ')[0]}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* SF Column */}
+                            {bracket.sf.length > 0 && (
+                              <div className="flex-shrink-0 w-48">
+                                <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
+                                <div className="space-y-2">
+                                  {bracket.sf.map((match, idx) => (
+                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        {match.player1.includes('Winner') ? match.player1 : match.player1.split(' ')[0]}
+                                      </div>
+                                      <div className="text-gray-400 text-center my-0.5">vs</div>
+                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        {match.player2.includes('Winner') ? match.player2 : match.player2.split(' ')[0]}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Final Column */}
+                            {bracket.final && (
+                              <div className="flex-shrink-0 w-48">
+                                <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
+                                <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
+                                  <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                    {bracket.final.player1.includes('Winner') ? bracket.final.player1 : bracket.final.player1.split(' ')[0]}
+                                  </div>
+                                  <div className="text-gray-400 text-center my-1 font-semibold">vs</div>
+                                  <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                    {bracket.final.player2.includes('Winner') ? bracket.final.player2 : bracket.final.player2.split(' ')[0]}
+                                  </div>
+                                  {bracket.final.winner && bracket.final.winner !== 'Winner' && !bracket.final.winner.includes('Winner') && (
+                                    <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
+                                      🏆 {bracket.final.winner.split(' ')[0]}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
