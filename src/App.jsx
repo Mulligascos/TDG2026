@@ -1616,7 +1616,7 @@ const DiscGolfApp = () => {
                   
                   return (
                     <div className="space-y-4">
-                      <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: `4px solid ${BRAND_ACCENT}`}}>
+                      <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: '4px solid ' + BRAND_ACCENT}}>
                         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                           <h3 className="text-lg font-bold text-gray-900">Week 1</h3>
                           <p className="text-xs text-gray-500 mt-1">A vs B, C vs D</p>
@@ -1639,7 +1639,7 @@ const DiscGolfApp = () => {
                         </div>
                       </div>
                       
-                      <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: `4px solid ${BRAND_ACCENT}`}}>
+                      <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: '4px solid ' + BRAND_ACCENT}}>
                         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                           <h3 className="text-lg font-bold text-gray-900">Week 2</h3>
                           <p className="text-xs text-gray-500 mt-1">A vs C, B vs D</p>
