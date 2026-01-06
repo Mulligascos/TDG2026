@@ -1599,7 +1599,7 @@ const DiscGolfApp = () => {
                 </div>
               </div>
 
-              {/* Playoff Brackets */}
+              {/* Crossover Matches */}
               <div className="mt-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Crossover Matches</h2>
                 
@@ -1616,7 +1616,6 @@ const DiscGolfApp = () => {
                   
                   return (
                     <div className="space-y-4">
-                      {/* Week 1 */}
                       <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: `4px solid ${BRAND_ACCENT}`}}>
                         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                           <h3 className="text-lg font-bold text-gray-900">Week 1</h3>
@@ -1640,7 +1639,6 @@ const DiscGolfApp = () => {
                         </div>
                       </div>
                       
-                      {/* Week 2 */}
                       <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: `4px solid ${BRAND_ACCENT}`}}>
                         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                           <h3 className="text-lg font-bold text-gray-900">Week 2</h3>
@@ -1667,10 +1665,6 @@ const DiscGolfApp = () => {
                   );
                 })()}
               </div>
-
-              {/* Playoff Brackets */}
-              <div className="mt-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Playoff Brackets</h2>
                 
                 {['Cup', 'Shield', 'Plate'].map(playoffType => {
                   const { bracket, hasMatches } = generatePlayoffBrackets(playoffType);
@@ -2054,7 +2048,187 @@ const DiscGolfApp = () => {
             </button>
           )}
           
-          {(status.isComplete || (currentHole > 18 && scores[currentHole]?.scored && status.leader)) && (
+                      <button 
+              onClick={completeMatch}
+              disabled={loading}
+              className="w-full text-white py-4 rounded-xl font-semibold transition-colors mt-4 disabled:bg-gray-400 shadow-lg"
+              style={{
+                backgroundColor: loading ? '#9ca3af' : BRAND_PRIMARY,
+                boxShadow: `0 10px 15px -3px ${BRAND_PRIMARY}30`
+              }}
+              onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = BRAND_ACCENT)}
+              onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = BRAND_PRIMARY)}
+            >
+              {loading ? 'Submitting...' : '✓ Complete Match'}
+            </button>
+          )}
+          
+          {error && (
+            <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r mt-4">
+              <p className="text-sm text-orange-800">{error}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'review') {
+    const status = calculateMatchStatus();
+    
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm sticky top-0 z-10">
+          <div className="max-w-md mx-auto px-4 py-4">
+            <button 
+              onClick={() => {
+                setView('matches');
+                setSelectedMatch(null);
+              }}
+              className="text-blue-600 font-semibold mb-3"
+            >
+              ← Back
+            </button>
+            <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
+            <div className="flex items-center text-sm text-gray-600 mt-1">
+              <MapPin size={14} className="mr-1" />
+              {selectedMatch.venue}
+            </div>
+            <div className="mt-3">
+              <span className="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <Check size={16} className="mr-1" />
+                {selectedMatch.winner} won
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="max-w-md mx-auto px-4 py-6">
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
+            <div className="flex items-center justify-center space-x-8 mb-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">{status.p1Holes}</div>
+                <div className="text-sm text-gray-600 mt-1">{selectedMatch.player1}</div>
+              </div>
+              <div className="text-gray-300 text-2xl font-bold">-</div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">{status.p2Holes}</div>
+                <div className="text-sm text-gray-600 mt-1">{selectedMatch.player2}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h3 className="font-bold text-gray-900 mb-4">Final Scorecard</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="sticky left-0 bg-white text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-16">Hole</th>
+                    {scores.map((_, idx) => (
+                      <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[35px]">
+                        {idx < 18 ? idx + 1 : `P${idx - 17}`}
+                      </th>
+                    ))}
+                    <th className="sticky right-[40px] bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-10">Hls</th>
+                    <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">vs Par</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-100">
+                    <td colSpan={scores.length + 3} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                      {selectedMatch.player1.split(' ')[0]}
+                    </td>
+                  </tr>
+                  <tr className="border-b-2 border-gray-200">
+                    <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
+                    {scores.map((score, idx) => (
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        {score.p1}
+                      </td>
+                    ))}
+                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
+                      {status.p1Holes}
+                    </td>
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                      {(() => {
+                        const totalScore = scores.reduce((sum, s) => sum + s.p1, 0);
+                        let totalPar = 0;
+                        scores.forEach((score, idx) => {
+                          const holeNum = idx < 18 ? idx + 1 : 1;
+                          const foundCourse = courses.find(c => c.name === selectedMatch.venue);
+                          const par = foundCourse && foundCourse.pars[holeNum] ? foundCourse.pars[holeNum] : 3;
+                          totalPar += par;
+                        });
+                        const diff = totalScore - totalPar;
+                        return (
+                          <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                            {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-100">
+                    <td colSpan={scores.length + 3} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                      {selectedMatch.player2.split(' ')[0]}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
+                    {scores.map((score, idx) => (
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        {score.p2}
+                      </td>
+                    ))}
+                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
+                      {status.p2Holes}
+                    </td>
+                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                      {(() => {
+                        const totalScore = scores.reduce((sum, s) => sum + s.p2, 0);
+                        let totalPar = 0;
+                        scores.forEach((score, idx) => {
+                          const holeNum = idx < 18 ? idx + 1 : 1;
+                          const foundCourse = courses.find(c => c.name === selectedMatch.venue);
+                          const par = foundCourse && foundCourse.pars[holeNum] ? foundCourse.pars[holeNum] : 3;
+                          totalPar += par;
+                        });
+                        const diff = totalScore - totalPar;
+                        return (
+                          <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                            {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-600">Match Result</p>
+                  <p className="text-2xl font-bold text-gray-900">{status.p1Holes} - {status.p2Holes}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Winner</p>
+                  <p className="text-xl font-bold text-green-600">{selectedMatch.winner}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+export default DiscGolfApp;
             <button 
               onClick={completeMatch}
               disabled={loading}
