@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
@@ -864,7 +863,216 @@ const DiscGolfApp = () => {
     
     return { week1, week2 };
   };
-   
+    // Get pool standings
+    const allPools = getPoolNames().filter(p => 
+      !p.toLowerCase().includes('cup') && 
+      !p.toLowerCase().includes('shield') && 
+      !p.toLowerCase().includes('plate')
+    );
+    
+    const poolStandings = allPools.map(poolName => ({
+      pool: poolName,
+      standings: calculateStandings(poolName)
+    }));
+    
+    let participants = [];
+    
+    if (playoffType === 'Cup') {
+      // Top 3 from each pool
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(0, 3).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 1
+          });
+        });
+      });
+    } else if (playoffType === 'Shield') {
+      // Next 3 from each pool (positions 4-6)
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(3, 6).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 4
+          });
+        });
+      });
+    } else if (playoffType === 'Plate') {
+      // Remaining players (position 7+)
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(6).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 7
+          });
+        });
+      });
+    }
+    
+    if (participants.length === 0) {
+      return { bracket: null, hasMatches: false };
+    }
+    
+    // Group participants by pool
+    const poolA = participants.filter(p => p.pool === allPools[0]) || [];
+    const poolB = participants.filter(p => p.pool === allPools[1]) || [];
+    const poolC = participants.filter(p => p.pool === allPools[2]) || [];
+    const poolD = participants.filter(p => p.pool === allPools[3]) || [];
+    
+    // Get completed playoff matches to show winners
+    const playoffMatches = matches.filter(m => {
+      const id = m.id?.toLowerCase() || '';
+      const venue = m.venue?.toLowerCase() || '';
+      const type = playoffType.toLowerCase();
+      return (id.includes(type) || venue.includes(type)) && m.status === 'Completed';
+    });
+    
+    const findWinner = (p1Name, p2Name) => {
+      const match = playoffMatches.find(m => 
+        (m.player1 === p1Name && m.player2 === p2Name) ||
+        (m.player1 === p2Name && m.player2 === p1Name)
+      );
+      return match?.winner;
+    };
+    
+    // Build bracket structure
+    const bracket = {
+      r16: [],
+      qf: [],
+      sf: [],
+      final: null
+    };
+    
+    // Round of 16: #2 vs #3 from each pool (winners advance to play pool #1)
+    if (poolA.length >= 3) {
+      const winner = findWinner(poolA[1].name, poolA[2].name);
+      bracket.r16.push({
+        id: 'Pool A: 2v3',
+        player1: poolA[1].name,
+        player2: poolA[2].name,
+        winner: winner,
+        poolLabel: allPools[0]
+      });
+    }
+    if (poolB.length >= 3) {
+      const winner = findWinner(poolB[1].name, poolB[2].name);
+      bracket.r16.push({
+        id: 'Pool B: 2v3',
+        player1: poolB[1].name,
+        player2: poolB[2].name,
+        winner: winner,
+        poolLabel: allPools[1]
+      });
+    }
+    if (poolC.length >= 3) {
+      const winner = findWinner(poolC[1].name, poolC[2].name);
+      bracket.r16.push({
+        id: 'Pool C: 2v3',
+        player1: poolC[1].name,
+        player2: poolC[2].name,
+        winner: winner,
+        poolLabel: allPools[2]
+      });
+    }
+    if (poolD.length >= 3) {
+      const winner = findWinner(poolD[1].name, poolD[2].name);
+      bracket.r16.push({
+        id: 'Pool D: 2v3',
+        player1: poolD[1].name,
+        player2: poolD[2].name,
+        winner: winner,
+        poolLabel: allPools[3]
+      });
+    }
+    
+    // Quarter Finals: Pool #1 vs R16 winner from same pool
+    if (poolA.length >= 1) {
+      const r16Winner = bracket.r16[0]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolA[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF1',
+        player1: poolA[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[0]
+      });
+    }
+    if (poolB.length >= 1) {
+      const r16Winner = bracket.r16[1]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolB[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF2',
+        player1: poolB[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[1]
+      });
+    }
+    if (poolC.length >= 1) {
+      const r16Winner = bracket.r16[2]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolC[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF3',
+        player1: poolC[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[2]
+      });
+    }
+    if (poolD.length >= 1) {
+      const r16Winner = bracket.r16[3]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolD[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF4',
+        player1: poolD[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[3]
+      });
+    }
+    
+    // Semi Finals: Pool 1 vs Pool 4, Pool 2 vs Pool 3
+    if (bracket.qf.length >= 2) {
+      const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
+      const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
+      const winner = findWinner(qf1Winner, qf4Winner);
+      bracket.sf.push({
+        id: 'SF1',
+        player1: qf1Winner,
+        player2: qf4Winner,
+        winner: winner
+      });
+    }
+    if (bracket.qf.length >= 3) {
+      const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
+      const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
+      const winner = findWinner(qf2Winner, qf3Winner);
+      bracket.sf.push({
+        id: 'SF2',
+        player1: qf2Winner,
+        player2: qf3Winner,
+        winner: winner
+      });
+    }
+    
+    // Final
+    if (bracket.sf.length >= 2) {
+      const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
+      const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
+      const winner = findWinner(sf1Winner, sf2Winner);
+      bracket.final = {
+        id: 'Final',
+        player1: sf1Winner,
+        player2: sf2Winner,
+        winner: winner
+      };
+    }
+    
+    return { bracket, hasMatches: true };
+  };
 
   if (view === 'login') {
     return (
@@ -1846,187 +2054,7 @@ const DiscGolfApp = () => {
             </button>
           )}
           
-                      <button 
-              onClick={completeMatch}
-              disabled={loading}
-              className="w-full text-white py-4 rounded-xl font-semibold transition-colors mt-4 disabled:bg-gray-400 shadow-lg"
-              style={{
-                backgroundColor: loading ? '#9ca3af' : BRAND_PRIMARY,
-                boxShadow: `0 10px 15px -3px ${BRAND_PRIMARY}30`
-              }}
-              onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = BRAND_ACCENT)}
-              onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = BRAND_PRIMARY)}
-            >
-              {loading ? 'Submitting...' : '✓ Complete Match'}
-            </button>
-          )}
-          
-          {error && (
-            <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r mt-4">
-              <p className="text-sm text-orange-800">{error}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (view === 'review') {
-    const status = calculateMatchStatus();
-    
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white shadow-sm sticky top-0 z-10">
-          <div className="max-w-md mx-auto px-4 py-4">
-            <button 
-              onClick={() => {
-                setView('matches');
-                setSelectedMatch(null);
-              }}
-              className="text-blue-600 font-semibold mb-3"
-            >
-              ← Back
-            </button>
-            <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
-            <div className="flex items-center text-sm text-gray-600 mt-1">
-              <MapPin size={14} className="mr-1" />
-              {selectedMatch.venue}
-            </div>
-            <div className="mt-3">
-              <span className="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                <Check size={16} className="mr-1" />
-                {selectedMatch.winner} won
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="max-w-md mx-auto px-4 py-6">
-          <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
-            <div className="flex items-center justify-center space-x-8 mb-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{status.p1Holes}</div>
-                <div className="text-sm text-gray-600 mt-1">{selectedMatch.player1}</div>
-              </div>
-              <div className="text-gray-300 text-2xl font-bold">-</div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{status.p2Holes}</div>
-                <div className="text-sm text-gray-600 mt-1">{selectedMatch.player2}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h3 className="font-bold text-gray-900 mb-4">Final Scorecard</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="sticky left-0 bg-white text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-16">Hole</th>
-                    {scores.map((_, idx) => (
-                      <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[35px]">
-                        {idx < 18 ? idx + 1 : `P${idx - 17}`}
-                      </th>
-                    ))}
-                    <th className="sticky right-[40px] bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-10">Hls</th>
-                    <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">vs Par</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-100">
-                    <td colSpan={scores.length + 3} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
-                      {selectedMatch.player1.split(' ')[0]}
-                    </td>
-                  </tr>
-                  <tr className="border-b-2 border-gray-200">
-                    <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
-                    {scores.map((score, idx) => (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
-                        {score.p1}
-                      </td>
-                    ))}
-                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
-                      {status.p1Holes}
-                    </td>
-                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
-                      {(() => {
-                        const totalScore = scores.reduce((sum, s) => sum + s.p1, 0);
-                        let totalPar = 0;
-                        scores.forEach((score, idx) => {
-                          const holeNum = idx < 18 ? idx + 1 : 1;
-                          const foundCourse = courses.find(c => c.name === selectedMatch.venue);
-                          const par = foundCourse && foundCourse.pars[holeNum] ? foundCourse.pars[holeNum] : 3;
-                          totalPar += par;
-                        });
-                        const diff = totalScore - totalPar;
-                        return (
-                          <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
-                            {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td colSpan={scores.length + 3} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
-                      {selectedMatch.player2.split(' ')[0]}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
-                    {scores.map((score, idx) => (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
-                        {score.p2}
-                      </td>
-                    ))}
-                    <td className="sticky right-[40px] bg-white px-2 py-2 text-center font-bold text-blue-600 border-l-2 border-gray-200 text-sm">
-                      {status.p2Holes}
-                    </td>
-                    <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
-                      {(() => {
-                        const totalScore = scores.reduce((sum, s) => sum + s.p2, 0);
-                        let totalPar = 0;
-                        scores.forEach((score, idx) => {
-                          const holeNum = idx < 18 ? idx + 1 : 1;
-                          const foundCourse = courses.find(c => c.name === selectedMatch.venue);
-                          const par = foundCourse && foundCourse.pars[holeNum] ? foundCourse.pars[holeNum] : 3;
-                          totalPar += par;
-                        });
-                        const diff = totalScore - totalPar;
-                        return (
-                          <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
-                            {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-600">Match Result</p>
-                  <p className="text-2xl font-bold text-gray-900">{status.p1Holes} - {status.p2Holes}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Winner</p>
-                  <p className="text-xl font-bold text-green-600">{selectedMatch.winner}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-};
-
-export default DiscGolfApp;
+          {(status.isComplete || (currentHole > 18 && scores[currentHole]?.scored && status.leader)) && (
             <button 
               onClick={completeMatch}
               disabled={loading}
