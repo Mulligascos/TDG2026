@@ -2061,7 +2061,7 @@ const DiscGolfApp = () => {
             >
               {loading ? 'Submitting...' : '✓ Complete Match'}
             </button>
-          )}
+
           
           {error && (
             <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r mt-4">
