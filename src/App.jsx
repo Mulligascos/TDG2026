@@ -777,6 +777,303 @@ const DiscGolfApp = () => {
     return { bracket, hasMatches: true };
   };
 
+  const generateCrossoverMatches = () => {
+    const allPools = getPoolNames().filter(p => 
+      !p.toLowerCase().includes('cup') && 
+      !p.toLowerCase().includes('shield') && 
+      !p.toLowerCase().includes('plate') &&
+      !p.toLowerCase().includes('crossover')
+    );
+    
+    if (allPools.length < 4) return { week1: [], week2: [] };
+    
+    const poolStandings = allPools.map(poolName => ({
+      pool: poolName,
+      standings: calculateStandings(poolName)
+    }));
+    
+    const poolA = poolStandings[0]?.standings || [];
+    const poolB = poolStandings[1]?.standings || [];
+    const poolC = poolStandings[2]?.standings || [];
+    const poolD = poolStandings[3]?.standings || [];
+    
+    const crossoverMatches = matches.filter(m => {
+      const id = m.id?.toLowerCase() || '';
+      const venue = m.venue?.toLowerCase() || '';
+      return id.includes('crossover') || venue.includes('crossover');
+    });
+    
+    const findMatchResult = (p1, p2) => {
+      const match = crossoverMatches.find(m => 
+        (m.player1 === p1 && m.player2 === p2) ||
+        (m.player1 === p2 && m.player2 === p1)
+      );
+      return match;
+    };
+    
+    const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
+      const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
+      const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
+      const match = findMatchResult(player1, player2);
+      
+      return {
+        player1,
+        player2,
+        winner: match?.winner,
+        status: match?.status,
+        label: `${poolName1}${pos1} v ${poolName2}${pos2}`
+      };
+    };
+    
+    // Week 1: A vs B, C vs D
+    const week1 = [
+      createMatch(poolA, 1, poolB, 3, 'A', 'B'),
+      createMatch(poolA, 2, poolB, 2, 'A', 'B'),
+      createMatch(poolA, 3, poolB, 1, 'A', 'B'),
+      createMatch(poolC, 1, poolD, 3, 'C', 'D'),
+      createMatch(poolC, 2, poolD, 2, 'C', 'D'),
+      createMatch(poolC, 3, poolD, 1, 'C', 'D'),
+      createMatch(poolA, 4, poolB, 6, 'A', 'B'),
+      createMatch(poolA, 5, poolB, 5, 'A', 'B'),
+      createMatch(poolA, 6, poolB, 4, 'A', 'B'),
+      createMatch(poolC, 4, poolD, 6, 'C', 'D'),
+      createMatch(poolC, 5, poolD, 5, 'C', 'D'),
+      createMatch(poolC, 6, poolD, 4, 'C', 'D'),
+      createMatch(poolA, 7, poolB, 7, 'A', 'B'),
+      createMatch(poolC, 7, poolD, 7, 'C', 'D')
+    ];
+    
+    // Week 2: A vs C, B vs D
+    const week2 = [
+      createMatch(poolA, 1, poolC, 3, 'A', 'C'),
+      createMatch(poolA, 2, poolC, 2, 'A', 'C'),
+      createMatch(poolA, 3, poolC, 1, 'A', 'C'),
+      createMatch(poolB, 1, poolD, 3, 'B', 'D'),
+      createMatch(poolB, 2, poolD, 2, 'B', 'D'),
+      createMatch(poolB, 3, poolD, 1, 'B', 'D'),
+      createMatch(poolA, 4, poolC, 6, 'A', 'C'),
+      createMatch(poolA, 5, poolC, 5, 'A', 'C'),
+      createMatch(poolA, 6, poolC, 4, 'A', 'C'),
+      createMatch(poolB, 4, poolD, 6, 'B', 'D'),
+      createMatch(poolB, 5, poolD, 5, 'B', 'D'),
+      createMatch(poolB, 6, poolD, 4, 'B', 'D'),
+      createMatch(poolA, 7, poolC, 7, 'A', 'C'),
+      createMatch(poolB, 7, poolD, 7, 'B', 'D')
+    ];
+    
+    return { week1, week2 };
+  };
+    // Get pool standings
+    const allPools = getPoolNames().filter(p => 
+      !p.toLowerCase().includes('cup') && 
+      !p.toLowerCase().includes('shield') && 
+      !p.toLowerCase().includes('plate')
+    );
+    
+    const poolStandings = allPools.map(poolName => ({
+      pool: poolName,
+      standings: calculateStandings(poolName)
+    }));
+    
+    let participants = [];
+    
+    if (playoffType === 'Cup') {
+      // Top 3 from each pool
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(0, 3).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 1
+          });
+        });
+      });
+    } else if (playoffType === 'Shield') {
+      // Next 3 from each pool (positions 4-6)
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(3, 6).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 4
+          });
+        });
+      });
+    } else if (playoffType === 'Plate') {
+      // Remaining players (position 7+)
+      poolStandings.forEach(({ pool, standings }) => {
+        standings.slice(6).forEach((player, idx) => {
+          participants.push({
+            ...player,
+            pool,
+            seed: idx + 7
+          });
+        });
+      });
+    }
+    
+    if (participants.length === 0) {
+      return { bracket: null, hasMatches: false };
+    }
+    
+    // Group participants by pool
+    const poolA = participants.filter(p => p.pool === allPools[0]) || [];
+    const poolB = participants.filter(p => p.pool === allPools[1]) || [];
+    const poolC = participants.filter(p => p.pool === allPools[2]) || [];
+    const poolD = participants.filter(p => p.pool === allPools[3]) || [];
+    
+    // Get completed playoff matches to show winners
+    const playoffMatches = matches.filter(m => {
+      const id = m.id?.toLowerCase() || '';
+      const venue = m.venue?.toLowerCase() || '';
+      const type = playoffType.toLowerCase();
+      return (id.includes(type) || venue.includes(type)) && m.status === 'Completed';
+    });
+    
+    const findWinner = (p1Name, p2Name) => {
+      const match = playoffMatches.find(m => 
+        (m.player1 === p1Name && m.player2 === p2Name) ||
+        (m.player1 === p2Name && m.player2 === p1Name)
+      );
+      return match?.winner;
+    };
+    
+    // Build bracket structure
+    const bracket = {
+      r16: [],
+      qf: [],
+      sf: [],
+      final: null
+    };
+    
+    // Round of 16: #2 vs #3 from each pool (winners advance to play pool #1)
+    if (poolA.length >= 3) {
+      const winner = findWinner(poolA[1].name, poolA[2].name);
+      bracket.r16.push({
+        id: 'Pool A: 2v3',
+        player1: poolA[1].name,
+        player2: poolA[2].name,
+        winner: winner,
+        poolLabel: allPools[0]
+      });
+    }
+    if (poolB.length >= 3) {
+      const winner = findWinner(poolB[1].name, poolB[2].name);
+      bracket.r16.push({
+        id: 'Pool B: 2v3',
+        player1: poolB[1].name,
+        player2: poolB[2].name,
+        winner: winner,
+        poolLabel: allPools[1]
+      });
+    }
+    if (poolC.length >= 3) {
+      const winner = findWinner(poolC[1].name, poolC[2].name);
+      bracket.r16.push({
+        id: 'Pool C: 2v3',
+        player1: poolC[1].name,
+        player2: poolC[2].name,
+        winner: winner,
+        poolLabel: allPools[2]
+      });
+    }
+    if (poolD.length >= 3) {
+      const winner = findWinner(poolD[1].name, poolD[2].name);
+      bracket.r16.push({
+        id: 'Pool D: 2v3',
+        player1: poolD[1].name,
+        player2: poolD[2].name,
+        winner: winner,
+        poolLabel: allPools[3]
+      });
+    }
+    
+    // Quarter Finals: Pool #1 vs R16 winner from same pool
+    if (poolA.length >= 1) {
+      const r16Winner = bracket.r16[0]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolA[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF1',
+        player1: poolA[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[0]
+      });
+    }
+    if (poolB.length >= 1) {
+      const r16Winner = bracket.r16[1]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolB[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF2',
+        player1: poolB[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[1]
+      });
+    }
+    if (poolC.length >= 1) {
+      const r16Winner = bracket.r16[2]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolC[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF3',
+        player1: poolC[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[2]
+      });
+    }
+    if (poolD.length >= 1) {
+      const r16Winner = bracket.r16[3]?.winner || 'Winner 2v3';
+      const winner = findWinner(poolD[0].name, r16Winner);
+      bracket.qf.push({
+        id: 'QF4',
+        player1: poolD[0].name,
+        player2: r16Winner,
+        winner: winner,
+        poolLabel: allPools[3]
+      });
+    }
+    
+    // Semi Finals: Pool 1 vs Pool 4, Pool 2 vs Pool 3
+    if (bracket.qf.length >= 2) {
+      const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
+      const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
+      const winner = findWinner(qf1Winner, qf4Winner);
+      bracket.sf.push({
+        id: 'SF1',
+        player1: qf1Winner,
+        player2: qf4Winner,
+        winner: winner
+      });
+    }
+    if (bracket.qf.length >= 3) {
+      const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
+      const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
+      const winner = findWinner(qf2Winner, qf3Winner);
+      bracket.sf.push({
+        id: 'SF2',
+        player1: qf2Winner,
+        player2: qf3Winner,
+        winner: winner
+      });
+    }
+    
+    // Final
+    if (bracket.sf.length >= 2) {
+      const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
+      const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
+      const winner = findWinner(sf1Winner, sf2Winner);
+      bracket.final = {
+        id: 'Final',
+        player1: sf1Winner,
+        player2: sf2Winner,
+        winner: winner
+      };
+    }
+    
+    return { bracket, hasMatches: true };
+  };
+
   if (view === 'login') {
     return (
       <div className="min-h-screen bg-white transition-colors">
@@ -1300,6 +1597,75 @@ const DiscGolfApp = () => {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Playoff Brackets */}
+              <div className="mt-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Crossover Matches</h2>
+                
+                {(() => {
+                  const { week1, week2 } = generateCrossoverMatches();
+                  
+                  if (week1.length === 0) {
+                    return (
+                      <div className="bg-white rounded-2xl shadow-sm p-6 text-center text-gray-500 text-sm">
+                        <p>Crossover matches will appear after pool play.</p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="space-y-4">
+                      {/* Week 1 */}
+                      <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: `4px solid ${BRAND_ACCENT}`}}>
+                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                          <h3 className="text-lg font-bold text-gray-900">Week 1</h3>
+                          <p className="text-xs text-gray-500 mt-1">A vs B, C vs D</p>
+                        </div>
+                        <div className="p-4">
+                          <div className="grid grid-cols-2 gap-2">
+                            {week1.map((match, idx) => (
+                              <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
+                                <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                  {match.player1.split(' ')[0]}
+                                </div>
+                                <div className="text-gray-400 text-center my-0.5">vs</div>
+                                <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                  {match.player2.split(' ')[0]}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Week 2 */}
+                      <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: `4px solid ${BRAND_ACCENT}`}}>
+                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                          <h3 className="text-lg font-bold text-gray-900">Week 2</h3>
+                          <p className="text-xs text-gray-500 mt-1">A vs C, B vs D</p>
+                        </div>
+                        <div className="p-4">
+                          <div className="grid grid-cols-2 gap-2">
+                            {week2.map((match, idx) => (
+                              <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
+                                <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                  {match.player1.split(' ')[0]}
+                                </div>
+                                <div className="text-gray-400 text-center my-0.5">vs</div>
+                                <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                  {match.player2.split(' ')[0]}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Playoff Brackets */}
