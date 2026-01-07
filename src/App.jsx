@@ -1552,7 +1552,6 @@ const DiscGolfApp = () => {
                   );
                 })}
               </div>
-            </div>
           )}
         </div>
       </div>
