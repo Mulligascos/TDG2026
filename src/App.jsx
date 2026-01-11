@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
@@ -400,17 +399,7 @@ const DiscGolfApp = () => {
     const hasProgress = await loadMatchProgress(match.id);
     
     if (!hasProgress) {
-      const course = courses.find(c => c.name === match.venue);
-      const initScores = Array(18).fill(null).map((_, idx) => {
-        const holeNumber = idx + 1;
-        const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
-        return {
-          p1: par,
-          p2: par,
-          scored: false
-        };
-      });
-      setScores(initScores);
+      setScores([]);
       setCurrentHole(0);
       setShowStartHoleModal(true);
     } else {
@@ -419,29 +408,29 @@ const DiscGolfApp = () => {
   };
 
   const confirmStartHole = () => {
-    if (startingHole > 1) {
-      // If starting at a hole other than 1, clear scores for holes that come before the starting hole
-      const course = courses.find(c => c.name === selectedMatch.venue);
-      const newScores = [...scores];
-      for (let i = 0; i < startingHole - 1; i++) {
-        newScores[i] = {
+    const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
+    const initScores = Array(18).fill(null).map((_, idx) => {
+      const holeNumber = idx + 1;
+      const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
+      
+      // If this hole comes before the starting hole, set score to 0 (unplayed)
+      if (holeNumber < startingHole) {
+        return {
           p1: 0,
           p2: 0,
           scored: false
         };
       }
-      // Set par for holes from starting hole onwards
-      for (let i = startingHole - 1; i < 18; i++) {
-        const holeNumber = i + 1;
-        const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
-        newScores[i] = {
-          p1: par,
-          p2: par,
-          scored: false
-        };
-      }
-      setScores(newScores);
-    }
+      
+      // Otherwise set to par
+      return {
+        p1: par,
+        p2: par,
+        scored: false
+      };
+    });
+    
+    setScores(initScores);
     setShowStartHoleModal(false);
     setView('scoring');
   };
@@ -953,8 +942,6 @@ const DiscGolfApp = () => {
       </div>
     );
   }
-
-  // Rest of the views continue...
 
   // Rest of the views continue...
 
