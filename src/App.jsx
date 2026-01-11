@@ -1718,17 +1718,43 @@ const DiscGolfApp = () => {
               </div>
             </div>
             
-            <button 
-              onClick={() => {
-                if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
-                  recordScore(currentHole, scores[currentHole].p1, scores[currentHole].p2);
-                }
-              }}
-              disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
-              className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors mt-6 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
-            >
-              {currentHole < scores.length - 1 ? 'Next Hole' : 'Record Score'}
-            </button>
+             <div className="mt-6">
+              {currentHole > 0 ? (
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => {
+                      setCurrentHole(currentHole - 1);
+                    }}
+                    className="flex-1 bg-gray-200 text-gray-700 py-4 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+                  >
+                    ← Previous
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
+                        recordScore(currentHole, scores[currentHole].p1, scores[currentHole].p2);
+                      }
+                    }}
+                    disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
+                    className="flex-1 bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+                  >
+                    {currentHole < scores.length - 1 ? 'Next →' : 'Record'}
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => {
+                    if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
+                      recordScore(currentHole, scores[currentHole].p1, scores[currentHole].p2);
+                    }
+                  }}
+                  disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
+                  className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+                >
+                  {currentHole < scores.length - 1 ? 'Next Hole' : 'Record Score'}
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="bg-white rounded-2xl shadow-sm p-6">
