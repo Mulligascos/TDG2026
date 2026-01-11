@@ -420,11 +420,22 @@ const DiscGolfApp = () => {
   const confirmStartHole = () => {
     if (startingHole > 1) {
       // If starting at a hole other than 1, clear scores for holes that come before the starting hole
+      const course = courses.find(c => c.name === selectedMatch.venue);
       const newScores = [...scores];
       for (let i = 0; i < startingHole - 1; i++) {
         newScores[i] = {
           p1: 0,
           p2: 0,
+          scored: false
+        };
+      }
+      // Set par for holes from starting hole onwards
+      for (let i = startingHole - 1; i < 18; i++) {
+        const holeNumber = i + 1;
+        const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
+        newScores[i] = {
+          p1: par,
+          p2: par,
           scored: false
         };
       }
@@ -941,6 +952,8 @@ const DiscGolfApp = () => {
       </div>
     );
   }
+
+  // Rest of the views continue...
 
   // Rest of the views continue...
 
