@@ -1578,7 +1578,7 @@ const DiscGolfApp = () => {
     );
   }
 
-   if (view === 'scoring') {
+ if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
     // For holes 0-17: just use currentHole + 1 as the hole number
