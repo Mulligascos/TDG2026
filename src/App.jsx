@@ -1581,9 +1581,9 @@ const DiscGolfApp = () => {
   if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
-    const actualHoleNumber = currentHole < 18 ? ((currentHole  - 1) % 18) + 1 : currentHole - 17;
+    const actualHoleNumber = currentHole < 18 ? ((currentHole  + startingHole - 1) % 18) + 1 : currentHole - 17;
     const par = currentHole < 18 && course ? course.pars[actualHoleNumber] : 3;
-    console.log('Current Hole: ', currentHole, '/ Starting Hole: ', startingHole, '/ Actual Hole Number: ' , actualHoleNumber);
+    console.log('Current Hole: ', currentHole, '/ Starting Hole: ', startingHole, '/ Actual Hole Number: ' , actualHoleNumber, ' / Course ', course);
     return (
       <div className="min-h-screen bg-gray-50 pb-20">
         <div className="bg-white shadow-sm sticky top-0 z-10">
