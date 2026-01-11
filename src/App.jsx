@@ -278,8 +278,6 @@ const DiscGolfApp = () => {
         setScores(progress.scores);
         setCurrentHole(progress.currentHole);
         setStartingHole(progress.startingHole);
-        console.log ('Starting Hole is ', startingHole);        
-        console.log ('Current Hole is ', currentHole);
         return true;
       }
     } catch (err) {
@@ -409,9 +407,6 @@ const DiscGolfApp = () => {
       setView('scoring');
     }
   };
-
-  console.log ('Starting Hole is ', startingHole); 
-  console.log ('Current Hole is ', currentHole);
   
   const confirmStartHole = () => {
     const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
@@ -454,8 +449,6 @@ const DiscGolfApp = () => {
     setStartingHole(1);
     setView('matches');
   };
-  console.log ('Starting Hole is ', startingHole);         
-  console.log ('Current Hole is ', currentHole);
   
   const calculateMatchStatus = () => {
     let p1Holes = 0;
@@ -1617,7 +1610,7 @@ const DiscGolfApp = () => {
               <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
               <div className="flex items-center text-sm text-gray-600 mt-1">
                 <MapPin size={14} className="mr-1" />
-                {selectedMatch.venue}
+                {selectedMatch.name}
               </div>
             </div>
             
