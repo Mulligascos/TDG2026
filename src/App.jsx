@@ -945,7 +945,6 @@ const DiscGolfApp = () => {
   }
 
   // Rest of the views continue...
-
   if (view === 'changePin') {
     return (
       <div className="min-h-screen bg-gray-50 transition-colors">
