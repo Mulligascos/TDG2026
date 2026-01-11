@@ -1578,10 +1578,12 @@ const DiscGolfApp = () => {
     );
   }
 
-  if (view === 'scoring') {
+   if (view === 'scoring') {
     const status = calculateMatchStatus();
     const course = courses.find(c => c.name === selectedMatch.venue);
-    const actualHoleNumber = currentHole < 18 ? ((currentHole  + startingHole - 1) % 18) + 1 : currentHole - 17;
+    // For holes 0-17: just use currentHole + 1 as the hole number
+    // For playoff holes (18+): show as Playoff 1, 2, etc.
+    const actualHoleNumber = currentHole < 18 ? currentHole + 1 : currentHole - 17;
     const par = currentHole < 18 && course ? course.pars[actualHoleNumber] : 3;
     console.log('Current Hole: ', currentHole, '/ Starting Hole: ', startingHole, '/ Actual Hole Number: ' , actualHoleNumber, ' / Course ', course);
     return (
