@@ -1233,7 +1233,7 @@ const DiscGolfApp = () => {
               <h3 className="text-xl font-bold text-gray-900 mb-4">Select Starting Hole</h3>
               <select 
                 value={startingHole}
-                onChange={(e) => setStartingHole(parseInt(e.target.value))}
+                onChange={(e) => setStartingHole(Number(e.target.value))}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {Array.from({length: 18}, (_, i) => i + 1).map(h => (
