@@ -278,7 +278,8 @@ const DiscGolfApp = () => {
         setScores(progress.scores);
         setCurrentHole(progress.currentHole);
         setStartingHole(progress.startingHole);
-        console.log ('Starting Hole is ', startingHole);
+        console.log ('Starting Hole is ', startingHole);        
+        console.log ('Current Hole is ', CurrentHole);
         return true;
       }
     } catch (err) {
@@ -409,7 +410,8 @@ const DiscGolfApp = () => {
     }
   };
 
-        console.log ('Starting Hole is ', startingHole);
+  console.log ('Starting Hole is ', startingHole); 
+  console.log ('Current Hole is ', CurrentHole);
   
   const confirmStartHole = () => {
     const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
@@ -452,7 +454,8 @@ const DiscGolfApp = () => {
     setStartingHole(1);
     setView('matches');
   };
-        console.log ('Starting Hole is ', startingHole);
+  console.log ('Starting Hole is ', startingHole);         
+  console.log ('Current Hole is ', CurrentHole);
   
   const calculateMatchStatus = () => {
     let p1Holes = 0;
