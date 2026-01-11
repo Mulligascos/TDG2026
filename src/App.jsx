@@ -416,7 +416,7 @@ const DiscGolfApp = () => {
       const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
       
       // If this hole comes before the starting hole, set score to 0 (unplayed)
-      if (holeNumber < startingHole) {
+      if (holeNumber < startHoleNum) {
         return {
           p1: 0,
           p2: 0,
