@@ -1610,7 +1610,7 @@ const DiscGolfApp = () => {
               <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
               <div className="flex items-center text-sm text-gray-600 mt-1">
                 <MapPin size={14} className="mr-1" />
-                {selectedMatch.name}
+                {course} //{selectedMatch.venue}
               </div>
             </div>
             
