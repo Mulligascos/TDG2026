@@ -409,14 +409,12 @@ const DiscGolfApp = () => {
 
   const confirmStartHole = () => {
     const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
-    //const startHoleNum = parseInt(startingHole); // Ensure it's a number
-    
     const initScores = Array(18).fill(null).map((_, idx) => {
       const holeNumber = idx + 1;
       const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
       
       // If this hole comes before the starting hole, set score to 0 (unplayed)
-      if (holeNumber < startHoleNum) {
+      if (holeNumber < startingHole) {
         return {
           p1: 0,
           p2: 0,
@@ -433,11 +431,15 @@ const DiscGolfApp = () => {
     });
     
     setScores(initScores);
-    setCurrentHole(startHoleNum - 1); // Set current hole to the starting hole (0-indexed)
+    
+    // Calculate the correct currentHole index based on starting hole
+    // If starting at hole 5, we want currentHole to be 4 (0-indexed)
+    const startingIndex = startingHole - 1;
+    setCurrentHole(startingIndex);
+    
     setShowStartHoleModal(false);
     setView('scoring');
   };
-
   const cancelMatch = () => {
     if (selectedMatch) {
       localStorage.removeItem(`match-progress-${selectedMatch.id}`);
