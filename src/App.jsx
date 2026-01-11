@@ -431,15 +431,11 @@ const DiscGolfApp = () => {
     });
     
     setScores(initScores);
-    
-    // Calculate the correct currentHole index based on starting hole
-    // If starting at hole 5, we want currentHole to be 4 (0-indexed)
-    const startingIndex = startingHole - 1;
-    setCurrentHole(startingIndex);
-    
+    setCurrentHole(startingHole - 1); // Set current hole to the starting hole (0-indexed)
     setShowStartHoleModal(false);
     setView('scoring');
   };
+ 
   const cancelMatch = () => {
     if (selectedMatch) {
       localStorage.removeItem(`match-progress-${selectedMatch.id}`);
