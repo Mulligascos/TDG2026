@@ -419,6 +419,18 @@ const DiscGolfApp = () => {
   };
 
   const confirmStartHole = () => {
+    if (startingHole > 1) {
+      // If starting at a hole other than 1, clear scores for holes that come before the starting hole
+      const newScores = [...scores];
+      for (let i = 0; i < startingHole - 1; i++) {
+        newScores[i] = {
+          p1: 0,
+          p2: 0,
+          scored: false
+        };
+      }
+      setScores(newScores);
+    }
     setShowStartHoleModal(false);
     setView('scoring');
   };
