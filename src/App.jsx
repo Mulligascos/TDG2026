@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
@@ -436,6 +435,9 @@ const DiscGolfApp = () => {
   };
 
   const cancelMatch = () => {
+    if (selectedMatch) {
+      localStorage.removeItem(`match-progress-${selectedMatch.id}`);
+    }
     setSelectedMatch(null);
     setScores([]);
     setCurrentHole(0);
@@ -939,6 +941,8 @@ const DiscGolfApp = () => {
       </div>
     );
   }
+
+  // Rest of the views continue...
 
   if (view === 'changePin') {
     return (
