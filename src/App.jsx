@@ -396,6 +396,11 @@ const DiscGolfApp = () => {
 
   const startMatch = async (match) => {
     setSelectedMatch(match);
+
+      // Clear old progress to ensure fresh start
+  localStorage.removeItem(`match-progress-${match.id}`);
+
+    
     const hasProgress = await loadMatchProgress(match.id);
     
     if (!hasProgress) {
@@ -415,18 +420,8 @@ const DiscGolfApp = () => {
     const initScores = Array(18).fill(null).map((_, idx) => {
       const holeNumber = idx + 1;
       const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
-      
-      // If this hole comes before the starting hole, set score to 0 (unplayed)
-      if (holeNumber < startHoleNum) {
-        return {
-          p1: 0,
-          p2: 0,
-          scored: false
-        };
-      }
-      
-      // Otherwise set to par
-      return {
+           
+     return {
         p1: par,
         p2: par,
         scored: false
