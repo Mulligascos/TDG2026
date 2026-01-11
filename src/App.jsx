@@ -431,6 +431,7 @@ const DiscGolfApp = () => {
     });
     
     setScores(initScores);
+    setCurrentHole(startingHole - 1); // Set current hole to the starting hole (0-indexed)
     setShowStartHoleModal(false);
     setView('scoring');
   };
