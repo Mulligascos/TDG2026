@@ -401,6 +401,7 @@ const DiscGolfApp = () => {
     if (!hasProgress) {
       setScores([]);
       setCurrentHole(0);
+      setStartingHole(1);
       setShowStartHoleModal(true);
     } else {
       setView('scoring');
