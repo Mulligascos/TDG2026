@@ -409,7 +409,7 @@ const DiscGolfApp = () => {
 
   const confirmStartHole = () => {
     const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
-    const startHoleNum = parseInt(startingHole); // Ensure it's a number
+    //const startHoleNum = parseInt(startingHole); // Ensure it's a number
     
     const initScores = Array(18).fill(null).map((_, idx) => {
       const holeNumber = idx + 1;
