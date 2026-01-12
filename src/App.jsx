@@ -457,13 +457,13 @@ const StandingsPage = ({ currentUser, matches, pools, onLogout, onChangePin, isO
                                 className={`border-b border-gray-100 ${standing.name === currentUser.name ? 'bg-green-50' : ''}`}
                               >
                                 <td className="py-3 pr-2 text-gray-600 font-semibold text-sm">{idx + 1}</td>
-                                <td className="py-3 pr-2 font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'} text-sm">
+                                <td className="py-3 pr-2 font-semibold text-gray-900 text-sm">
                                   {(() => {
                                     const nameParts = standing.name.split(' ');
                                     return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
                                   })()}
                                 </td>
-                                <td className="py-3 px-2 text-center ${darkMode ? 'text-gray-100' : 'text-gray-900'} font-bold text-base">{standing.points}</td>
+                                <td className="py-3 px-2 text-center text-gray-900 font-bold text-base">{standing.points}</td>
                                 <td className={`py-3 pl-2 text-center font-bold text-sm ${
                                   standing.holeDiff > 0 ? 'text-green-600' : 
                                   standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
@@ -534,7 +534,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
             <button onClick={onCancel} className="text-blue-600 font-semibold">← Cancel Match</button>
           </div>
           <div className="mb-4">
-            <h2 className="text-lg font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
+            <h2 className="text-lg font-bold text-gray-900">{selectedMatch.player1} <span className="text-gray-400">vs</span> {selectedMatch.player2}</h2>
             <div className="flex items-center text-sm text-gray-600 mt-1">
               <MapPin size={14} className="mr-1" />
               {selectedMatch.venue}
@@ -579,7 +579,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-2xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}">Hole {actualHoleNumber}</h3>
+              <h3 className="text-2xl font-bold text-gray-900">Hole {actualHoleNumber}</h3>
               <p className="text-gray-500">Par {par}</p>
             </div>
             <div className="text-right text-sm text-gray-500">{status.holesPlayed} of {scores.length} holes</div>
@@ -592,7 +592,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                 <button onClick={() => { const newScores = [...scores]; newScores[currentHole].p1 = Math.max(1, newScores[currentHole].p1 - 1); setScores(newScores); }} className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600">
                   <Minus size={20} />
                 </button>
-                <div className="text-4xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}">{scores[currentHole]?.p1 || 0}</div>
+                <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p1 || 0}</div>
                 <button onClick={() => { const newScores = [...scores]; newScores[currentHole].p1 = newScores[currentHole].p1 + 1; setScores(newScores); }} className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600">
                   <Plus size={20} />
                 </button>
@@ -605,7 +605,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                 <button onClick={() => { const newScores = [...scores]; newScores[currentHole].p2 = Math.max(1, newScores[currentHole].p2 - 1); setScores(newScores); }} className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600">
                   <Minus size={20} />
                 </button>
-                <div className="text-4xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}">{scores[currentHole]?.p2 || 0}</div>
+                <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p2 || 0}</div>
                 <button onClick={() => { const newScores = [...scores]; newScores[currentHole].p2 = newScores[currentHole].p2 + 1; setScores(newScores); }} className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600">
                   <Plus size={20} />
                 </button>
@@ -649,7 +649,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
         )}
         
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
-          <h3 className="font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'} mb-4">Scorecard</h3>
+          <h3 className="font-bold text-gray-900 mb-4">Scorecard</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -681,7 +681,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                     const holeNum = score.holeNumber || (idx < 18 ? idx + 1 : 1);
                     const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
                     return (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : '${darkMode ? 'text-gray-100' : 'text-gray-900'}'}`}>
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                         {score.p1}
                       </td>
                     );
@@ -699,7 +699,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                       });
                       const diff = totalScore - totalPar;
                       return (
-                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : '${darkMode ? 'text-gray-100' : 'text-gray-900'}'}>
+                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
                           {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
                         </span>
                       );
@@ -707,7 +707,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                   </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'} text-xs">
+                  <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
                     {(() => {
                       const nameParts = selectedMatch.player2.split(' ');
                       return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
@@ -719,7 +719,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                   {scores.map((score, idx) => {
                     if (!score.scored) return null;
                     return (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : '${darkMode ? 'text-gray-100' : 'text-gray-900'}'}`}>
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
                         {score.p2}
                       </td>
                     );
@@ -737,7 +737,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                       });
                       const diff = totalScore - totalPar;
                       return (
-                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : '${darkMode ? 'text-gray-100' : 'text-gray-900'}'}>
+                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
                           {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
                         </span>
                       );
@@ -967,8 +967,8 @@ const DiscGolfApp = () => {
         {showStartHoleModal && (
           <div className="fixed inset-0 bg-black/50 flex items-end z-50">
             <div className="bg-white w-full rounded-t-3xl p-6 max-w-md mx-auto">
-              <h3 className="text-xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'} mb-4">Select Starting Hole</h3>
-              <select value={startingHole} onChange={(e) => setStartingHole(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 ${darkMode ? 'text-gray-100' : 'text-gray-900'} mb-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Select Starting Hole</h3>
+              <select value={startingHole} onChange={(e) => setStartingHole(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 mb-4">
                 {Array.from({length: 18}, (_, i) => i + 1).map(h => (
                   <option key={h} value={h}>Hole {h}</option>
                 ))}
