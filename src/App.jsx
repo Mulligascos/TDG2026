@@ -148,7 +148,7 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
               {upcomingMatches.map(match => (
                 <div key={match.id} onClick={() => onStartMatch(match)} className={`rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white'}`}>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center text-sm text-gray-500">
+                    <div className={`flex items-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       <Calendar size={14} className="mr-1" />
                       <span>{match.date}</span>
                       <Clock size={14} className="ml-3 mr-1" />
@@ -157,10 +157,10 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
                     <ChevronRight className="text-blue-600" size={20} />
                   </div>
                   <div>
-                    <p className="font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'} text-lg mb-1">
+                    <p className={`font-bold text-lg mb-1 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                       {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
                     </p>
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className={`flex items-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       <MapPin size={14} className="mr-1" />
                       {match.venue}
                     </div>
@@ -173,8 +173,8 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
         
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Completed Matches</h2>
-            <select value={matchFilter} onChange={(e) => { setMatchFilter(e.target.value); setSelectedFilterDate(''); setSelectedFilterPlayer(''); }} className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700">
+            <h2 className={`text-xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Completed Matches</h2>
+            <select value={matchFilter} onChange={(e) => { setMatchFilter(e.target.value); setSelectedFilterDate(''); setSelectedFilterPlayer(e.target.value === 'player' ? currentUser.name : ''); }} className={`text-sm border rounded-lg px-3 py-1.5 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-white border-gray-300 text-gray-700'}`}>
               <option value="all">All Matches</option>
               <option value="date">By Date</option>
               <option value="player">By Player</option>
@@ -183,7 +183,7 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
           
           {matchFilter === 'date' && (
             <div className="mb-4">
-              <select value={selectedFilterDate} onChange={(e) => setSelectedFilterDate(e.target.value)} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700">
+              <select value={selectedFilterDate} onChange={(e) => setSelectedFilterDate(e.target.value)} className={`w-full border rounded-lg px-4 py-2 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-white border-gray-300 text-gray-700'}`}>
                 <option value="">Select a date</option>
                 {uniqueDates.map(date => <option key={date} value={date}>{date}</option>)}
               </select>
@@ -192,7 +192,7 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
           
           {matchFilter === 'player' && (
             <div className="mb-4">
-              <select value={selectedFilterPlayer} onChange={(e) => setSelectedFilterPlayer(e.target.value)} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700">
+              <select value={selectedFilterPlayer} onChange={(e) => setSelectedFilterPlayer(e.target.value)} className={`w-full border rounded-lg px-4 py-2 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-white border-gray-300 text-gray-700'}`}>
                 <option value="">Select a player</option>
                 {uniquePlayers.map(player => <option key={player} value={player}>{player}</option>)}
               </select>
@@ -200,19 +200,21 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
           )}
           
           {completedMatches.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-              <p className="text-gray-500">{matchFilter !== 'all' ? 'No matches found for this filter' : 'No completed matches yet'}</p>
+            <div className={`rounded-2xl shadow-sm p-8 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                {matchFilter !== 'all' ? 'No matches found for this filter' : 'No completed matches yet'}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               {completedMatches.map(match => (
-                <div key={match.id} onClick={() => onReviewMatch(match)} className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all">
+                <div key={match.id} onClick={() => onReviewMatch(match)} className={`rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="font-bold text-gray-900">{match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}</p>
-                    <span className="text-xs text-gray-500">{match.date}</span>
+                    <p className={`font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}</p>
+                    <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{match.date}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className={`flex items-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       <MapPin size={14} className="mr-1" />
                       {match.venue}
                     </div>
@@ -430,7 +432,7 @@ const StandingsPage = ({ currentUser, matches, pools, onLogout, onChangePin, isO
         ) : (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'} mb-4">Pool Standings</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Pool Standings</h2>
               <div className="space-y-4">
                 {poolNames.map(poolName => {
                   const standings = calculateStandings(poolName);
@@ -902,12 +904,41 @@ const DiscGolfApp = () => {
     }
   };
 
-  const handleChangePin = (newPin) => {
+  const handleChangePin = async (newPin) => {
     const updatedPlayers = players.map(p => 
       p.id === currentUser.id ? { ...p, pin: newPin } : p
     );
     setPlayers(updatedPlayers);
     setCurrentUser({ ...currentUser, pin: newPin });
+    
+    // Update local storage
+    localStorage.setItem('sheet-data', JSON.stringify({
+      players: updatedPlayers,
+      courses,
+      matches,
+      pools
+    }));
+    
+    // Update Google Sheet
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updatePin',
+          playerId: currentUser.id,
+          newPin: newPin
+        }),
+        mode: 'no-cors'
+      });
+      console.log('PIN updated in Google Sheets');
+    } catch (err) {
+      console.error('Error updating PIN:', err);
+      setError('PIN changed locally but may not sync to sheet. Try again when online.');
+    }
+    
     setView('matches');
     setError('');
   };
