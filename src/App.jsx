@@ -236,7 +236,7 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
 // ============================================================================
 // CHANGE PIN COMPONENT
 // ============================================================================
-const ChangePinPage = ({ currentUser, onSave, onCancel, error }) => {
+const ChangePinPage = ({ currentUser, onSave, onCancel, error, darkMode }) => {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [localError, setLocalError] = useState('');
@@ -254,41 +254,41 @@ const ChangePinPage = ({ currentUser, onSave, onCancel, error }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 transition-colors">
-      <div className="bg-white shadow-sm sticky top-0 z-10">
+    <div className={`min-h-screen transition-colors ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className={`shadow-sm sticky top-0 z-10 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <button onClick={onCancel} className="mr-4">
-              <X size={24} className="text-gray-600" />
+              <X size={24} className={darkMode ? 'text-gray-400' : 'text-gray-600'} />
             </button>
-            <h2 className="text-lg font-bold text-gray-900">Change PIN</h2>
+            <h2 className={`text-lg font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Change PIN</h2>
           </div>
         </div>
       </div>
       
       <div className="max-w-md mx-auto px-4 py-6">
-        <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+        <div className={`rounded-2xl shadow-sm p-6 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">New PIN</label>
+            <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>New PIN</label>
             <input 
               type="password"
               maxLength="4"
               value={newPin}
               onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
               placeholder="4 digits"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
             />
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm PIN</label>
+            <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Confirm PIN</label>
             <input 
               type="password"
               maxLength="4"
               value={confirmPin}
               onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
               placeholder="4 digits"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
             />
           </div>
           
@@ -492,7 +492,7 @@ const StandingsPage = ({ currentUser, matches, pools, onLogout, onChangePin, isO
 // ============================================================================
 // SCORING COMPONENT
 // ============================================================================
-const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrentHole, courses, onCancel, onComplete, loading, error }) => {
+const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrentHole, courses, onCancel, onComplete, loading, error, darkMode }) => {
   const calculateMatchStatus = () => {
     let p1Holes = 0, p2Holes = 0, holesPlayed = 0;
     scores.forEach((score) => {
@@ -650,45 +650,45 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
           </div>
         )}
         
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
-          <h3 className="font-bold text-gray-900 mb-4">Scorecard</h3>
+        <div className={`rounded-2xl shadow-sm p-6 mb-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <h3 className={`font-bold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Scorecard</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-gray-200">
-                  <th className="sticky left-0 bg-white text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-16">Hole</th>
+                <tr className={`border-b-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <th className={`sticky left-0 text-left py-2 pr-2 font-semibold text-xs w-16 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-700'}`}>Hole</th>
                   {scores.map((score, idx) => (
                     score.scored && (
-                      <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[35px]">
+                      <th key={idx} className={`px-1 py-2 text-center font-semibold text-xs min-w-[35px] ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
                         {score.holeNumber || (idx < 18 ? idx + 1 : `P${idx - 17}`)}
                       </th>
                     )
                   ))}
-                  <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">vs Par</th>
+                  <th className={`sticky right-0 px-2 py-2 text-center font-semibold border-l-2 text-xs w-12 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-white border-gray-200 text-gray-700'}`}>vs Par</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-100">
-                  <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <td colSpan={scores.filter(s => s.scored).length + 2} className={`sticky left-0 px-2 py-1.5 font-bold text-xs ${darkMode ? 'bg-blue-900 text-gray-100' : 'bg-blue-50 text-gray-900'}`}>
                     {(() => {
                       const nameParts = selectedMatch.player1.split(' ');
                       return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
                     })()}
                   </td>
                 </tr>
-                <tr className="border-b-2 border-gray-200">
-                  <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
+                <tr className={`border-b-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <td className={`sticky left-0 py-2 pr-2 text-xs ${darkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-500'}`}></td>
                   {scores.map((score, idx) => {
                     if (!score.scored) return null;
                     const holeNum = score.holeNumber || (idx < 18 ? idx + 1 : 1);
                     const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
                     return (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? (darkMode ? 'text-blue-400 bg-blue-900' : 'text-blue-600 bg-blue-50') : score.p1 === score.p2 ? (darkMode ? 'text-gray-400' : 'text-gray-600') : (darkMode ? 'text-gray-200' : 'text-gray-900')}`}>
                         {score.p1}
                       </td>
                     );
                   })}
-                  <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                  <td className={`sticky right-0 px-2 py-2 text-center font-bold border-l-2 text-sm ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                     {(() => {
                       const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0);
                       let totalPar = 0;
@@ -701,15 +701,15 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                       });
                       const diff = totalScore - totalPar;
                       return (
-                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : (darkMode ? 'text-gray-200' : 'text-gray-900')}>
                           {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
                         </span>
                       );
                     })()}
                   </td>
                 </tr>
-                <tr className="border-b border-gray-100">
-                  <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <td colSpan={scores.filter(s => s.scored).length + 2} className={`sticky left-0 px-2 py-1.5 font-bold text-xs ${darkMode ? 'bg-blue-900 text-gray-100' : 'bg-blue-50 text-gray-900'}`}>
                     {(() => {
                       const nameParts = selectedMatch.player2.split(' ');
                       return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
@@ -717,16 +717,16 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                   </td>
                 </tr>
                 <tr>
-                  <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
+                  <td className={`sticky left-0 py-2 pr-2 text-xs ${darkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-500'}`}></td>
                   {scores.map((score, idx) => {
                     if (!score.scored) return null;
                     return (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? (darkMode ? 'text-blue-400 bg-blue-900' : 'text-blue-600 bg-blue-50') : score.p1 === score.p2 ? (darkMode ? 'text-gray-400' : 'text-gray-600') : (darkMode ? 'text-gray-200' : 'text-gray-900')}`}>
                         {score.p2}
                       </td>
                     );
                   })}
-                  <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                  <td className={`sticky right-0 px-2 py-2 text-center font-bold border-l-2 text-sm ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                     {(() => {
                       const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p2, 0);
                       let totalPar = 0;
@@ -739,7 +739,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                       });
                       const diff = totalScore - totalPar;
                       return (
-                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : (darkMode ? 'text-gray-200' : 'text-gray-900')}>
                           {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
                         </span>
                       );
@@ -961,6 +961,7 @@ const DiscGolfApp = () => {
       onSave={handleChangePin}
       onCancel={() => setView('matches')}
       error={error}
+      darkMode={darkMode}
     />;
   }
 
@@ -1032,6 +1033,7 @@ const DiscGolfApp = () => {
         onComplete={completeMatch}
         loading={loading}
         error={error}
+        darkMode={darkMode}
       />
     );
   }
