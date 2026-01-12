@@ -70,9 +70,9 @@ const LoginPage = ({ players, onLogin, isOnline, darkMode, setDarkMode, error })
 // MATCHES COMPONENT
 // ============================================================================
 const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChangePin, onLogout, isOnline, pendingUpdates, darkMode, setDarkMode, setView }) => {
-  const [matchFilter, setMatchFilter] = useState('all');
+  const [matchFilter, setMatchFilter] = useState('player');
   const [selectedFilterDate, setSelectedFilterDate] = useState('');
-  const [selectedFilterPlayer, setSelectedFilterPlayer] = useState('');
+  const [selectedFilterPlayer, setSelectedFilterPlayer] = useState(currentUser.name);
 
   const userMatches = matches.filter(m => m.player1 === currentUser.name || m.player2 === currentUser.name);
   const upcomingMatches = userMatches.filter(m => m.status !== 'Completed');
