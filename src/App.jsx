@@ -904,41 +904,12 @@ const DiscGolfApp = () => {
     }
   };
 
-  const handleChangePin = async (newPin) => {
+  const handleChangePin = (newPin) => {
     const updatedPlayers = players.map(p => 
       p.id === currentUser.id ? { ...p, pin: newPin } : p
     );
     setPlayers(updatedPlayers);
     setCurrentUser({ ...currentUser, pin: newPin });
-    
-    // Update local storage
-    localStorage.setItem('sheet-data', JSON.stringify({
-      players: updatedPlayers,
-      courses,
-      matches,
-      pools
-    }));
-    
-    // Update Google Sheet
-    try {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'updatePin',
-          playerId: currentUser.id,
-          newPin: newPin
-        }),
-        mode: 'no-cors'
-      });
-      console.log('PIN updated in Google Sheets');
-    } catch (err) {
-      console.error('Error updating PIN:', err);
-      setError('PIN changed locally but may not sync to sheet. Try again when online.');
-    }
-    
     setView('matches');
     setError('');
   };
