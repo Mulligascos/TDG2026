@@ -497,9 +497,16 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
         else if (score.p2 < score.p1) p2Holes++;
       }
     });
+    const holesRemaining = Math.max(0, 18 - holesPlayed);
     const lead = Math.abs(p1Holes - p2Holes);
     const leader = p1Holes > p2Holes ? selectedMatch.player1 : p2Holes > p1Holes ? selectedMatch.player2 : null;
-    return { p1Holes, p2Holes, holesPlayed, lead, leader };
+    
+    // Match is complete if lead is greater than holes remaining (dormie/winner decided)
+    const isDormie = lead > 0 && lead >= holesRemaining && holesPlayed > 0;
+    const isComplete = isDormie || (holesPlayed >= 18 && p1Holes !== p2Holes);
+    const needsPlayoff = holesPlayed >= 18 && p1Holes === p2Holes;
+    
+    return { p1Holes, p2Holes, holesPlayed, lead, leader, isDormie, isComplete, needsPlayoff };
   };
 
   const recordScore = () => {
@@ -545,8 +552,20 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
           
           {status.leader && (
             <div className="mt-3 text-center">
-              <span className="inline-block bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-                {status.leader} {status.lead} UP
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                status.isDormie 
+                  ? 'bg-green-50 text-green-700' 
+                  : 'bg-blue-50 text-blue-700'
+              }`}>
+                {status.leader} {status.lead} UP {status.isDormie ? '(Dormie)' : ''}
+              </span>
+            </div>
+          )}
+          
+          {status.needsPlayoff && (
+            <div className="mt-3 text-center">
+              <span className="inline-block bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-sm font-semibold">
+                Match Tied - Playoff Needed
               </span>
             </div>
           )}
@@ -607,9 +626,24 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
           </div>
         </div>
         
-        <button onClick={onComplete} disabled={loading} className="w-full text-white py-4 rounded-xl font-semibold" style={{backgroundColor: loading ? '#9ca3af' : '#006400'}}>
-          {loading ? 'Submitting...' : '✓ Complete Match'}
+        <button 
+          onClick={onComplete} 
+          disabled={loading || !status.isComplete} 
+          className="w-full text-white py-4 rounded-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" 
+          style={{backgroundColor: (loading || !status.isComplete) ? '#9ca3af' : '#006400'}}
+        >
+          {loading ? 'Submitting...' : status.isComplete ? '✓ Complete Match' : '⏸ Match In Progress'}
         </button>
+        
+        {!status.isComplete && status.holesPlayed > 0 && (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r mt-4">
+            <p className="text-sm text-blue-800">
+              {status.needsPlayoff 
+                ? 'Match is tied. Continue playing to determine a winner.' 
+                : 'Continue playing until a winner is decided or the match reaches dormie.'}
+            </p>
+          </div>
+        )}
         
         {error && (
           <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r mt-4">
