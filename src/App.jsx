@@ -523,7 +523,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
 
   const status = calculateMatchStatus();
   const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
-  const actualHoleNumber = currentHole + 1; // KEY FIX: Simple calculation
+  const actualHoleNumber = scores[currentHole]?.holeNumber || currentHole + 1; // Use tracked hole number
   const par = course && course.pars[actualHoleNumber] ? course.pars[actualHoleNumber] : 3;
 
   return (
@@ -639,7 +639,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                   {scores.map((score, idx) => (
                     score.scored && (
                       <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[35px]">
-                        {idx < 18 ? idx + 1 : `P${idx - 17}`}
+                        {score.holeNumber || (idx < 18 ? idx + 1 : `P${idx - 17}`)}
                       </th>
                     )
                   ))}
@@ -659,7 +659,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                   <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
                   {scores.map((score, idx) => {
                     if (!score.scored) return null;
-                    const holeNum = idx < 18 ? idx + 1 : 1;
+                    const holeNum = score.holeNumber || (idx < 18 ? idx + 1 : 1);
                     const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
                     return (
                       <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
@@ -673,7 +673,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                       let totalPar = 0;
                       scores.forEach((score, idx) => {
                         if (score.scored) {
-                          const holeNum = idx < 18 ? idx + 1 : 1;
+                          const holeNum = score.holeNumber || (idx < 18 ? idx + 1 : 1);
                           const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
                           totalPar += par;
                         }
@@ -711,7 +711,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                       let totalPar = 0;
                       scores.forEach((score, idx) => {
                         if (score.scored) {
-                          const holeNum = idx < 18 ? idx + 1 : 1;
+                          const holeNum = score.holeNumber || (idx < 18 ? idx + 1 : 1);
                           const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
                           totalPar += par;
                         }
@@ -833,16 +833,34 @@ const DiscGolfApp = () => {
     const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
     const startHoleNum = Number(startingHole);
     
-    // KEY FIX: Create scores where index = hole number - 1
-    // Index 0 = Hole 1, Index 3 = Hole 4, etc.
-    const initScores = Array(18).fill(null).map((_, idx) => {
-      const holeNumber = idx + 1;
-      const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
-      return { p1: par, p2: par, scored: false };
-    });
+    // Create scores array where index = hole number - 1
+    // BUT reorder based on starting hole to allow wraparound
+    const initScores = [];
+    
+    // Add holes from starting hole to 18
+    for (let i = startHoleNum; i <= 18; i++) {
+      const par = course && course.pars[i] ? course.pars[i] : 3;
+      initScores.push({ 
+        p1: par, 
+        p2: par, 
+        scored: false,
+        holeNumber: i  // Track actual hole number
+      });
+    }
+    
+    // Add holes from 1 to starting hole - 1 (wraparound)
+    for (let i = 1; i < startHoleNum; i++) {
+      const par = course && course.pars[i] ? course.pars[i] : 3;
+      initScores.push({ 
+        p1: par, 
+        p2: par, 
+        scored: false,
+        holeNumber: i  // Track actual hole number
+      });
+    }
     
     setScores(initScores);
-    setCurrentHole(startHoleNum - 1); // Start at the selected hole (0-indexed)
+    setCurrentHole(0); // Always start at index 0 (which is the starting hole)
     setShowStartHoleModal(false);
     setView('scoring');
   };
