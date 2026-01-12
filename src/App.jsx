@@ -14,10 +14,10 @@ const LoginPage = ({ players, onLogin, isOnline, darkMode, setDarkMode, error })
   };
 
   return (
-    <div className="min-h-screen bg-white transition-colors">
+    <div className={`min-h-screen transition-colors ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
       <div className="max-w-md mx-auto px-4 py-8">
         <div className="absolute top-4 right-4">
-          <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </div>
@@ -25,8 +25,8 @@ const LoginPage = ({ players, onLogin, isOnline, darkMode, setDarkMode, error })
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-lg" style={{background: 'linear-gradient(to bottom right, #006400, #228B22)'}}>
             <Trophy className="text-white" size={40} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Matchplay</h1>
-          <p className="text-gray-500">Disc Golf Tournament Tracker</p>
+          <h1 className={`text-3xl font-bold mb-2 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Matchplay</h1>
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Disc Golf Tournament Tracker</p>
         </div>
         
         {!isOnline && (
@@ -37,8 +37,8 @@ const LoginPage = ({ players, onLogin, isOnline, darkMode, setDarkMode, error })
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Select Player</label>
-            <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2">
+            <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Select Player</label>
+            <select value={selectedPlayer} onChange={(e) => setSelectedPlayer(e.target.value)} className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-gray-50 border-gray-200 text-gray-900'}`}>
               <option value="">Choose your name</option>
               {players.map(p => (
                 <option key={p.id} value={p.name}>{p.name}</option>
@@ -47,8 +47,8 @@ const LoginPage = ({ players, onLogin, isOnline, darkMode, setDarkMode, error })
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">PIN</label>
-            <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} maxLength="4" placeholder="Enter 4-digit PIN" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2" />
+            <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>PIN</label>
+            <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} maxLength="4" placeholder="Enter 4-digit PIN" className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
           </div>
           
           {error && (
@@ -89,7 +89,7 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
   const uniquePlayers = [...new Set(matches.filter(m => m.status === 'Completed').flatMap(m => [m.player1, m.player2]))].sort();
 
   return (
-    <div className="min-h-screen bg-gray-50 transition-colors">
+    <div className={`min-h-screen transition-colors ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
         <div className="max-w-md mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-4">
@@ -135,18 +135,18 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
       
       <div className="max-w-md mx-auto px-4 py-6">
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Your Matches</h2>
+          <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Your Matches</h2>
           {upcomingMatches.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Trophy className="text-gray-400" size={28} />
+            <div className={`rounded-2xl shadow-sm p-8 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <Trophy className={darkMode ? 'text-gray-500' : 'text-gray-400'} size={28} />
               </div>
-              <p className="text-gray-500">No upcoming matches</p>
+              <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>No upcoming matches</p>
             </div>
           ) : (
             <div className="space-y-3">
               {upcomingMatches.map(match => (
-                <div key={match.id} onClick={() => onStartMatch(match)} className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all">
+                <div key={match.id} onClick={() => onStartMatch(match)} className={`rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all ${darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white'}`}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar size={14} className="mr-1" />
@@ -778,10 +778,24 @@ const DiscGolfApp = () => {
   const [pendingUpdates, setPendingUpdates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const SHEET_ID = '1bzJdaMrV7sInlNtMP81hKST8-TTq2UTDujkk68w3IPU';
   const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.body.style.backgroundColor = '#111827';
+      document.body.style.color = '#f9fafb';
+    } else {
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.style.color = '#111827';
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     if (isOnline) loadSheetData();
