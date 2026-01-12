@@ -629,6 +629,25 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
           </div>
         </div>
         
+        <button 
+          onClick={onComplete} 
+          disabled={loading || !status.isComplete} 
+          className="w-full text-white py-4 rounded-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mb-4" 
+          style={{backgroundColor: (loading || !status.isComplete) ? '#9ca3af' : '#006400'}}
+        >
+          {loading ? 'Submitting...' : status.isComplete ? '✓ Complete Match' : '⏸ Match In Progress'}
+        </button>
+        
+        {!status.isComplete && status.holesPlayed > 0 && (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r mb-4">
+            <p className="text-sm text-blue-800">
+              {status.needsPlayoff 
+                ? 'Match is tied. Continue playing to determine a winner.' 
+                : 'Continue playing until a winner is decided or the match reaches dormie.'}
+            </p>
+          </div>
+        )}
+        
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
           <h3 className="font-bold text-gray-900 mb-4">Scorecard</h3>
           <div className="overflow-x-auto">
@@ -729,25 +748,6 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
             </table>
           </div>
         </div>
-        
-        <button 
-          onClick={onComplete} 
-          disabled={loading || !status.isComplete} 
-          className="w-full text-white py-4 rounded-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" 
-          style={{backgroundColor: (loading || !status.isComplete) ? '#9ca3af' : '#006400'}}
-        >
-          {loading ? 'Submitting...' : status.isComplete ? '✓ Complete Match' : '⏸ Match In Progress'}
-        </button>
-        
-        {!status.isComplete && status.holesPlayed > 0 && (
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r mt-4">
-            <p className="text-sm text-blue-800">
-              {status.needsPlayoff 
-                ? 'Match is tied. Continue playing to determine a winner.' 
-                : 'Continue playing until a winner is decided or the match reaches dormie.'}
-            </p>
-          </div>
-        )}
         
         {error && (
           <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r mt-4">
