@@ -157,7 +157,7 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
                     <ChevronRight className="text-blue-600" size={20} />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-lg mb-1">
+                    <p className="font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'} text-lg mb-1">
                       {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
                     </p>
                     <div className="flex items-center text-sm text-gray-600">
@@ -173,7 +173,7 @@ const MatchesPage = ({ currentUser, matches, onStartMatch, onReviewMatch, onChan
         
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Completed Matches</h2>
+            <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Completed Matches</h2>
             <select value={matchFilter} onChange={(e) => { setMatchFilter(e.target.value); setSelectedFilterDate(''); setSelectedFilterPlayer(''); }} className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-gray-700">
               <option value="all">All Matches</option>
               <option value="date">By Date</option>
