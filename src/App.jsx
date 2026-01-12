@@ -458,7 +458,10 @@ const StandingsPage = ({ currentUser, matches, pools, onLogout, onChangePin, isO
                               >
                                 <td className="py-3 pr-2 text-gray-600 font-semibold text-sm">{idx + 1}</td>
                                 <td className="py-3 pr-2 font-semibold text-gray-900 text-sm">
-                                  {standing.name.split(' ')[0]}
+                                  {(() => {
+                                    const nameParts = standing.name.split(' ');
+                                    return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
+                                  })()}
                                 </td>
                                 <td className="py-3 px-2 text-center text-gray-900 font-bold text-base">{standing.points}</td>
                                 <td className={`py-3 pl-2 text-center font-bold text-sm ${
@@ -623,6 +626,107 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                 {currentHole < scores.length - 1 ? 'Next Hole' : 'Record Score'}
               </button>
             )}
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
+          <h3 className="font-bold text-gray-900 mb-4">Scorecard</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-gray-200">
+                  <th className="sticky left-0 bg-white text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-16">Hole</th>
+                  {scores.map((score, idx) => (
+                    score.scored && (
+                      <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[35px]">
+                        {idx < 18 ? idx + 1 : `P${idx - 17}`}
+                      </th>
+                    )
+                  ))}
+                  <th className="sticky right-0 bg-white px-2 py-2 text-center font-semibold text-gray-700 border-l-2 border-gray-200 text-xs w-12">vs Par</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-100">
+                  <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                    {(() => {
+                      const nameParts = selectedMatch.player1.split(' ');
+                      return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
+                    })()}
+                  </td>
+                </tr>
+                <tr className="border-b-2 border-gray-200">
+                  <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
+                  {scores.map((score, idx) => {
+                    if (!score.scored) return null;
+                    const holeNum = idx < 18 ? idx + 1 : 1;
+                    const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                    return (
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        {score.p1}
+                      </td>
+                    );
+                  })}
+                  <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                    {(() => {
+                      const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0);
+                      let totalPar = 0;
+                      scores.forEach((score, idx) => {
+                        if (score.scored) {
+                          const holeNum = idx < 18 ? idx + 1 : 1;
+                          const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                          totalPar += par;
+                        }
+                      });
+                      const diff = totalScore - totalPar;
+                      return (
+                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td colSpan={scores.filter(s => s.scored).length + 2} className="sticky left-0 bg-blue-50 px-2 py-1.5 font-bold text-gray-900 text-xs">
+                    {(() => {
+                      const nameParts = selectedMatch.player2.split(' ');
+                      return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
+                    })()}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="sticky left-0 bg-white py-2 pr-2 text-xs text-gray-500"></td>
+                  {scores.map((score, idx) => {
+                    if (!score.scored) return null;
+                    return (
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900'}`}>
+                        {score.p2}
+                      </td>
+                    );
+                  })}
+                  <td className="sticky right-0 bg-white px-2 py-2 text-center font-bold border-l-2 border-gray-200 text-sm">
+                    {(() => {
+                      const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p2, 0);
+                      let totalPar = 0;
+                      scores.forEach((score, idx) => {
+                        if (score.scored) {
+                          const holeNum = idx < 18 ? idx + 1 : 1;
+                          const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                          totalPar += par;
+                        }
+                      });
+                      const diff = totalScore - totalPar;
+                      return (
+                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : 'text-gray-900'}>
+                          {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
         
