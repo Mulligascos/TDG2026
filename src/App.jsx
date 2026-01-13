@@ -920,7 +920,7 @@ const DiscGolfApp = () => {
     
     // Update Google Sheet
     try {
-      await fetch(APPS_SCRIPT_URL, {
+      await fetch('https://script.google.com/macros/s/AKfycbxW0Sa-T_oBu-5ka0TU6Hf1kkY_VBj40891Xq3Md1LdbuJfaHCRSqAK25xfnebtQXwWmg/exec', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
