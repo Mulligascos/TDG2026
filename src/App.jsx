@@ -787,6 +787,7 @@ const DiscGolfApp = () => {
 
   const SHEET_ID = '1bzJdaMrV7sInlNtMP81hKST8-TTq2UTDujkk68w3IPU';
   const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyVdjX2pSgCQPhLjDARktG2wocEzAhn7bv2x682uvWXtKxqjv_fpjxalS9WCB6MJVnlgg/exec';
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
