@@ -882,28 +882,42 @@ const DiscGolfApp = () => {
   };
 
   const completeMatch = async () => {
-    let p1Holes = 0, p2Holes = 0;
-    scores.forEach(s => {
-      if (s.scored) {
-        if (s.p1 < s.p2) p1Holes++;
-        else if (s.p2 < s.p1) p2Holes++;
-      }
-    });
-    const winner = p1Holes > p2Holes ? selectedMatch.player1 : selectedMatch.player2;
-    
-    setLoading(true);
-    try {
-      // Submit to backend
-      setView('matches');
-      setSelectedMatch(null);
-      setScores([]);
-    } catch (err) {
-      setError('Error submitting match');
-    } finally {
-      setLoading(false);
+  let p1Holes = 0, p2Holes = 0;
+  scores.forEach(s => {
+    if (s.scored) {
+      if (s.p1 < s.p2) p1Holes++;
+      else if (s.p2 < s.p1) p2Holes++;
     }
-  };
-
+  });
+  const winner = p1Holes > p2Holes ? selectedMatch.player1 : selectedMatch.player2;
+  
+  setLoading(true);
+  try {
+    // Submit to Apps Script
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        matchId: selectedMatch.id,
+        scores: scores,
+        winner: winner
+      }),
+      mode: 'no-cors'
+    });
+    
+    console.log('Match submitted successfully');
+    setView('matches');
+    setSelectedMatch(null);
+    setScores([]);
+  } catch (err) {
+    console.error('Error submitting match:', err);
+    setError('Error submitting match');
+  } finally {
+    setLoading(false);
+  }
+};
   const handleChangePin = async (newPin) => {
     const updatedPlayers = players.map(p => 
       p.id === currentUser.id ? { ...p, pin: newPin } : p
