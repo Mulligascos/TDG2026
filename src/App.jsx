@@ -577,118 +577,43 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
         </div>
       </div>
       
-     <div className={`rounded-2xl shadow-sm p-5 mb-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-  {/* Header */}
-  <div className="flex items-center justify-between mb-5">
-    <div>
-      <h3 className={`text-2xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-        Hole {actualHoleNumber}
-      </h3>
-      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Par {par}</p>
-    </div>
-    <div className={`text-right text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-      {status.holesPlayed} of {scores.length} holes
-    </div>
-  </div>
-  
-  {/* Player 1 - Horizontal Row */}
-  <div className="flex items-center justify-between mb-3">
-    <label className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} style={{minWidth: '90px'}}>
-      {getPlayerShortName(selectedMatch.player1)}
-    </label>
-    <div className="flex items-center gap-4">
-      <button 
-        onClick={() => { 
-          const newScores = [...scores]; 
-          newScores[currentHole].p1 = Math.max(1, newScores[currentHole].p1 - 1); 
-          setScores(newScores); 
-        }} 
-        className={`w-10 h-10 flex items-center justify-center rounded-lg border-2 ${
-          darkMode 
-            ? 'bg-gray-700 border-gray-600 text-gray-300 active:bg-gray-600' 
-            : 'bg-white border-gray-200 text-gray-600 active:bg-gray-50'
-        }`}
-      >
-        <Minus size={16} />
-      </button>
-      <div className={`text-4xl font-bold text-center ${darkMode ? 'text-gray-100' : 'text-gray-900'}`} style={{minWidth: '50px'}}>
-        {scores[currentHole]?.p1 || 0}
-      </div>
-      <button 
-        onClick={() => { 
-          const newScores = [...scores]; 
-          newScores[currentHole].p1 = newScores[currentHole].p1 + 1; 
-          setScores(newScores); 
-        }} 
-        className={`w-10 h-10 flex items-center justify-center rounded-lg border-2 ${
-          darkMode 
-            ? 'bg-gray-700 border-gray-600 text-gray-300 active:bg-gray-600' 
-            : 'bg-white border-gray-200 text-gray-600 active:bg-gray-50'
-        }`}
-      >
-        <Plus size={16} />
-      </button>
-    </div>
-  </div>
-  
-  {/* Player 2 - Horizontal Row */}
-  <div className="flex items-center justify-between mb-5">
-    <label className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} style={{minWidth: '90px'}}>
-      {getPlayerShortName(selectedMatch.player2)}
-    </label>
-    <div className="flex items-center gap-4">
-      <button 
-        onClick={() => { 
-          const newScores = [...scores]; 
-          newScores[currentHole].p2 = Math.max(1, newScores[currentHole].p2 - 1); 
-          setScores(newScores); 
-        }} 
-        className={`w-10 h-10 flex items-center justify-center rounded-lg border-2 ${
-          darkMode 
-            ? 'bg-gray-700 border-gray-600 text-gray-300 active:bg-gray-600' 
-            : 'bg-white border-gray-200 text-gray-600 active:bg-gray-50'
-        }`}
-      >
-        <Minus size={16} />
-      </button>
-      <div className={`text-4xl font-bold text-center ${darkMode ? 'text-gray-100' : 'text-gray-900'}`} style={{minWidth: '50px'}}>
-        {scores[currentHole]?.p2 || 0}
-      </div>
-      <button 
-        onClick={() => { 
-          const newScores = [...scores]; 
-          newScores[currentHole].p2 = newScores[currentHole].p2 + 1; 
-          setScores(newScores); 
-        }} 
-        className={`w-10 h-10 flex items-center justify-center rounded-lg border-2 ${
-          darkMode 
-            ? 'bg-gray-700 border-gray-600 text-gray-300 active:bg-gray-600' 
-            : 'bg-white border-gray-200 text-gray-600 active:bg-gray-50'
-        }`}
-      >
-        <Plus size={16} />
-      </button>
-    </div>
-  </div>
-  
-  {/* Holes Won Summary at Bottom */}
-  <div className={`flex items-center justify-center gap-16 pt-5 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-    <div className="text-center">
-      <div className="text-3xl font-bold text-blue-600">{status.p1Holes}</div>
-      <div className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-        {getPlayerShortName(selectedMatch.player1)}
-      </div>
-    </div>
-    <div className="text-center">
-      <div className="text-3xl font-bold text-blue-600">{status.p2Holes}</div>
-      <div className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-        {getPlayerShortName(selectedMatch.player2)}
-      </div>
-    </div>
-  </div>
-</div>
-
+    <div className="max-w-md mx-auto px-4 py-6">
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Hole {actualHoleNumber}</h3>
+              <p className="text-gray-500">Par {par}</p>
+            </div>
+            <div className="text-right text-sm text-gray-500">{status.holesPlayed} of {scores.length} holes</div>
+          </div>
           
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">{selectedMatch.player1}</label>
+              <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
+                <button onClick={() => { const newScores = [...scores]; newScores[currentHole].p1 = Math.max(1, newScores[currentHole].p1 - 1); setScores(newScores); }} className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600">
+                  <Minus size={20} />
+                </button>
+                <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p1 || 0}</div>
+                <button onClick={() => { const newScores = [...scores]; newScores[currentHole].p1 = newScores[currentHole].p1 + 1; setScores(newScores); }} className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600">
+                  <Plus size={20} />
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">{selectedMatch.player2}</label>
+              <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
+                <button onClick={() => { const newScores = [...scores]; newScores[currentHole].p2 = Math.max(1, newScores[currentHole].p2 - 1); setScores(newScores); }} className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600">
+                  <Minus size={20} />
+                </button>
+                <div className="text-4xl font-bold text-gray-900">{scores[currentHole]?.p2 || 0}</div>
+                <button onClick={() => { const newScores = [...scores]; newScores[currentHole].p2 = newScores[currentHole].p2 + 1; setScores(newScores); }} className="w-12 h-12 flex items-center justify-center bg-white rounded-xl border-2 border-gray-200 text-gray-600">
+                  <Plus size={20} />
+                </button>
+              </div>
+            </div>
+          </div>     
           <div className="mt-6">
             {currentHole > 0 ? (
               <div className="flex gap-3">
