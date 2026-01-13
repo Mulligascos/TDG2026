@@ -577,7 +577,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
         </div>
       </div>
       
-    <div className="max-w-md mx-auto px-4 py-6">
+      <div className="max-w-md mx-auto px-4 py-6">
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -613,7 +613,8 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
                 </button>
               </div>
             </div>
-          </div>     
+          </div>
+          
           <div className="mt-6">
             {currentHole > 0 ? (
               <div className="flex gap-3">
@@ -644,7 +645,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
             <p className="text-sm text-blue-800">
               {status.needsPlayoff 
                 ? 'Match is tied. Continue playing to determine a winner.' 
-                : 'Continue playing until a winner is decided.'}
+                : 'Continue playing until a winner is decided or the match reaches dormie.'}
             </p>
           </div>
         )}
@@ -786,7 +787,6 @@ const DiscGolfApp = () => {
 
   const SHEET_ID = '1bzJdaMrV7sInlNtMP81hKST8-TTq2UTDujkk68w3IPU';
   const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxW0Sa-T_oBu-5ka0TU6Hf1kkY_VBj40891Xq3Md1LdbuJfaHCRSqAK25xfnebtQXwWmg/exec';
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
@@ -882,42 +882,57 @@ const DiscGolfApp = () => {
   };
 
   const completeMatch = async () => {
-  let p1Holes = 0, p2Holes = 0;
-  scores.forEach(s => {
-    if (s.scored) {
-      if (s.p1 < s.p2) p1Holes++;
-      else if (s.p2 < s.p1) p2Holes++;
-    }
-  });
-  const winner = p1Holes > p2Holes ? selectedMatch.player1 : selectedMatch.player2;
-  
-  setLoading(true);
-  try {
-    // Submit to Apps Script
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        matchId: selectedMatch.id,
-        scores: scores,
-        winner: winner
-      }),
-      mode: 'no-cors'
+    let p1Holes = 0, p2Holes = 0;
+    scores.forEach(s => {
+      if (s.scored) {
+        if (s.p1 < s.p2) p1Holes++;
+        else if (s.p2 < s.p1) p2Holes++;
+      }
     });
+    const winner = p1Holes > p2Holes ? selectedMatch.player1 : selectedMatch.player2;
     
-    console.log('Match submitted successfully');
-    setView('matches');
-    setSelectedMatch(null);
-    setScores([]);
-  } catch (err) {
-    console.error('Error submitting match:', err);
-    setError('Error submitting match');
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+    try {
+      // Submit match to Google Sheets via Apps Script
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          matchId: selectedMatch.id,
+          scores: scores,
+          winner: winner
+        }),
+        mode: 'no-cors'
+      });
+      
+      console.log('Match submitted successfully:', {
+        matchId: selectedMatch.id,
+        winner: winner,
+        holesPlayed: scores.filter(s => s.scored).length
+      });
+      
+      // Update local state
+      const updatedMatches = matches.map(m => 
+        m.id === selectedMatch.id 
+          ? { ...m, scoresJson: scores, winner, status: 'Completed' }
+          : m
+      );
+      setMatches(updatedMatches);
+      
+      setView('matches');
+      setSelectedMatch(null);
+      setScores([]);
+      setError('');
+    } catch (err) {
+      console.error('Error submitting match:', err);
+      setError('Error submitting match. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleChangePin = async (newPin) => {
     const updatedPlayers = players.map(p => 
       p.id === currentUser.id ? { ...p, pin: newPin } : p
@@ -1012,18 +1027,18 @@ const DiscGolfApp = () => {
         />
         {showStartHoleModal && (
           <div className="fixed inset-0 bg-black/50 flex items-end z-50">
-            <div className="bg-white w-full rounded-t-3xl p-6 max-w-md mx-auto">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Select Starting Hole</h3>
-              <select value={startingHole} onChange={(e) => setStartingHole(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 mb-4">
+            <div className={`w-full rounded-t-3xl p-6 max-w-md mx-auto ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Select Starting Hole</h3>
+              <select value={startingHole} onChange={(e) => setStartingHole(Number(e.target.value))} className={`w-full border rounded-xl px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-gray-50 border-gray-200 text-gray-900'}`}>
                 {Array.from({length: 18}, (_, i) => i + 1).map(h => (
                   <option key={h} value={h}>Hole {h}</option>
                 ))}
               </select>
               <div className="flex gap-3">
-                <button onClick={() => {setShowStartHoleModal(false); setSelectedMatch(null);}} className="flex-1 bg-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold">
+                <button onClick={() => {setShowStartHoleModal(false); setSelectedMatch(null);}} className={`flex-1 py-3.5 rounded-xl font-semibold ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                   Cancel
                 </button>
-                <button onClick={confirmStartHole} className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-semibold">
+                <button onClick={confirmStartHole} className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700">
                   Start Match
                 </button>
               </div>
