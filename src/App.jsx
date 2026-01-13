@@ -644,7 +644,7 @@ const ScoringPage = ({ selectedMatch, scores, setScores, currentHole, setCurrent
             <p className="text-sm text-blue-800">
               {status.needsPlayoff 
                 ? 'Match is tied. Continue playing to determine a winner.' 
-                : 'Continue playing until a winner is decided or the match reaches dormie.'}
+                : 'Continue playing until a winner is decided.'}
             </p>
           </div>
         )}
