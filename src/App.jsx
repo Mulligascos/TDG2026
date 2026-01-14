@@ -1498,44 +1498,81 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
           </div>
         )}
 
-        {/* Scorecard Table */}
+   {/* Scorecard Table */}
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <h4 className="font-bold text-gray-900 mb-3">Scorecard</h4>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-2 font-semibold text-gray-700">Hole</th>
-                <th className="text-center py-2 font-semibold text-gray-700"></th>
-                <th className="text-right py-2 font-semibold text-gray-700">vs Par</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-100">
-                <td className="py-2 text-gray-900 font-medium">{player1FirstName}</td>
-                <td className="py-2"></td>
-                <td className={`py-2 text-right font-bold ${
-                  calculateVsPar('p1').includes('-') ? 'text-green-600' : 
-                  calculateVsPar('p1').includes('+') ? 'text-red-600' : 
-                  'text-gray-900'
-                }`}>
-                  {calculateVsPar('p1')}
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2 text-gray-900 font-medium">{player2FirstName}</td>
-                <td className="py-2"></td>
-                <td className={`py-2 text-right font-bold ${
-                  calculateVsPar('p2').includes('-') ? 'text-green-600' : 
-                  calculateVsPar('p2').includes('+') ? 'text-red-600' : 
-                  'text-gray-900'
-                }`}>
-                  {calculateVsPar('p2')}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-gray-200">
+                  <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs sticky left-0 bg-white">Hole</th>
+                  {scores.slice(0, 18).map((_, idx) => {
+                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
+                    return (
+                      <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[32px]">
+                        {holeNum}
+                      </th>
+                    );
+                  })}
+                  <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-xs border-l-2 border-gray-200 sticky right-0 bg-white">vs Par</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Player 1 Row */}
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player1FirstName}</td>
+                  {scores.slice(0, 18).map((score, idx) => {
+                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
+                    const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                    return (
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
+                        !score.scored ? 'text-gray-400' :
+                        score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : 
+                        score.p1 === score.p2 ? 'text-gray-600' : 
+                        'text-gray-900'
+                      }`}>
+                        {score.scored ? score.p1 : '-'}
+                      </td>
+                    );
+                  })}
+                  <td className={`py-2 pl-2 text-center font-bold text-xs border-l-2 border-gray-200 sticky right-0 bg-white ${
+                    calculateVsPar('p1').includes('-') ? 'text-green-600' : 
+                    calculateVsPar('p1').includes('+') ? 'text-red-600' : 
+                    'text-gray-900'
+                  }`}>
+                    {calculateVsPar('p1')}
+                  </td>
+                </tr>
+                
+                {/* Player 2 Row */}
+                <tr>
+                  <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player2FirstName}</td>
+                  {scores.slice(0, 18).map((score, idx) => {
+                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
+                    const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                    return (
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
+                        !score.scored ? 'text-gray-400' :
+                        score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : 
+                        score.p1 === score.p2 ? 'text-gray-600' : 
+                        'text-gray-900'
+                      }`}>
+                        {score.scored ? score.p2 : '-'}
+                      </td>
+                    );
+                  })}
+                  <td className={`py-2 pl-2 text-center font-bold text-xs border-l-2 border-gray-200 sticky right-0 bg-white ${
+                    calculateVsPar('p2').includes('-') ? 'text-green-600' : 
+                    calculateVsPar('p2').includes('+') ? 'text-red-600' : 
+                    'text-gray-900'
+                  }`}>
+                    {calculateVsPar('p2')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
     </div>
   );
 };
