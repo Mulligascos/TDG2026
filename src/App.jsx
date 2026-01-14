@@ -72,16 +72,32 @@ const DiscGolfApp = () => {
     setShowStartHoleModal(true);
   };
 
-  const confirmStart = () => {
-    const course = courses.find(c => c.name === selectedMatch.venue) || { pars: {} };
-    const init = Array(18).fill(null).map((_, i) => ({
-      p1: course.pars[i + 1] || 3, p2: course.pars[i + 1] || 3, scored: false
-    }));
-    setScores(init);
-    setCurrentHole(startingHole - 1);
-    setShowStartHoleModal(false);
-    setView('scoring');
-  };
+const confirmStartHole = () => {
+  const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
+  const startHoleNum = Number(startingHole); 
+  
+  // Create a wrapped sequence of hole numbers (e.g., if starting at 3: [3,4,5...18,1,2])
+  const wrappedHoleSequence = [];
+  for (let i = 0; i < 18; i++) {
+    let holeNum = ((startHoleNum - 1 + i) % 18) + 1;
+    wrappedHoleSequence.push(holeNum);
+  }
+  
+  const initScores = wrappedHoleSequence.map((holeNumber) => {
+    const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
+    return {
+      holeNumber: holeNumber, // Store the actual hole number for display
+      p1: par,
+      p2: par,
+      scored: false
+    };
+  });
+
+  setScores(initScores);
+  setCurrentHole(0); // Always start at the first index of our new wrapped array
+  setShowStartHoleModal(false);
+  setView('scoring');
+};
 
   const submitResults = async () => {
     try {
