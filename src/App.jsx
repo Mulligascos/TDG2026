@@ -1624,13 +1624,28 @@ const DiscGolfApp = () => {
     />;
   }
 
+   if (view === 'standings') {
+    return <StandingsPage
+      currentUser={currentUser}
+      matches={appData.matches}
+      pools={appData.pools}
+      onLogout={handleLogout}
+      onChangePin={() => setView('changePin')}
+      onViewMatches={() => setView('matches')}
+      darkMode={darkMode}
+      setDarkMode={setDarkMode}
+      isOnline={appData.isOnline}
+      pendingUpdates={appData.pendingUpdates}
+    />;
+  }          
+
   
-  // Note: Other pages (Standings, Scoring, Review) to be implemented
+  // Note: Review Page under construction
   
   return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
     <div className="text-center">
       <Trophy size={48} className="mx-auto mb-4 text-gray-400" />
-      <p className="text-gray-600">Additional pages (Standings, Scoring, Review) to be implemented...</p>
+      <p className="text-gray-600">Review page under construction...</p>
       <button 
         onClick={handleLogout}
         className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
