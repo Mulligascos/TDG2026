@@ -73,30 +73,43 @@ const DiscGolfApp = () => {
   };
 
 const confirmStartHole = () => {
-  const course = courses.find(c => c.name === selectedMatch.venue || c.code === selectedMatch.venue);
+  const course = courses.find(c => c.name === selectedMatch.venue) || courses[0];
   const startHoleNum = Number(startingHole); 
   
-  // Create a wrapped sequence of hole numbers (e.g., if starting at 3: [3,4,5...18,1,2])
-  const wrappedHoleSequence = [];
+  // Create wrapped array [Start...18, 1...Start-1]
+  const sequence = [];
   for (let i = 0; i < 18; i++) {
-    let holeNum = ((startHoleNum - 1 + i) % 18) + 1;
-    wrappedHoleSequence.push(holeNum);
+    sequence.push(((startHoleNum - 1 + i) % 18) + 1);
   }
   
-  const initScores = wrappedHoleSequence.map((holeNumber) => {
-    const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
-    return {
-      holeNumber: holeNumber, // Store the actual hole number for display
-      p1: par,
-      p2: par,
-      scored: false
-    };
-  });
+  const initScores = sequence.map(num => ({
+    holeNum: num,
+    p1: course.pars[num] || 3,
+    p2: course.pars[num] || 3,
+    scored: false,
+    isPlayoff: false
+  }));
 
   setScores(initScores);
-  setCurrentHole(0); // Always start at the first index of our new wrapped array
-  setShowStartHoleModal(false);
+  setCurrentHole(0); 
   setView('scoring');
+};
+
+const addPlayoffHole = () => {
+  const lastHoleNum = scores[scores.length - 1].holeNum;
+  const nextHoleNum = (lastHoleNum % 18) + 1;
+  const course = courses.find(c => c.name === selectedMatch.venue) || courses[0];
+  
+  const newHole = {
+    holeNum: nextHoleNum,
+    p1: course.pars[nextHoleNum] || 3,
+    p2: course.pars[nextHoleNum] || 3,
+    scored: false,
+    isPlayoff: true
+  };
+  
+  setScores([...scores, newHole]);
+  setCurrentHole(scores.length); // Move to the new hole immediately
 };
 
   const submitResults = async () => {
@@ -127,42 +140,96 @@ const confirmStartHole = () => {
     </div>
   );
 
-  if (view === 'scoring') return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="p-4 bg-white shadow-sm flex justify-between items-center sticky top-0">
-        <button onClick={() => setView('matches')}><X /></button>
-        <div className="text-center font-bold">Hole {currentHole + 1} | Par {scores[currentHole].p1}</div>
-        <div className="w-6" />
-      </div>
+if (view === 'scoring') {
+  const status = calculateMatchStatus(); // Uses logic from previous response
+  const activeHole = scores[currentHole];
 
-      <div className="flex-1 p-6 space-y-6">
-        {[1, 2].map(num => (
-          <div key={num} className="bg-white p-6 rounded-2xl shadow-sm flex items-center justify-between">
-            <span className="font-bold">{num === 1 ? selectedMatch.player1 : selectedMatch.player2}</span>
-            <div className="flex items-center gap-4">
-              <button onClick={() => { const s = [...scores]; s[currentHole][`p${num}`]--; setScores(s); }} className="p-2 bg-gray-100 rounded-full"><Minus /></button>
-              <span className="text-3xl font-black">{scores[currentHole][`p${num}`]}</span>
-              <button onClick={() => { const s = [...scores]; s[currentHole][`p${num}`]++; setScores(s); }} className="p-2 bg-gray-100 rounded-full"><Plus /></button>
-            </div>
+  return (
+    <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+      {/* 1. HEADER & NAVIGATION */}
+      <div className="bg-white p-4 shadow-sm">
+        <div className="flex justify-between items-center mb-2">
+          <button onClick={() => setCurrentHole(Math.max(0, currentHole - 1))} className="p-2 bg-gray-100 rounded-full">
+            <ChevronLeft size={24} />
+          </button>
+          <div className="text-center">
+            <h2 className="text-xs font-bold text-gray-400 uppercase">Hole {activeHole.holeNum} {activeHole.isPlayoff && '(Playoff)'}</h2>
+            <p className="font-bold text-xl">{status.state}</p>
           </div>
-        ))}
-        <button onClick={() => { const s = [...scores]; s[currentHole].scored = true; setScores(s); if(currentHole < scores.length - 1) setCurrentHole(currentHole + 1); }} className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold">Record Score</button>
-        {status.played === 18 && status.allSquare && <button onClick={() => setScores([...scores, { p1: 3, p2: 3, scored: false }])} className="w-full py-4 border-2 border-dashed border-gray-400 rounded-xl">Add Playoff Hole</button>}
+          <button onClick={() => setCurrentHole(Math.min(scores.length - 1, currentHole + 1))} className="p-2 bg-gray-100 rounded-full">
+            <ChevronRight size={24} />
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white border-t p-4 sticky bottom-0">
-        <div className="flex justify-between items-center mb-4">
-          <span className="font-bold">{status.allSquare ? "All Square" : `${status.leader} is ${status.lead} up`}</span>
-          {status.isComplete && <button onClick={submitResults} className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold">Submit Results</button>}
+      {/* 2. SCORING CARDS */}
+      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+        {[1, 2].map(num => {
+          const pName = num === 1 ? selectedMatch.player1 : selectedMatch.player2;
+          return (
+            <div key={num} className="bg-white rounded-3xl p-6 shadow-sm flex items-center justify-between border-2 border-transparent focus-within:border-green-700">
+              <span className="font-bold text-lg text-gray-700">{pName}</span>
+              <div className="flex items-center gap-6">
+                <button onClick={() => { const s = [...scores]; s[currentHole][`p${num}`]--; setScores(s); }} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center font-bold text-2xl">-</button>
+                <span className="text-5xl font-black w-16 text-center">{activeHole[`p${num}`]}</span>
+                <button onClick={() => { const s = [...scores]; s[currentHole][`p${num}`]++; setScores(s); }} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center font-bold text-2xl">+</button>
+              </div>
+            </div>
+          );
+        })}
+        <button 
+          onClick={() => {
+            const s = [...scores]; s[currentHole].scored = true; setScores(s);
+            if (currentHole < scores.length - 1) setCurrentHole(currentHole + 1);
+          }}
+          className="w-full py-5 bg-gray-900 text-white rounded-2xl font-bold text-lg shadow-lg"
+        >
+          Confirm Hole {activeHole.holeNum}
+        </button>
+        
+        {status.needsPlayoff && (
+          <button onClick={addPlayoffHole} className="w-full py-4 border-2 border-dashed border-gray-400 text-gray-500 rounded-2xl font-bold">
+            + Add Playoff Hole
+          </button>
+        )}
+
+        {status.isComplete && (
+          <button onClick={submitMatch} className="w-full py-5 bg-green-700 text-white rounded-2xl font-black text-xl animate-pulse shadow-xl">
+            SUBMIT SCORES
+          </button>
+        )}
+      </div>
+
+      {/* 3. STICKY SCOREBOARD (Horizontal Scroll) */}
+      <div className="bg-white border-t flex flex-row overflow-hidden h-32">
+        {/* Fixed Left Names */}
+        <div className="w-24 flex-shrink-0 bg-gray-50 border-r font-bold text-[10px] flex flex-col justify-around p-2">
+          <div className="h-4 text-gray-400">HOLE</div>
+          <div className="truncate">{selectedMatch.player1}</div>
+          <div className="truncate">{selectedMatch.player2}</div>
         </div>
-        <div className="flex overflow-x-auto gap-2 no-scrollbar">
-          {scores.map((s, i) => (
-            <div key={i} onClick={() => setCurrentHole(i)} className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold ${currentHole === i ? 'bg-green-800 text-white' : s.scored ? 'bg-gray-200' : 'bg-gray-50'}`}>{i + 1}</div>
+
+        {/* Scrollable Center Scores */}
+        <div className="flex-1 overflow-x-auto flex flex-row">
+          {scores.map((s, idx) => (
+            <div key={idx} onClick={() => setCurrentHole(idx)} className={`flex-shrink-0 w-10 flex flex-col justify-around items-center border-r text-[10px] ${currentHole === idx ? 'bg-green-50' : ''}`}>
+              <div className="font-bold text-gray-400">{s.holeNum}</div>
+              <div className={s.scored ? 'font-bold' : 'text-gray-300'}>{s.p1}</div>
+              <div className={s.scored ? 'font-bold' : 'text-gray-300'}>{s.p2}</div>
+            </div>
           ))}
+        </div>
+
+        {/* Fixed Right Totals */}
+        <div className="w-16 flex-shrink-0 bg-gray-100 border-l font-bold text-[10px] flex flex-col justify-around items-center">
+          <div className="text-gray-400">TOT</div>
+          <div>{scores.filter(s=>s.scored).reduce((a,b)=>a+b.p1, 0)}</div>
+          <div>{scores.filter(s=>s.scored).reduce((a,b)=>a+b.p2, 0)}</div>
         </div>
       </div>
     </div>
   );
+}
 
   return (
     <div className="min-h-screen bg-gray-100">
