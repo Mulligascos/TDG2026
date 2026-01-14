@@ -270,8 +270,9 @@ const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, 
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleChangePin = () => {
+  const handleChangePin = async () => {
     if (newPin.length !== 4 || confirmPin.length !== 4) {
       setError('PIN must be 4 digits');
       return;
@@ -280,7 +281,31 @@ const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, 
       setError('PINs do not match');
       return;
     }
-    onPinChange(newPin);
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      // Update Google Sheets
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updatePin',
+          playerId: currentUser.id,
+          newPin: newPin
+        }),
+        mode: 'no-cors'
+      });
+      
+      // Call parent handler to update local state
+      onPinChange(newPin);
+    } catch (err) {
+      console.error('Error updating PIN:', err);
+      setError('Failed to update PIN. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -319,8 +344,12 @@ const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, 
             </div>
           )}
           
-          <button onClick={handleChangePin} className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-            Update PIN
+          <button 
+            onClick={handleChangePin} 
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Updating...' : 'Update PIN'}
           </button>
         </div>
       </div>
