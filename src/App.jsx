@@ -1261,19 +1261,17 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       setCurrentHole(progress.currentHole);
     } else {
       const startHoleNum = Number(startingHole);
+      // Create scores for all 18 holes with pars based on actual hole numbers
       const initScores = Array(18).fill(null).map((_, idx) => {
-        const holeNumber = idx + 1;
-        const par = course && course.pars[holeNumber] ? course.pars[holeNumber] : 3;
-        
-        if (holeNumber < startHoleNum) {
-          return { p1: 0, p2: 0, scored: false };
-        }
+        // Calculate the actual hole number based on starting hole and wrapping
+        const actualHoleNumber = ((startHoleNum - 1 + idx) % 18) + 1;
+        const par = course && course.pars[actualHoleNumber] ? course.pars[actualHoleNumber] : 3;
         
         return { p1: par, p2: par, scored: false };
       });
       
       setScores(initScores);
-      setCurrentHole(startHoleNum - 1);
+      setCurrentHole(0); // Start at first position (which represents the starting hole)
     }
   }, [match.id, startingHole, course]);
 
@@ -1357,8 +1355,9 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
     scores.forEach((score, idx) => {
       if (score.scored) {
         totalScore += playerScores === 'p1' ? score.p1 : score.p2;
-        const holeNum = idx < 18 ? idx + 1 : 1;
-        const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+        // Calculate actual hole number with wrapping
+        const actualHoleNumber = idx < 18 ? ((Number(startingHole) - 1 + idx) % 18) + 1 : 1;
+        const par = course && course.pars[actualHoleNumber] ? course.pars[actualHoleNumber] : 3;
         totalPar += par;
       }
     });
@@ -1370,15 +1369,12 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
   };
 
   const status = calculateMatchStatus();
-  const actualHoleNumber = currentHole < 18 ? currentHole + 1 : currentHole - 17;
+  // Calculate the actual hole number being played (with wrapping)
+  const actualHoleNumber = currentHole < 18 ? ((Number(startingHole) - 1 + currentHole) % 18) + 1 : currentHole - 17;
   const par = currentHole < 18 && course ? course.pars[actualHoleNumber] : 3;
   
   const player1FirstName = match.player1.split(' ')[0];
-  const P1nameParts = selectedMatch.player1.split(' ');
-    return P1nameParts.length > 1 ? `${P1nameParts[0]} ${P1nameParts[P1nameParts.length - 1][0]}` : P1nameParts[0];
   const player2FirstName = match.player2.split(' ')[0];
-  const P2nameParts = selectedMatch.player2.split(' ');
-    return P2nameParts.length > 1 ? `${P2nameParts[0]} ${P2nameParts[P2nameParts.length - 1][0]}` : P2nameParts[0];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
@@ -1458,7 +1454,6 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
           <div className="font-semibold text-gray-900">{player1FirstName}</div>
           <div className="flex items-center gap-4">
             <span className="text-3xl font-bold text-blue-600">{status.p1Holes}</span>
-            
             <span className="text-3xl font-bold text-blue-600">{status.p2Holes}</span>
           </div>
           <div className="font-semibold text-gray-900">{player2FirstName}</div>
@@ -1504,105 +1499,46 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
         )}
 
         {/* Scorecard Table */}
-       
-        <div className={`rounded-2xl shadow-sm p-6 mb-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <h3 className={`font-bold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Scorecard</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className={`border-b-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <th className={`sticky left-0 text-left py-2 pr-2 font-semibold text-xs w-16 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-700'}`}>Hole</th>
-                  {scores.map((score, idx) => (
-                    score.scored && (
-                      <th key={idx} className={`px-1 py-2 text-center font-semibold text-xs min-w-[35px] ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
-                        {score.holeNumber || (idx < 18 ? idx + 1 : `P${idx - 17}`)}
-                      </th>
-                    )
-                  ))}
-                  <th className={`sticky right-0 px-2 py-2 text-center font-semibold border-l-2 text-xs w-12 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-white border-gray-200 text-gray-700'}`}>vs Par</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-                  <td colSpan={scores.filter(s => s.scored).length + 2} className={`sticky left-0 px-2 py-1.5 font-bold text-xs ${darkMode ? 'bg-blue-900 text-gray-100' : 'bg-blue-50 text-gray-900'}`}>
-                    {(() => {P1nameParts})()}
-                  </td>
-                </tr>
-                <tr className={`border-b-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <td className={`sticky left-0 py-2 pr-2 text-xs ${darkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-500'}`}></td>
-                  {scores.map((score, idx) => {
-                    if (!score.scored) return null;
-                    const holeNum = score.holeNumber || (idx < 18 ? idx + 1 : 1);
-                    const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
-                    return (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p1 < score.p2 ? (darkMode ? 'text-blue-400 bg-blue-900' : 'text-blue-600 bg-blue-50') : score.p1 === score.p2 ? (darkMode ? 'text-gray-400' : 'text-gray-600') : (darkMode ? 'text-gray-200' : 'text-gray-900')}`}>
-                        {score.p1}
-                      </td>
-                    );
-                  })}
-                  <td className={`sticky right-0 px-2 py-2 text-center font-bold border-l-2 text-sm ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>                    
-					                    {(() => {
-                      const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0);
-                      let totalPar = 0;
-                      scores.forEach((score, idx) => {
-                        if (score.scored) {
-                          const holeNum = score.holeNumber || (idx < 18 ? idx + 1 : 1);
-                          const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
-                          totalPar += par;
-                        }
-                      });
-                      const diff = totalScore - totalPar;
-                      return (
-                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : (darkMode ? 'text-gray-200' : 'text-gray-900')}>
-                          {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                </tr>
-                <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-                  <td colSpan={scores.filter(s => s.scored).length + 2} className={`sticky left-0 px-2 py-1.5 font-bold text-xs ${darkMode ? 'bg-blue-900 text-gray-100' : 'bg-blue-50 text-gray-900'}`}>
-                    {(() => {P2nameParts})()}
-                  </td>
-                </tr>
-                <tr>
-                  <td className={`sticky left-0 py-2 pr-2 text-xs ${darkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-500'}`}></td>
-                  {scores.map((score, idx) => {
-					if (!score.scored) return null;
-                    return (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? (darkMode ? 'text-blue-400 bg-blue-900' : 'text-blue-600 bg-blue-50') : score.p1 === score.p2 ? (darkMode ? 'text-gray-400' : 'text-gray-600') : (darkMode ? 'text-gray-200' : 'text-gray-900')}`}>
-                        {score.p2}
-                      </td>
-                    );
-                  })}
-                  <td className={`sticky right-0 px-2 py-2 text-center font-bold border-l-2 text-sm ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                    {(() => {
-                      const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p2, 0);
-                      let totalPar = 0;
-                      scores.forEach((score, idx) => {
-                        if (score.scored) {
-                          const holeNum = score.holeNumber || (idx < 18 ? idx + 1 : 1);
-                          const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
-                          totalPar += par;
-                        }
-                      });
-                      const diff = totalScore - totalPar;
-                      return (
-                        <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : (darkMode ? 'text-gray-200' : 'text-gray-900')}>
-                          {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <h4 className="font-bold text-gray-900 mb-3">Scorecard</h4>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-2 font-semibold text-gray-700">Hole</th>
+                <th className="text-center py-2 font-semibold text-gray-700"></th>
+                <th className="text-right py-2 font-semibold text-gray-700">vs Par</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-gray-100">
+                <td className="py-2 text-gray-900 font-medium">{player1FirstName}</td>
+                <td className="py-2"></td>
+                <td className={`py-2 text-right font-bold ${
+                  calculateVsPar('p1').includes('-') ? 'text-green-600' : 
+                  calculateVsPar('p1').includes('+') ? 'text-red-600' : 
+                  'text-gray-900'
+                }`}>
+                  {calculateVsPar('p1')}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2 text-gray-900 font-medium">{player2FirstName}</td>
+                <td className="py-2"></td>
+                <td className={`py-2 text-right font-bold ${
+                  calculateVsPar('p2').includes('-') ? 'text-green-600' : 
+                  calculateVsPar('p2').includes('+') ? 'text-red-600' : 
+                  'text-gray-900'
+                }`}>
+                  {calculateVsPar('p2')}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
     </div>
   );
 };
-
 // ============================================
 // MAIN APP COMPONENT
 // ============================================
