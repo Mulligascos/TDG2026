@@ -54,96 +54,29 @@ const DiscGolfApp = () => {
         transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
       }
       
-      body.dark-mode {
-        background-color: #111827;
-        color: #f9fafb;
-      }
-      
-      .dark-mode .bg-white {
-        background-color: #1f2937 !important;
-      }
-      
-      .dark-mode .bg-gray-50 {
-        background-color: #111827 !important;
-      }
-      
-      .dark-mode .bg-gray-100 {
-        background-color: #374151 !important;
-      }
-      
-      .dark-mode .text-gray-900 {
-        color: #f9fafb !important;
-      }
-      
-      .dark-mode .text-gray-700 {
-        color: #d1d5db !important;
-      }
-      
-      .dark-mode .text-gray-600 {
-        color: #9ca3af !important;
-      }
-      
-      .dark-mode .text-gray-500 {
-        color: #6b7280 !important;
-      }
-      
-      .dark-mode .border-gray-200 {
-        border-color: #374151 !important;
-      }
-      
-      .dark-mode .border-gray-100 {
-        border-color: #1f2937 !important;
-      }
-      
+      body.dark-mode {background-color: #111827; color: #f9fafb;}
+      .dark-mode .bg-white {background-color: #1f2937 !important;}
+      .dark-mode .bg-gray-50 {background-color: #111827 !important;}
+      .dark-mode .bg-gray-100 {background-color: #374151 !important;}
+      .dark-mode .text-gray-900 {color: #f9fafb !important;}
+      .dark-mode .text-gray-700 {color: #d1d5db !important;}
+      .dark-mode .text-gray-600 {color: #9ca3af !important;}
+      .dark-mode .text-gray-500 {color: #6b7280 !important;}
+      .dark-mode .border-gray-200 {border-color: #374151 !important;}
+      .dark-mode .border-gray-100 {border-color: #1f2937 !important;}
       .dark-mode select,
-      .dark-mode input,
-      .dark-mode textarea {
-        background-color: #374151 !important;
-        color: #f9fafb !important;
-        border-color: #4b5563 !important;
-      }
-      
-      .dark-mode select option {
-        background-color: #1f2937;
-        color: #f9fafb;
-      }
-      
-      .dark-mode input::placeholder {
-        color: #9ca3af !important;
-      }
-      
-      .dark-mode .bg-red-50 {
-        background-color: rgba(153, 27, 27, 0.2) !important;
-      }
-      
-      .dark-mode .text-red-800 {
-        color: #fca5a5 !important;
-      }
-      
-      .dark-mode .bg-orange-50 {
-        background-color: rgba(154, 52, 18, 0.2) !important;
-      }
-      
-      .dark-mode .text-orange-800 {
-        color: #fdba74 !important;
-      }
-      
-      .dark-mode .bg-blue-50 {
-        background-color: rgba(30, 58, 138, 0.3) !important;
-      }
-      
-      .dark-mode .shadow-sm {
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
-      }
-      
-      .dark-mode .shadow-md {
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
-      }
-      
-      .dark-mode .shadow-lg {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
-      }
-    `;
+      .dark-mode input {background-color: #374151 !important; color: #f9fafb !important; border-color: #4b5563 !important;}
+      .dark-mode textarea {background-color: #374151 !important; color: #f9fafb !important; border-color: #4b5563 !important;}
+      .dark-mode select option {background-color: #1f2937; color: #f9fafb;}
+      .dark-mode input::placeholder {color: #9ca3af !important;}
+      .dark-mode .bg-red-50 {background-color: rgba(153, 27, 27, 0.2) !important;}
+      .dark-mode .text-red-800 {color: #fca5a5 !important;}
+      .dark-mode .bg-orange-50 {background-color: rgba(154, 52, 18, 0.2) !important;}
+      .dark-mode .text-orange-800 {color: #fdba74 !important;}
+      .dark-mode .bg-blue-50 {background-color: rgba(30, 58, 138, 0.3) !important;}
+      .dark-mode .shadow-sm {box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;}
+      .dark-mode .shadow-md {box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;}
+      .dark-mode .shadow-lg {box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;}`;
     document.head.appendChild(style);
     return () => {
       if (document.head.contains(style)) {
