@@ -328,80 +328,6 @@ const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, 
   );
 };
 
-// I'll continue with the rest of the pages in the next artifact update...
-// For now, let me create a proper file structure guide
-
-const DiscGolfApp = () => {
-  const [view, setView] = useState('login');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [error, setError] = useState('');
-  const [selectedMatch, setSelectedMatch] = useState(null);
-  const [darkMode, setDarkMode] = useDarkMode();
-  const appData = useAppData();
-
-  // Authentication
-  const handleLogin = (playerName, pin) => {
-    const player = appData.players.find(p => p.name === playerName && p.pin === pin);
-    if (player) {
-      setCurrentUser(player);
-      setView('matches');
-      setError('');
-    } else {
-      setError('Invalid player name or PIN');
-    }
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setView('login');
-    setSelectedMatch(null);
-  };
-
-  const handleChangePin = (newPin) => {
-    const updatedPlayers = appData.players.map(p => 
-      p.id === currentUser.id ? { ...p, pin: newPin } : p
-    );
-    appData.setPlayers(updatedPlayers);
-    setCurrentUser({ ...currentUser, pin: newPin });
-    
-    localStorage.setItem('sheet-data', JSON.stringify({
-      players: updatedPlayers,
-      courses: appData.courses,
-      matches: appData.matches,
-      pools: appData.pools
-    }));
-    
-    setView('matches');
-    setError('');
-  };
-
-  // Render appropriate page
-  if (view === 'login') {
-    return <LoginPage 
-      players={appData.players}
-      onLogin={handleLogin}
-      error={error}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-      isOnline={appData.isOnline}
-    />;
-  }
-
-  if (view === 'changePin') {
-    return <ChangePinPage
-      currentUser={currentUser}
-      players={appData.players}
-      courses={appData.courses}
-      matches={appData.matches}
-      pools={appData.pools}
-      onBack={() => setView('matches')}
-      onPinChange={handleChangePin}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-    />;
-  }
-
- 
 // Matches Page
 const MatchesPage = ({ 
   currentUser, 
@@ -656,98 +582,6 @@ const MatchesPage = ({
     </div>
   );
 };
-
-const DiscGolfApp = () => {
-  const [view, setView] = useState('login');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [error, setError] = useState('');
-  const [selectedMatch, setSelectedMatch] = useState(null);
-  const [darkMode, setDarkMode] = useDarkMode();
-  const appData = useAppData();
-
-  // Authentication
-  const handleLogin = (playerName, pin) => {
-    const player = appData.players.find(p => p.name === playerName && p.pin === pin);
-    if (player) {
-      setCurrentUser(player);
-      setView('matches');
-      setError('');
-    } else {
-      setError('Invalid player name or PIN');
-    }
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setView('login');
-    setSelectedMatch(null);
-  };
-
-  const handleChangePin = (newPin) => {
-    const updatedPlayers = appData.players.map(p => 
-      p.id === currentUser.id ? { ...p, pin: newPin } : p
-    );
-    appData.setPlayers(updatedPlayers);
-    setCurrentUser({ ...currentUser, pin: newPin });
-    
-    localStorage.setItem('sheet-data', JSON.stringify({
-      players: updatedPlayers,
-      courses: appData.courses,
-      matches: appData.matches,
-      pools: appData.pools
-    }));
-    
-    setView('matches');
-    setError('');
-  };
-
-  // Render appropriate page
-  if (view === 'login') {
-    return <LoginPage 
-      players={appData.players}
-      onLogin={handleLogin}
-      error={error}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-      isOnline={appData.isOnline}
-    />;
-  }
-
-  if (view === 'changePin') {
-    return <ChangePinPage
-      currentUser={currentUser}
-      players={appData.players}
-      courses={appData.courses}
-      matches={appData.matches}
-      pools={appData.pools}
-      onBack={() => setView('matches')}
-      onPinChange={handleChangePin}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-    />;
-  }
-
-  if (view === 'matches') {
-    return <MatchesPage
-      currentUser={currentUser}
-      matches={appData.matches}
-      onLogout={handleLogout}
-      onChangePin={() => setView('changePin')}
-      onStartMatch={(match, startingHole) => {
-        setSelectedMatch(match);
-        setView('scoring');
-      }}
-      onReviewMatch={(match) => {
-        setSelectedMatch(match);
-        setView('review');
-      }}
-      onViewStandings={() => setView('standings')}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-      isOnline={appData.isOnline}
-      pendingUpdates={appData.pendingUpdates}
-    />;
-  }
 
 // Scoring Page
 const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => {
@@ -1044,8 +878,120 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
   );
 };
 
+// ============================================
+// MAIN APP COMPONENT
+// ============================================
 
-  // Note: Other pages (Standings, Review) to be implemented
+const DiscGolfApp = () => {
+  const [view, setView] = useState('login');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [error, setError] = useState('');
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [darkMode, setDarkMode] = useDarkMode();
+  const appData = useAppData();
+
+  // Authentication
+  const handleLogin = (playerName, pin) => {
+    const player = appData.players.find(p => p.name === playerName && p.pin === pin);
+    if (player) {
+      setCurrentUser(player);
+      setView('matches');
+      setError('');
+    } else {
+      setError('Invalid player name or PIN');
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setView('login');
+    setSelectedMatch(null);
+  };
+
+  const handleChangePin = (newPin) => {
+    const updatedPlayers = appData.players.map(p => 
+      p.id === currentUser.id ? { ...p, pin: newPin } : p
+    );
+    appData.setPlayers(updatedPlayers);
+    setCurrentUser({ ...currentUser, pin: newPin });
+    
+    localStorage.setItem('sheet-data', JSON.stringify({
+      players: updatedPlayers,
+      courses: appData.courses,
+      matches: appData.matches,
+      pools: appData.pools
+    }));
+    
+    setView('matches');
+    setError('');
+  };
+
+  // Render appropriate page
+  if (view === 'login') {
+    return <LoginPage 
+      players={appData.players}
+      onLogin={handleLogin}
+      error={error}
+      darkMode={darkMode}
+      setDarkMode={setDarkMode}
+      isOnline={appData.isOnline}
+    />;
+  }
+
+  if (view === 'changePin') {
+    return <ChangePinPage
+      currentUser={currentUser}
+      players={appData.players}
+      courses={appData.courses}
+      matches={appData.matches}
+      pools={appData.pools}
+      onBack={() => setView('matches')}
+      onPinChange={handleChangePin}
+      darkMode={darkMode}
+      setDarkMode={setDarkMode}
+    />;
+  }
+
+  if (view === 'matches') {
+    return <MatchesPage
+      currentUser={currentUser}
+      matches={appData.matches}
+      onLogout={handleLogout}
+      onChangePin={() => setView('changePin')}
+      onStartMatch={(match, startingHole) => {
+        setSelectedMatch({ match, startingHole });
+        setView('scoring');
+      }}
+      onReviewMatch={(match) => {
+        setSelectedMatch(match);
+        setView('review');
+      }}
+      onViewStandings={() => setView('standings')}
+      darkMode={darkMode}
+      setDarkMode={setDarkMode}
+      isOnline={appData.isOnline}
+      pendingUpdates={appData.pendingUpdates}
+    />;
+  }
+
+  if (view === 'scoring') {
+    return <ScoringPage
+      match={selectedMatch.match}
+      startingHole={selectedMatch.startingHole}
+      courses={appData.courses}
+      onCancel={() => {
+        setSelectedMatch(null);
+        setView('matches');
+      }}
+      onComplete={(scores, winner) => {
+        appData.submitMatchToSheet(selectedMatch.match.id, scores, winner);
+        setSelectedMatch(null);
+        setView('matches');
+      }}
+    />;
+  }
+
+  // Note: Other pages (Standings, Scoring, Review) to be implemented
   
   return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
     <div className="text-center">
