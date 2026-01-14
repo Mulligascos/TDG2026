@@ -1475,7 +1475,9 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
         )}
 
         {/* Scorecard Table */}
-        <h3 className={`font-bold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Scorecard</h3>
+       
+        <div className={`rounded-2xl shadow-sm p-6 mb-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <h3 className={`font-bold mb-4 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Scorecard</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -1508,8 +1510,9 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
                         {score.p1}
                       </td>
                     );
-<td className={`sticky right-0 px-2 py-2 text-center font-bold border-l-2 text-sm ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                    {(() => {
+                  })}
+                  <td className={`sticky right-0 px-2 py-2 text-center font-bold border-l-2 text-sm ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>                    
+					                    {(() => {
                       const totalScore = scores.filter(s => s.scored).reduce((sum, s) => sum + s.p1, 0);
                       let totalPar = 0;
                       scores.forEach((score, idx) => {
@@ -1523,7 +1526,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
                       return (
                         <span className={diff < 0 ? 'text-green-600' : diff > 0 ? 'text-red-600' : (darkMode ? 'text-gray-200' : 'text-gray-900')}>
                           {diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
-                                </span>
+                        </span>
                       );
                     })()}
                   </td>
@@ -1536,7 +1539,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
                 <tr>
                   <td className={`sticky left-0 py-2 pr-2 text-xs ${darkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-500'}`}></td>
                   {scores.map((score, idx) => {
-                    if (!score.scored) return null;
+					if (!score.scored) return null;
                     return (
                       <td key={idx} className={`px-1 py-2 text-center font-bold text-sm ${score.p2 < score.p1 ? (darkMode ? 'text-blue-400 bg-blue-900' : 'text-blue-600 bg-blue-50') : score.p1 === score.p2 ? (darkMode ? 'text-gray-400' : 'text-gray-600') : (darkMode ? 'text-gray-200' : 'text-gray-900')}`}>
                         {score.p2}
@@ -1566,7 +1569,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
               </tbody>
             </table>
           </div>
-      </div>
+        </div>
     </div>
   );
 };
