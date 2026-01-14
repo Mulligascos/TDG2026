@@ -1345,7 +1345,11 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
   const par = currentHole < 18 && course ? course.pars[actualHoleNumber] : 3;
   
   const player1FirstName = match.player1.split(' ')[0];
+  const P1nameParts = selectedMatch.player1.split(' ');
+    return P1nameParts.length > 1 ? `${P1nameParts[0]} ${P1nameParts[P1nameParts.length - 1][0]}` : P1nameParts[0];
   const player2FirstName = match.player2.split(' ')[0];
+  const P2nameParts = selectedMatch.player2.split(' ');
+    return P2nameParts.length > 1 ? `${P2nameParts[0]} ${P2nameParts[P2nameParts.length - 1][0]}` : P2nameParts[0];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
@@ -1490,10 +1494,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
               <tbody>
                 <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                   <td colSpan={scores.filter(s => s.scored).length + 2} className={`sticky left-0 px-2 py-1.5 font-bold text-xs ${darkMode ? 'bg-blue-900 text-gray-100' : 'bg-blue-50 text-gray-900'}`}>
-                    {(() => {
-                      const nameParts = selectedMatch.player1.split(' ');
-                      return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
-                    })()}
+                    {(() => {P1nameParts})()}
                   </td>
                 </tr>
                 <tr className={`border-b-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
@@ -1529,10 +1530,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
                 </tr>
                 <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                   <td colSpan={scores.filter(s => s.scored).length + 2} className={`sticky left-0 px-2 py-1.5 font-bold text-xs ${darkMode ? 'bg-blue-900 text-gray-100' : 'bg-blue-50 text-gray-900'}`}>
-                    {(() => {
-                      const nameParts = selectedMatch.player2.split(' ');
-                      return nameParts.length > 1 ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}` : nameParts[0];
-                    })()}
+                    {(() => {P2nameParts})()}
                   </td>
                 </tr>
                 <tr>
