@@ -1498,7 +1498,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
           </div>
         )}
 
-   {/* Scorecard Table */}
+        {/* Scorecard Table */}
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <h4 className="font-bold text-gray-900 mb-3">Scorecard</h4>
           <div className="overflow-x-auto">
@@ -1573,6 +1573,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
             </table>
           </div>
         </div>
+      </div>
     </div>
   );
 };
