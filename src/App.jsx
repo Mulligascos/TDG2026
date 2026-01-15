@@ -1167,12 +1167,12 @@ const StandingsPage = ({
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    #{match.player1.includes('Winner') ? match.player1 : '2 ' + {formatPlayerName(match.player1)}
-                                  </div>
-                                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    #{match.player2.includes('Winner') ? match.player2 : '3 ' + {formatPlayerName(match.player2)}
-                                  </div>
+  #{match.player1.includes('Winner') ? match.player1 : '2 ' + formatPlayerName(match.player1)}
+</div>
+<div className="text-gray-400 text-center my-0.5">vs</div>
+<div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+  #{match.player2.includes('Winner') ? match.player2 : '3 ' + formatPlayerName(match.player2)}
+</div>
                                 </div>
                               ))}
                             </div>
@@ -1188,12 +1188,12 @@ const StandingsPage = ({
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player1.includes('Winner') ? match.player1 : '#1 ' + {formatPlayerName(match.player1)}
-                                  </div>
-                                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player2.includes('Winner') ? 'Winner R16' : {formatPlayerName(match.player2)}
-                                  </div>
+  {match.player1.includes('Winner') ? match.player1 : '#1 ' + formatPlayerName(match.player1)}
+</div>
+<div className="text-gray-400 text-center my-0.5">vs</div>
+<div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+  {match.player2.includes('Winner') ? 'Winner R16' : formatPlayerName(match.player2)}
+</div>
                                 </div>
                               ))}
                             </div>
@@ -1208,12 +1208,12 @@ const StandingsPage = ({
                               {bracket.sf.map((match, idx) => (
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player1.includes('Winner') ? match.player1 : {formatPlayerName(match.player1)}
-                                  </div>
-                                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player2.includes('Winner') ? match.player2 : {formatPlayerName(match.player2)}
-                                  </div>
+  {match.player1.includes('Winner') ? match.player1 : formatPlayerName(match.player1)}
+</div>
+<div className="text-gray-400 text-center my-0.5">vs</div>
+<div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+  {match.player2.includes('Winner') ? match.player2 : formatPlayerName(match.player2)}
+</div>
                                 </div>
                             ))}
                             </div>
@@ -1225,18 +1225,18 @@ const StandingsPage = ({
                           <div className="flex-shrink-0 w-48">
                             <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
                             <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
-                              <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {bracket.final.player1.includes('Winner') ? bracket.final.player1 : bracket.final.player1.split(' ')[0]}
-                              </div>
-                              <div className="text-gray-400 text-center my-1 font-semibold">vs</div>
-                              <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {bracket.final.player2.includes('Winner') ? bracket.final.player2 : bracket.final.player2.split(' ')[0]}
-                              </div>
-                              {bracket.final.winner && bracket.final.winner !== 'Winner' && !bracket.final.winner.includes('Winner') && (
-                                <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
-                                  🏆 {bracket.final.winner.split(' ')[0]}
-                                </div>
-                              )}
+                             <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+  {bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}
+</div>
+<div className="text-gray-400 text-center my-1 font-semibold">vs</div>
+<div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+  {bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}
+</div>
+{bracket.final.winner && bracket.final.winner !== 'Winner' && !bracket.final.winner.includes('Winner') && (
+  <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
+    🏆 {formatPlayerName(bracket.final.winner)}
+  </div>
+)}
                             </div>
                           </div>
                         )}
