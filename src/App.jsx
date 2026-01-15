@@ -1093,11 +1093,11 @@ const StandingsPage = ({
                             <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                               <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
                               <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {{formatPlayerName(match.player1)}
+                                {formatPlayerName(match.player1)}
                               </div>
                               <div className="text-gray-400 text-center my-0.5">vs</div>
                               <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {{formatPlayerName(match.player2)}
+                                {formatPlayerName(match.player2)}
                               </div>
                             </div>
                           ))}
@@ -1116,11 +1116,11 @@ const StandingsPage = ({
                             <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                               <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
                               <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {{formatPlayerName(match.player1)}
+                                {formatPlayerName(match.player1)}
                               </div>
                               <div className="text-gray-400 text-center my-0.5">vs</div>
                               <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {{formatPlayerName(match.player2)}
+                                {formatPlayerName(match.player2)}
                               </div>
                             </div>
                           ))}
