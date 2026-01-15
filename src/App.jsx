@@ -371,9 +371,9 @@ const MatchesPage = ({
   isOnline,
   pendingUpdates
 }) => {
-  const [matchFilter, setMatchFilter] = useState('all');
+  const [matchFilter, setMatchFilter] = useState('player');
   const [selectedFilterDate, setSelectedFilterDate] = useState('');
-  const [selectedFilterPlayer, setSelectedFilterPlayer] = useState('');
+  const [selectedFilterPlayer, setSelectedFilterPlayer] = useState(currentUser.name);
   const [showStartHoleModal, setShowStartHoleModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [startingHole, setStartingHole] = useState(1);
