@@ -215,66 +215,108 @@ const useAppData = () => {
 // PAGE COMPONENTS
 // ============================================
 
+import { useState } from 'react';
+
 // Login Page
-const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline }) => (
-  <div className="min-h-screen bg-white transition-colors">
-    <div className="max-w-md mx-auto px-4 py-8">
-      <div className="absolute top-4 right-4">
-        <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-      </div>
-      <div className="text-center mb-12 mt-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-lg" 
-             style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
-          <Trophy className="text-white" size={40} />
+const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, currentUser }) => {
+  const [selectedPlayer, setSelectedPlayer] = useState(currentUser?.name || '');
+
+  const handlePlayerChange = (e) => {
+    setSelectedPlayer(e.target.value);
+  };
+
+  return (
+    <div className="min-h-screen bg-white transition-colors">
+      <div className="max-w-md mx-auto px-4 py-8">
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          >
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Matchplay</h1>
-        <p className="text-gray-500">Disc Golf Tournament Tracker</p>
-      </div>
-      
-      {!isOnline && (
-        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded-r">
-          <p className="text-sm text-orange-800">You're offline. Data will sync when connected.</p>
+        <div className="text-center mb-12 mt-8">
+          <div
+            className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-lg"
+            style={{
+              background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`,
+            }}
+          >
+            <Trophy className="text-white" size={40} />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Matchplay</h1>
+          <p className="text-gray-500">Disc Golf Tournament Tracker</p>
         </div>
-      )}
-      
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        onLogin(formData.get('player'), formData.get('pin'));
-      }} className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Select Player</label>
-          <select name="player" required className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2">
-            <option value="">Choose your name</option>
-            {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">PIN</label>
-          <input type="password" name="pin" maxLength="4" pattern="[0-9]{4}" placeholder="Enter 4-digit PIN" required
-                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2" />
-        </div>
-        
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
-            <p className="text-sm text-red-800">{error}</p>
+
+        {!isOnline && (
+          <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded-r">
+            <p className="text-sm text-orange-800">You're offline. Data will sync when connected.</p>
           </div>
         )}
-        
-        <button type="submit" className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
-                style={{ backgroundColor: BRAND_PRIMARY, boxShadow: `0 10px 15px -3px ${BRAND_PRIMARY}30` }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = BRAND_ACCENT}
-                onMouseLeave={(e) => e.target.style.backgroundColor = BRAND_PRIMARY}>
-          Sign In
-        </button>
-      </form>
-    </div>
-  </div>
-);
 
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            onLogin(formData.get('player'), formData.get('pin'));
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Select Player</label>
+            <select
+              name="player"
+              required
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2"
+              value={selectedPlayer}
+              onChange={handlePlayerChange}
+            >
+              <option value="">Choose your name</option>
+              {players.map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">PIN</label>
+            <input
+              type="password"
+              name="pin"
+              maxLength="4"
+              pattern="[0-9]{4}"
+              placeholder="Enter 4-digit PIN"
+              required
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2"
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
+            style={{
+              backgroundColor: BRAND_PRIMARY,
+              boxShadow: `0 10px 15px -3px ${BRAND_PRIMARY}30`,
+            }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = BRAND_ACCENT)}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = BRAND_PRIMARY)}
+          >
+            Sign In
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 // Change PIN Page
 const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, onPinChange, darkMode, setDarkMode }) => {
   const [newPin, setNewPin] = useState('');
