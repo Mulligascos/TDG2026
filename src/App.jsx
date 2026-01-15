@@ -15,6 +15,16 @@ const BRAND_ACCENT = '#228B22';
 // CUSTOM HOOKS
 // ============================================
 
+// Helper function to format names with last initial
+const formatPlayerName = (fullName) => {
+  if (!fullName) return '';
+  const parts = fullName.split(' ');
+  if (parts.length === 1) return parts[0];
+  const firstName = parts[0];
+  const lastInitial = parts[parts.length - 1][0];
+  return `${firstName} ${lastInitial}`;
+};
+
 // Dark Mode Hook
 const useDarkMode = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -480,7 +490,7 @@ const MatchesPage = ({
                   </div>
                   <div>
                     <p className="font-bold text-gray-900 text-lg mb-1">
-                      {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
+                      {formatPlayerName(match.player1)} <span className="text-gray-400 font-normal">vs</span> {formatPlayerName(match.player2)}
                     </p>
                     <div className="flex items-center text-sm text-gray-600">
                       <MapPin size={14} className="mr-1" />
@@ -1035,7 +1045,7 @@ const StandingsPage = ({
                               >
                                 <td className="py-3 pr-2 text-gray-600 font-semibold text-sm">{idx + 1}</td>
                                 <td className="py-3 pr-2 font-semibold text-gray-900 text-sm">
-                                  {standing.name.split(' ')[0]}
+                                  {formatPlayerName(standing.name)}
                                 </td>
                                 <td className="py-3 px-2 text-center text-gray-900 font-bold text-base">{standing.points}</td>
                                 <td className={`py-3 pl-2 text-center font-bold text-sm ${
@@ -1083,11 +1093,11 @@ const StandingsPage = ({
                             <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                               <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
                               <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {match.player1.split(' ')[0]}
+                                {{formatPlayerName(match.player1)}
                               </div>
                               <div className="text-gray-400 text-center my-0.5">vs</div>
                               <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {match.player2.split(' ')[0]}
+                                {{formatPlayerName(match.player2)}
                               </div>
                             </div>
                           ))}
@@ -1106,11 +1116,11 @@ const StandingsPage = ({
                             <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                               <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
                               <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {match.player1.split(' ')[0]}
+                                {{formatPlayerName(match.player1)}
                               </div>
                               <div className="text-gray-400 text-center my-0.5">vs</div>
                               <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {match.player2.split(' ')[0]}
+                                {{formatPlayerName(match.player2)}
                               </div>
                             </div>
                           ))}
@@ -1157,11 +1167,11 @@ const StandingsPage = ({
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    #{match.player1.includes('Winner') ? match.player1 : '2 ' + match.player1.split(' ')[0]}
+                                    #{match.player1.includes('Winner') ? match.player1 : '2 ' + {formatPlayerName(match.player1)}
                                   </div>
                                   <div className="text-gray-400 text-center my-0.5">vs</div>
                                   <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    #{match.player2.includes('Winner') ? match.player2 : '3 ' + match.player2.split(' ')[0]}
+                                    #{match.player2.includes('Winner') ? match.player2 : '3 ' + {formatPlayerName(match.player2)}
                                   </div>
                                 </div>
                               ))}
@@ -1178,11 +1188,11 @@ const StandingsPage = ({
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player1.includes('Winner') ? match.player1 : '#1 ' + match.player1.split(' ')[0]}
+                                    {match.player1.includes('Winner') ? match.player1 : '#1 ' + {formatPlayerName(match.player1)}
                                   </div>
                                   <div className="text-gray-400 text-center my-0.5">vs</div>
                                   <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player2.includes('Winner') ? 'Winner R16' : match.player2.split(' ')[0]}
+                                    {match.player2.includes('Winner') ? 'Winner R16' : {formatPlayerName(match.player2)}
                                   </div>
                                 </div>
                               ))}
@@ -1198,11 +1208,11 @@ const StandingsPage = ({
                               {bracket.sf.map((match, idx) => (
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player1.includes('Winner') ? match.player1 : match.player1.split(' ')[0]}
+                                    {match.player1.includes('Winner') ? match.player1 : {formatPlayerName(match.player1)}
                                   </div>
                                   <div className="text-gray-400 text-center my-0.5">vs</div>
                                   <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player2.includes('Winner') ? match.player2 : match.player2.split(' ')[0]}
+                                    {match.player2.includes('Winner') ? match.player2 : {formatPlayerName(match.player2)}
                                   </div>
                                 </div>
                             ))}
@@ -1373,8 +1383,8 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
   const actualHoleNumber = currentHole < 18 ? ((Number(startingHole) - 1 + currentHole) % 18) + 1 : currentHole - 17;
   const par = currentHole < 18 && course ? course.pars[actualHoleNumber] : 3;
   
-  const player1FirstName = match.player1.split(' ')[0];
-  const player2FirstName = match.player2.split(' ')[0];
+  const player1FirstName = formatPlayerName(match.player1);
+const player2FirstName = formatPlayerName(match.player2);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
@@ -1478,25 +1488,25 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
         </div>
 
         {/* Match Status / Submit Button */}
-        {status.isComplete ? (
-          <button 
-            onClick={handleComplete}
-            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors mb-4"
-          >
-            Submit Scorecard
-          </button>
-        ) : status.needsPlayoff && currentHole >= 17 && scores[currentHole]?.scored ? (
-          <button 
-            onClick={addPlayoffHole}
-            className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold hover:bg-orange-700 transition-colors mb-4"
-          >
-            Add Playoff Hole
-          </button>
-        ) : (
-          <div className="w-full bg-gray-400 text-white py-3 rounded-xl font-semibold text-center mb-4">
-            Match In Progress
-          </div>
-        )}
+{status.isComplete ? (
+  <button 
+    onClick={handleComplete}
+    className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors mb-4"
+  >
+    Submit Scorecard
+  </button>
+) : status.needsPlayoff && scores[currentHole]?.scored ? (
+  <button 
+    onClick={addPlayoffHole}
+    className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold hover:bg-orange-700 transition-colors mb-4"
+  >
+    Add Playoff Hole
+  </button>
+) : (
+  <div className="w-full bg-gray-400 text-white py-3 rounded-xl font-semibold text-center mb-4">
+    Match In Progress
+  </div>
+)}
 
         {/* Scorecard Table */}
         <div className="bg-white rounded-2xl shadow-sm p-4">
@@ -1674,21 +1684,24 @@ const DiscGolfApp = () => {
   }
 
   if (view === 'scoring') {
-    return <ScoringPage
-      match={selectedMatch.match}
-      startingHole={selectedMatch.startingHole}
-      courses={appData.courses}
-      onCancel={() => {
-        setSelectedMatch(null);
-        setView('matches');
-      }}
-      onComplete={(scores, winner) => {
-        appData.submitMatchToSheet(selectedMatch.match.id, scores, winner);
-        setSelectedMatch(null);
-        setView('matches');
-      }}
-    />;
-  }
+  return <ScoringPage
+    match={selectedMatch.match}
+    startingHole={selectedMatch.startingHole}
+    courses={appData.courses}
+    onCancel={() => {
+      if (selectedMatch && selectedMatch.match) {
+        localStorage.removeItem(`match-progress-${selectedMatch.match.id}`);
+      }
+      setSelectedMatch(null);
+      setView('matches');
+    }}
+    onComplete={(scores, winner) => {
+      appData.submitMatchToSheet(selectedMatch.match.id, scores, winner);
+      setSelectedMatch(null);
+      setView('matches');
+    }}
+  />;
+}
 
    if (view === 'standings') {
     return <StandingsPage
