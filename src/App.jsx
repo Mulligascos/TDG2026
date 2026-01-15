@@ -1462,7 +1462,7 @@ const player2FirstName = formatPlayerName(match.player2);
         {/* Match Score Display */}
         <div className="bg-gray-100 rounded-2xl p-4 mb-4 flex items-center justify-between">
           <div className="font-semibold text-gray-900">{player1FirstName}</div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-12">
             <span className="text-3xl font-bold text-blue-600">{status.p1Holes}</span>
             <span className="text-3xl font-bold text-blue-600">{status.p2Holes}</span>
           </div>
@@ -1487,7 +1487,7 @@ const player2FirstName = formatPlayerName(match.player2);
           </button>
         </div>
 
-        {/* Match Status / Submit Button */}
+{/* Match Status / Submit Button */}
 {status.isComplete ? (
   <button 
     onClick={handleComplete}
@@ -1495,7 +1495,7 @@ const player2FirstName = formatPlayerName(match.player2);
   >
     Submit Scorecard
   </button>
-) : status.needsPlayoff && scores[currentHole]?.scored ? (
+) : status.needsPlayoff && currentHole >= 17 && scores[currentHole]?.scored ? (
   <button 
     onClick={addPlayoffHole}
     className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold hover:bg-orange-700 transition-colors mb-4"
