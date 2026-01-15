@@ -1629,6 +1629,146 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
     </div>
   );
 };
+
+// Add the new ReviewPage component
+const ReviewPage = ({ match, onCancel }) => {
+  const [scores, setScores] = useState(match.scoresJson || []);
+  const [currentHole, setCurrentHole] = useState(0);
+  const [startingHole, setStartingHole] = useState(1); // default, can be passed as prop
+
+  // Assume match contains course info if needed, or pass it as a prop
+  // For simplicity, we will just use a default par value if course info is missing
+  const course = match.course; // or pass as prop
+
+  // Player names
+  const player1Name = formatPlayerName(match.player1);
+  const player2Name = formatPlayerName(match.player2);
+
+  useEffect(() => {
+    if (match.scoresJson && match.scoresJson.length > 0) {
+      setScores(match.scoresJson);
+    }
+  }, [match]);
+
+  const calculateVsPar = (playerScores) => {
+    let totalScore = 0;
+    let totalPar = 0;
+    scores.forEach((score, idx) => {
+      if (score.scored) {
+        totalScore += score[playerScores];
+        const actualHoleNumber = ((Number(startingHole) - 1 + idx) % 18) + 1;
+        const par = course?.pars[actualHoleNumber] || 3;
+        totalPar += par;
+      }
+    });
+    const diff = totalScore - totalPar;
+    if (diff === 0) return 'E';
+    if (diff < 0) return String(diff);
+    return `+${diff}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-6">
+      {/* Header with Cancel Button */}
+      <div className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+          <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
+            ← Back to Matches
+          </button>
+        </div>
+      </div>
+
+      {/* Match Info */}
+      <div className="max-w-md mx-auto px-4 py-4">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          {player1Name} <span className="text-gray-400 font-normal">vs</span> {player2Name}
+        </h2>
+        <div className="flex items-center text-sm text-gray-500 mb-4">
+          <MapPin size={14} className="mr-1" /> {match.venue}
+        </div>
+
+        {/* Hole info */}
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900">
+              Hole {scores.length > 0 ? ((Number(startingHole) - 1 + currentHole) % 18) + 1 : 1}
+            </h3>
+            <p className="text-gray-500 text-sm">Par {course?.pars[((Number(startingHole) - 1 + currentHole) % 18) + 1] || 3}</p>
+          </div>
+        </div>
+
+        {/* Scorecard display (read-only) */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          <h4 className="font-bold text-gray-900 mb-3">Scorecard</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-gray-200">
+                  <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs sticky left-0 bg-white">Hole</th>
+                  {scores.slice(0, 18).map((_, idx) => {
+                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
+                    return (
+                      <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[32px]">
+                        {holeNum}
+                      </th>
+                    );
+                  })}
+                  {scores.length > 18 && scores.slice(18).map((_, idx) => (
+                    <th key={`playoff-${idx}`} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[32px]">
+                      P{idx + 1}
+                    </th>
+                  ))}
+                  <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-xs border-l-2 border-gray-200 sticky right-0 bg-white">vs Par</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Player 1 Row */}
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player1Name}</td>
+                  {scores.map((score, idx) => {
+                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
+                    return (
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
+                        score.scored ? (score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900') : 'text-gray-400'
+                      }`}>
+                        {score.scored ? score.p1 : '-'}
+                      </td>
+                    );
+                  })}
+                  <td className={`py-2 pl-2 text-center font-bold text-xs border-l-2 border-gray-200 sticky right-0 bg-white ${
+                    calculateVsPar('p1').includes('-') ? 'text-green-600' : calculateVsPar('p1').includes('+') ? 'text-red-600' : 'text-gray-900'
+                  }`}>
+                    {calculateVsPar('p1')}
+                  </td>
+                </tr>
+                {/* Player 2 Row */}
+                <tr>
+                  <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player2Name}</td>
+                  {scores.map((score, idx) => {
+                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
+                    return (
+                      <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
+                        score.scored ? (score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p2 === score.p1 ? 'text-gray-600' : 'text-gray-900') : 'text-gray-400'
+                      }`}>
+                        {score.scored ? score.p2 : '-'}
+                      </td>
+                    );
+                  })}
+                  <td className={`py-2 pl-2 text-center font-bold text-xs border-l-2 border-gray-200 sticky right-0 bg-white ${
+                    calculateVsPar('p2').includes('-') ? 'text-green-600' : calculateVsPar('p2').includes('+') ? 'text-red-600' : 'text-gray-900'
+                  }`}>
+                    {calculateVsPar('p2')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============================================
 // MAIN APP COMPONENT
 // ============================================
@@ -1759,14 +1899,24 @@ const DiscGolfApp = () => {
       pendingUpdates={appData.pendingUpdates}
     />;
   }          
-
+if (view === 'review') {
+    return (
+      <ReviewPage
+        match={selectedMatch}
+        onCancel={() => {
+          setSelectedMatch(null);
+          setView('matches');
+        }}
+      />
+    );
+  }
   
-  // Note: Review Page under construction
+ 
   
   return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
     <div className="text-center">
       <Trophy size={48} className="mx-auto mb-4 text-gray-400" />
-      <p className="text-gray-600">Review page under construction...</p>
+      <p className="text-gray-600">Page under construction...</p>
       <button 
         onClick={handleLogout}
         className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
