@@ -1254,7 +1254,6 @@ const StandingsPage = ({
 };
 
 
-                        
 // Scoring Page
 const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => {
   const [scores, setScores] = useState([]);
@@ -1271,17 +1270,14 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       setCurrentHole(progress.currentHole);
     } else {
       const startHoleNum = Number(startingHole);
-      // Create scores for all 18 holes with pars based on actual hole numbers
       const initScores = Array(18).fill(null).map((_, idx) => {
-        // Calculate the actual hole number based on starting hole and wrapping
         const actualHoleNumber = ((startHoleNum - 1 + idx) % 18) + 1;
         const par = course && course.pars[actualHoleNumber] ? course.pars[actualHoleNumber] : 3;
-        
         return { p1: par, p2: par, scored: false };
       });
       
       setScores(initScores);
-      setCurrentHole(0); // Start at first position (which represents the starting hole)
+      setCurrentHole(0);
     }
   }, [match.id, startingHole, course]);
 
@@ -1311,29 +1307,32 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       }
     });
     
-    const holesRemaining = Math.max(0, 18 - holesPlayed);
     const lead = Math.abs(p1Holes - p2Holes);
     const leader = p1Holes > p2Holes ? match.player1 : 
                    p2Holes > p1Holes ? match.player2 : null;
     
-    const isComplete = (holesPlayed >= 18 && p1Holes !== p2Holes) || (lead > holesRemaining && holesPlayed > 0);
-    const needsPlayoff = holesPlayed === 18 && p1Holes === p2Holes;
+    // Match is complete if there's a leader after 18+ holes, or if lead is insurmountable
+    const holesRemaining = Math.max(0, scores.length - holesPlayed);
+    const isComplete = (holesPlayed >= 18 && leader !== null) || (lead > holesRemaining && holesPlayed > 0);
+    
+    // Need playoff if tied after completing 18+ holes
+    const needsPlayoff = holesPlayed >= 18 && p1Holes === p2Holes;
     
     return { p1Holes, p2Holes, holesPlayed, lead, leader, isComplete, needsPlayoff };
   };
 
-const recordScore = () => {
-  if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
-    const newScores = [...scores];
-    newScores[currentHole] = { ...newScores[currentHole], scored: true };
-    setScores(newScores);
-    
-    // Move to next hole if not at the end
-    if (currentHole < scores.length - 1) {
-      setCurrentHole(currentHole + 1);
+  const recordScore = () => {
+    if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
+      const newScores = [...scores];
+      newScores[currentHole] = { ...newScores[currentHole], scored: true };
+      setScores(newScores);
+      
+      // Always allow moving to next hole if one exists
+      if (currentHole < scores.length - 1) {
+        setCurrentHole(currentHole + 1);
+      }
     }
-  }
-};
+  };
 
   const updateScore = (player, delta) => {
     const newScores = [...scores];
@@ -1347,8 +1346,9 @@ const recordScore = () => {
 
   const addPlayoffHole = () => {
     const playoffPar = course && course.pars[1] ? course.pars[1] : 3;
-    setScores([...scores, { p1: playoffPar, p2: playoffPar, scored: false }]);
-    setCurrentHole(scores.length);
+    const newScores = [...scores, { p1: playoffPar, p2: playoffPar, scored: false }];
+    setScores(newScores);
+    setCurrentHole(scores.length); // Move to the new playoff hole
   };
 
   const handleComplete = () => {
@@ -1366,7 +1366,6 @@ const recordScore = () => {
     scores.forEach((score, idx) => {
       if (score.scored) {
         totalScore += playerScores === 'p1' ? score.p1 : score.p2;
-        // Calculate actual hole number with wrapping
         const actualHoleNumber = idx < 18 ? ((Number(startingHole) - 1 + idx) % 18) + 1 : 1;
         const par = course && course.pars[actualHoleNumber] ? course.pars[actualHoleNumber] : 3;
         totalPar += par;
@@ -1380,12 +1379,11 @@ const recordScore = () => {
   };
 
   const status = calculateMatchStatus();
-  // Calculate the actual hole number being played (with wrapping)
   const actualHoleNumber = currentHole < 18 ? ((Number(startingHole) - 1 + currentHole) % 18) + 1 : currentHole - 17;
   const par = currentHole < 18 && course ? course.pars[actualHoleNumber] : 3;
   
   const player1FirstName = formatPlayerName(match.player1);
-const player2FirstName = formatPlayerName(match.player2);
+  const player2FirstName = formatPlayerName(match.player2);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
@@ -1396,7 +1394,7 @@ const player2FirstName = formatPlayerName(match.player2);
           </button>
           
           <h2 className="text-xl font-bold text-gray-900">
-            {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
+            {formatPlayerName(match.player1)} <span className="text-gray-400 font-normal">vs</span> {formatPlayerName(match.player2)}
           </h2>
           <div className="flex items-center text-sm text-gray-500 mt-1">
             <MapPin size={14} className="mr-1" />
@@ -1470,44 +1468,44 @@ const player2FirstName = formatPlayerName(match.player2);
           <div className="font-semibold text-gray-900">{player2FirstName}</div>
         </div>
 
-       {/* Action Buttons */}
-<div className="flex gap-3 mb-4">
-  <button 
-    onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
-    disabled={currentHole === 0}
-    className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-  >
-    Previous Hole
-  </button>
-  <button 
-    onClick={recordScore}
-    disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
-    className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-  >
-    Next Hole
-  </button>
-</div>
+        {/* Action Buttons */}
+        <div className="flex gap-3 mb-4">
+          <button 
+            onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
+            disabled={currentHole === 0}
+            className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Previous Hole
+          </button>
+          <button 
+            onClick={recordScore}
+            disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
+            className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Next Hole
+          </button>
+        </div>
 
-{/* Match Status / Submit Button */}
-{status.isComplete ? (
-  <button 
-    onClick={handleComplete}
-    className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors mb-4"
-  >
-    Submit Scorecard
-  </button>
-) : status.needsPlayoff && currentHole >= 17 && scores[currentHole]?.scored ? (
-  <button 
-    onClick={addPlayoffHole}
-    className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold hover:bg-orange-700 transition-colors mb-4"
-  >
-    Add Playoff Hole
-  </button>
-) : (
-  <div className="w-full bg-gray-400 text-white py-3 rounded-xl font-semibold text-center mb-4">
-    Match In Progress
-  </div>
-)}
+        {/* Match Status / Submit Button */}
+        {status.isComplete ? (
+          <button 
+            onClick={handleComplete}
+            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors mb-4"
+          >
+            Submit Scorecard
+          </button>
+        ) : status.needsPlayoff ? (
+          <button 
+            onClick={addPlayoffHole}
+            className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold hover:bg-orange-700 transition-colors mb-4"
+          >
+            Add Playoff Hole
+          </button>
+        ) : (
+          <div className="w-full bg-gray-400 text-white py-3 rounded-xl font-semibold text-center mb-4">
+            Match In Progress
+          </div>
+        )}
 
         {/* Scorecard Table */}
         <div className="bg-white rounded-2xl shadow-sm p-4">
@@ -1525,6 +1523,11 @@ const player2FirstName = formatPlayerName(match.player2);
                       </th>
                     );
                   })}
+                  {scores.length > 18 && scores.slice(18).map((_, idx) => (
+                    <th key={`playoff-${idx}`} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[32px]">
+                      P{idx + 1}
+                    </th>
+                  ))}
                   <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-xs border-l-2 border-gray-200 sticky right-0 bg-white">vs Par</th>
                 </tr>
               </thead>
@@ -1532,9 +1535,8 @@ const player2FirstName = formatPlayerName(match.player2);
                 {/* Player 1 Row */}
                 <tr className="border-b border-gray-100">
                   <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player1FirstName}</td>
-                  {scores.slice(0, 18).map((score, idx) => {
-                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
-                    const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                  {scores.map((score, idx) => {
+                    const holeNum = idx < 18 ? ((Number(startingHole) - 1 + idx) % 18) + 1 : 1;
                     return (
                       <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
                         !score.scored ? 'text-gray-400' :
@@ -1558,9 +1560,8 @@ const player2FirstName = formatPlayerName(match.player2);
                 {/* Player 2 Row */}
                 <tr>
                   <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player2FirstName}</td>
-                  {scores.slice(0, 18).map((score, idx) => {
-                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
-                    const par = course && course.pars[holeNum] ? course.pars[holeNum] : 3;
+                  {scores.map((score, idx) => {
+                    const holeNum = idx < 18 ? ((Number(startingHole) - 1 + idx) % 18) + 1 : 1;
                     return (
                       <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
                         !score.scored ? 'text-gray-400' :
