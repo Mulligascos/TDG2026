@@ -1322,17 +1322,18 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
     return { p1Holes, p2Holes, holesPlayed, lead, leader, isComplete, needsPlayoff };
   };
 
-  const recordScore = () => {
-    if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
-      const newScores = [...scores];
-      newScores[currentHole] = { ...newScores[currentHole], scored: true };
-      setScores(newScores);
-      
-      if (currentHole < scores.length - 1) {
-        setCurrentHole(currentHole + 1);
-      }
+const recordScore = () => {
+  if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
+    const newScores = [...scores];
+    newScores[currentHole] = { ...newScores[currentHole], scored: true };
+    setScores(newScores);
+    
+    // Move to next hole if not at the end
+    if (currentHole < scores.length - 1) {
+      setCurrentHole(currentHole + 1);
     }
-  };
+  }
+};
 
   const updateScore = (player, delta) => {
     const newScores = [...scores];
@@ -1469,23 +1470,23 @@ const player2FirstName = formatPlayerName(match.player2);
           <div className="font-semibold text-gray-900">{player2FirstName}</div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 mb-4">
-          <button 
-            onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
-            disabled={currentHole === 0}
-            className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Previous Hole
-          </button>
-          <button 
-            onClick={recordScore}
-            disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
-            className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Next Hole
-          </button>
-        </div>
+       {/* Action Buttons */}
+<div className="flex gap-3 mb-4">
+  <button 
+    onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
+    disabled={currentHole === 0}
+    className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+  >
+    Previous Hole
+  </button>
+  <button 
+    onClick={recordScore}
+    disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
+    className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+  >
+    Next Hole
+  </button>
+</div>
 
 {/* Match Status / Submit Button */}
 {status.isComplete ? (
