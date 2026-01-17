@@ -215,9 +215,12 @@ const useAppData = () => {
 // PAGE COMPONENTS
 // ============================================
 
-// Login Page
 const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, currentUser }) => {
-  const [selectedPlayer, setSelectedPlayer] = useState(currentUser?.name || '');
+  const [selectedPlayer, setSelectedPlayer] = useState(() => {
+    // Check localStorage for last logged-in user
+    const lastUser = localStorage.getItem('lastLoggedInUser');
+    return lastUser || currentUser?.name || '';
+  });
 
   const handlePlayerChange = (e) => {
     setSelectedPlayer(e.target.value);
@@ -1782,9 +1785,11 @@ const DiscGolfApp = () => {
   const appData = useAppData();
 
   // Authentication
-  const handleLogin = (playerName, pin) => {
+   const handleLogin = (playerName, pin) => {
     const player = appData.players.find(p => p.name === playerName && p.pin === pin);
     if (player) {
+      // Save the username to localStorage for next time
+      localStorage.setItem('lastLoggedInUser', playerName);
       setCurrentUser(player);
       setView('matches');
       setError('');
