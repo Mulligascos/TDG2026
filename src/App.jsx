@@ -177,22 +177,41 @@ const useAppData = () => {
   };
 
   const submitMatchToSheet = async (matchId, finalScores, winner) => {
-    if (!isOnline) {
-      const updates = [...pendingUpdates, { matchId, scores: finalScores, winner }];
-      setPendingUpdates(updates);
-      localStorage.setItem('pending-updates', JSON.stringify(updates));
-      return;
-    }
+  if (!isOnline) {
+    const updates = [...pendingUpdates, { matchId, scores: finalScores, winner }];
+    setPendingUpdates(updates);
+    localStorage.setItem('pending-updates', JSON.stringify(updates));
+    return;
+  }
 
-    try {
-      const updatedMatches = matches.map(m => 
-        m.id === matchId ? { ...m, scoresJson: finalScores, winner, status: 'Completed' } : m
-      );
-      setMatches(updatedMatches);
-      
-      localStorage.setItem('sheet-data', JSON.stringify({
-        players, courses, matches: updatedMatches, pools
-      }));
+  try {
+    const match = matches.find(m => m.id === matchId);
+    const updatedMatches = matches.map(m => 
+      m.id === matchId ? { ...m, scoresJson: finalScores, winner, status: 'Completed' } : m
+    );
+    setMatches(updatedMatches);
+    
+    // Calculate points to update in pools
+    const updatedPools = pools.map(p => {
+      if (p.player === match.player1 || p.player === match.player2) {
+        const isWinner = p.player === winner;
+        const isTie = !winner || winner === 'Tie';
+        
+        return {
+          ...p,
+          played: p.played + 1,
+          win: isWinner ? p.win + 1 : p.win,
+          loss: (!isWinner && !isTie) ? p.loss + 1 : p.loss,
+          points: p.points + (isWinner ? 3 : isTie ? 1 : 0)
+        };
+      }
+      return p;
+    });
+    setPools(updatedPools);
+    
+    localStorage.setItem('sheet-data', JSON.stringify({
+      players, courses, matches: updatedMatches, pools: updatedPools
+    }));
       
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
@@ -688,6 +707,9 @@ const StandingsPage = ({
 
       let holesWon = 0;
       let holesLost = 0;
+      let matchWins = 0;
+      let matchLosses = 0;
+      let matchTies = 0;
 
       poolMatches.forEach(match => {
         const isPlayer1 = match.player1 === player.player;
@@ -707,18 +729,28 @@ const StandingsPage = ({
         if (isPlayer1) {
           holesWon += p1Holes;
           holesLost += p2Holes;
+          if (match.winner === player.player) matchWins++;
+        else if (match.winner && match.winner !== player.player) matchLosses++;
+        else if (p1Holes === p2Holes) matchTies++; // tie condition
         } else {
           holesWon += p2Holes;
           holesLost += p1Holes;
+          if (match.winner === player.player) matchWins++;
+        else if (match.winner && match.winner !== player.player) matchLosses++;
+        else if (p1Holes === p2Holes) matchTies++; // tie condition
         }
       });
-
+       const calculatedPoints = (matchWins * 3) + (matchTies * 1);
+      
       return {
         name: player.player,
-        points: player.points,
+        points: calculatedPoints,
         holesWon,
         holesLost,
-        holeDiff: holesWon - holesLost
+        holeDiff: holesWon - holesLost,
+        played: poolMatches.length,
+      win: matchWins,
+      loss: matchLosses
       };
     });
 
