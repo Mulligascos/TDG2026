@@ -1722,6 +1722,45 @@ const ReviewPage = ({ match, onCancel }) => {
           <MapPin size={14} className="mr-1" /> {match.venue}
         </div>
 
+        {/* Match Summary */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          <h4 className="font-bold text-gray-900 mb-3">Match Summary</h4>
+          <div className="flex items-center justify-between">
+            <div className="text-center flex-1">
+              <div className="text-sm text-gray-500 mb-1">{player1Name}</div>
+              <div className="text-3xl font-bold text-blue-600">
+                {(() => {
+                  let p1Holes = 0;
+                  scores.forEach(score => {
+                    if (score.scored && score.p1 < score.p2) p1Holes++;
+                  });
+                  return p1Holes;
+                })()}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Holes Won</div>
+            </div>
+            <div className="text-2xl text-gray-400 font-light px-4">—</div>
+            <div className="text-center flex-1">
+              <div className="text-sm text-gray-500 mb-1">{player2Name}</div>
+              <div className="text-3xl font-bold text-blue-600">
+                {(() => {
+                  let p2Holes = 0;
+                  scores.forEach(score => {
+                    if (score.scored && score.p2 < score.p1) p2Holes++;
+                  });
+                  return p2Holes;
+                })()}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Holes Won</div>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+            <div className="text-sm font-semibold text-gray-700">
+              Winner: <span className="text-green-600">{formatPlayerName(match.winner)}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Hole info */}
         <div className="flex items-end justify-between mb-6">
           <div>
