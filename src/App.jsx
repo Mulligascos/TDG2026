@@ -480,7 +480,7 @@ const MatchesPage = ({
 
   return (
     <div className="min-h-screen bg-gray-50 transition-colors">
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
+      <div className="text-white sticky top-0 z-10 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
         <div className="max-w-md mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
@@ -1037,7 +1037,7 @@ const StandingsPage = ({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white sticky top-0 z-10 shadow-lg">
+      <div className="text-white sticky top-0 z-10 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
         <div className="max-w-md mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
