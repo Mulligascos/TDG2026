@@ -1107,9 +1107,12 @@ const StandingsPage = ({
                           <thead>
                             <tr className="border-b-2 border-gray-200">
                               <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-8">#</th>
-                              <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-sm">Player</th>
-                              <th className="text-center py-2 px-2 font-semibold text-gray-700 text-sm">Pts</th>
-                              <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-sm">+/-</th>
+                              <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs">Player</th>
+                              <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">P</th>
+                              <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">W</th>
+                              <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">L</th>
+                              <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">+/-</th>
+                              <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-xs">Pts</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1118,17 +1121,20 @@ const StandingsPage = ({
                                 key={standing.name} 
                                 className={`border-b border-gray-100 ${standing.name === currentUser.name ? 'bg-green-50' : ''}`}
                               >
-                                <td className="py-3 pr-2 text-gray-600 font-semibold text-sm">{idx + 1}</td>
-                                <td className="py-3 pr-2 font-semibold text-gray-900 text-sm">
+                                <td className="py-3 pr-2 text-gray-600 font-semibold text-xs">{idx + 1}</td>
+                                <td className="py-3 pr-2 font-semibold text-gray-900 text-xs">
                                   {formatPlayerName(standing.name)}
                                 </td>
-                                <td className="py-3 px-2 text-center text-gray-900 font-bold text-base">{standing.points}</td>
-                                <td className={`py-3 pl-2 text-center font-bold text-sm ${
+                                <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.played}</td>
+                                <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.win}</td>
+                                <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.loss}</td>
+                                <td className={`py-3 px-1 text-center font-bold text-xs ${
                                   standing.holeDiff > 0 ? 'text-green-600' : 
                                   standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
                                 }`}>
                                   {standing.holeDiff > 0 ? '+' : ''}{standing.holeDiff}
                                 </td>
+                                <td className="py-3 pl-2 text-center text-gray-900 font-bold text-sm">{standing.points}</td>
                               </tr>
                             ))}
                           </tbody>
