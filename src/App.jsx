@@ -260,7 +260,7 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, c
           <div
             className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-lg">
             <img
-              src="https://drive.google.com/uc?export=view&id=1KA8BYO6IsXwRZuKL8PdZqOCwKp0tDRib"
+              src="https://imgur.com/a/vEcMe0c"
               alt="Timaru Disc Golf"
               className="w-36 h-36 object-contain"
               />
