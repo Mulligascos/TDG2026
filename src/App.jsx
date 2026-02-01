@@ -1488,7 +1488,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
         {/* Hole Header */}
         <div className="flex items-end justify-between mb-6">
           <div>
-            <h3 className="text-2xl font-bold  bg-{BRAND_PRIMARY} text-white">
+            <h3 className="text-2xl font-bold  bg-gray-900 text-white">
               Hole {currentHole < 18 ? actualHoleNumber : `Playoff ${actualHoleNumber}`}
             </h3>
             <p className="text-gray-500 text-sm">Par {par}</p>
