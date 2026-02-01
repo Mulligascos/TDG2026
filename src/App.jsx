@@ -1477,12 +1477,19 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
 
       <div className="max-w-md mx-auto px-4 py-4">
         {/* Hole Header */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 text-center" style={{backgroundColor: BRAND_PRIMARY}}>
-          <h3 className="text-3xl font-bold text-white mb-1">
-            Hole {currentHole < 18 ? actualHoleNumber : `Playoff ${actualHoleNumber}`}
-          </h3>
-          <p className="text-white/80 text-sm mb-2">Par {par}</p>
-          <p className="text-white/60 text-xs">{status.holesPlayed} of {scores.length} Holes</p>
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6" style={{backgroundColor: BRAND_PRIMARY}}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-3xl font-bold text-white mb-1">
+                Hole {currentHole < 18 ? actualHoleNumber : `Playoff ${actualHoleNumber}`}
+              </h3>
+              <p className="text-white/60 text-xs">{status.holesPlayed} of {scores.length} Holes</p>
+            </div>
+            <div className="text-right">
+              <p className="text-white/60 text-xs mb-1">Par</p>
+              <p className="text-3xl font-bold text-white">{par}</p>
+            </div>
+          </div>
         </div>
 
         {/* Score Input Section */}
