@@ -1468,21 +1468,14 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-md mx-auto px-4 py-4">
-          <button onClick={onCancel} className="text-blue-600 font-medium text-sm mb-3">
-            ← Cancel Match
-          </button>
-          
-          <h2 className="text-xl font-bold text-gray-900">
-            {formatPlayerName(match.player1)} <span className="text-gray-400 font-normal">vs</span> {formatPlayerName(match.player2)}
-          </h2>
-          <div className="flex items-center text-sm text-gray-500 mt-1">
-            <MapPin size={14} className="mr-1" />
-            {match.venue}
-          </div>
-        </div>
+      {/* Minimal header with just cancel button */}
+      <div className="max-w-md mx-auto px-4 pt-4 pb-2">
+        <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
+          ← Cancel Match
+        </button>
       </div>
+
+      <div className="max-w-md mx-auto px-4 py-4">
 
       <div className="max-w-md mx-auto px-4 py-4">
         {/* Hole Header */}
