@@ -1476,8 +1476,6 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       </div>
 
       <div className="max-w-md mx-auto px-4 py-4">
-
-      <div className="max-w-md mx-auto px-4 py-4">
         {/* Hole Header */}
         <div className="flex items-end justify-between mb-6">
           <div>
