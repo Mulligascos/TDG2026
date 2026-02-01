@@ -1468,14 +1468,15 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
-      {/* Minimal header with just cancel button */}
+           {/* Minimal header with just cancel button */}
       <div className="max-w-md mx-auto px-4 pt-4 pb-2">
         <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
           ← Cancel Match
         </button>
       </div>
 
-      {/* Hole Header */}
+      <div className="max-w-md mx-auto px-4 py-4">
+        {/* Hole Header */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 text-center" style={{backgroundColor: BRAND_PRIMARY}}>
           <h3 className="text-3xl font-bold text-white mb-1">
             Hole {currentHole < 18 ? actualHoleNumber : `Playoff ${actualHoleNumber}`}
