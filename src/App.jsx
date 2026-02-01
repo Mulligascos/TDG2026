@@ -1475,7 +1475,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
         </button>
       </div>
 
-       {/* Hole Header */}
+      {/* Hole Header */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 text-center" style={{backgroundColor: BRAND_PRIMARY}}>
           <h3 className="text-3xl font-bold text-white mb-1">
             Hole {currentHole < 18 ? actualHoleNumber : `Playoff ${actualHoleNumber}`}
