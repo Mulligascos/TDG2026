@@ -1587,16 +1587,37 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
                   {scores.slice(0, 18).map((_, idx) => {
                     const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
                     return (
-                      <th key={idx} className="px-1 py-1.5 text-center font-semibold text-gray-700 min-w-[28px]">
-                        {holeNum}
+                      <th key={idx} className="px-1 py-1.5 text-center min-w-[28px]">
+                        <button
+                          onClick={() => setCurrentHole(idx)}
+                          className={`font-semibold transition-colors ${
+                            currentHole === idx 
+                              ? 'text-blue-600 underline' 
+                              : 'text-gray-700 hover:text-blue-500'
+                          }`}
+                        >
+                          {holeNum}
+                        </button>
                       </th>
                     );
                   })}
-                  {scores.length > 18 && scores.slice(18).map((_, idx) => (
-                    <th key={`playoff-${idx}`} className="px-1 py-1.5 text-center font-semibold text-gray-700 min-w-[28px]">
-                      P{idx + 1}
-                    </th>
-                  ))}
+                  {scores.length > 18 && scores.slice(18).map((_, idx) => {
+                    const playoffIdx = 18 + idx;
+                    return (
+                      <th key={`playoff-${idx}`} className="px-1 py-1.5 text-center min-w-[28px]">
+                        <button
+                          onClick={() => setCurrentHole(playoffIdx)}
+                          className={`font-semibold transition-colors ${
+                            currentHole === playoffIdx 
+                              ? 'text-blue-600 underline' 
+                              : 'text-gray-700 hover:text-blue-500'
+                          }`}
+                        >
+                          P{idx + 1}
+                        </button>
+                      </th>
+                    );
+                  })}
                   <th className="text-center py-1.5 pl-2 font-semibold text-gray-700 border-l border-gray-200 sticky right-0 bg-white">vs Par</th>
                 </tr>
               </thead>
