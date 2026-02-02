@@ -1475,76 +1475,184 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
         </button>
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-4">
+     <div className="max-w-md mx-auto px-4 py-2">
         {/* Hole Header */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6" style={{backgroundColor: BRAND_PRIMARY}}>
+        <div className="rounded-2xl shadow-sm p-4 mb-4" style={{backgroundColor: BRAND_PRIMARY}}>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-3xl font-bold text-white mb-1">
+              <h3 className="text-2xl font-bold text-white">
                 Hole {currentHole < 18 ? actualHoleNumber : `Playoff ${actualHoleNumber}`}
               </h3>
-              <p className="text-white/60 text-xs">{status.holesPlayed} of {scores.length} Holes</p>
+              <p className="text-white/60 text-xs">{status.holesPlayed} of {scores.length}</p>
             </div>
             <div className="text-right">
-              <p className="text-white/60 text-xs mb-1">Par</p>
-              <p className="text-3xl font-bold text-white">{par}</p>
+              <p className="text-white/60 text-xs">Par</p>
+              <p className="text-2xl font-bold text-white">{par}</p>
             </div>
           </div>
         </div>
 
         {/* Score Input Section */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
           {/* Player 1 */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="font-bold text-gray-900 text-lg w-24">{player1FirstName}</div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-bold text-gray-900 text-base w-20">{player1FirstName}</div>
             <button 
               onClick={() => updateScore('p1', -1)}
-              className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
+              className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
             >
-              <Minus size={20} />
+              <Minus size={18} />
             </button>
-            <div className="text-5xl font-bold text-gray-900 w-20 text-center">
+            <div className="text-4xl font-bold text-gray-900 w-16 text-center">
               {scores[currentHole]?.p1 || 0}
             </div>
             <button 
               onClick={() => updateScore('p1', 1)}
-              className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
+              className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
             >
-              <Plus size={20} />
+              <Plus size={18} />
             </button>
+            <div className="text-2xl font-bold text-blue-600 w-12 text-center">{status.p1Holes}</div>
           </div>
 
           {/* Player 2 */}
           <div className="flex items-center justify-between">
-            <div className="font-bold text-gray-900 text-lg w-24">{player2FirstName}</div>
+            <div className="font-bold text-gray-900 text-base w-20">{player2FirstName}</div>
             <button 
               onClick={() => updateScore('p2', -1)}
-              className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
+              className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
             >
-              <Minus size={20} />
+              <Minus size={18} />
             </button>
-            <div className="text-5xl font-bold text-gray-900 w-20 text-center">
+            <div className="text-4xl font-bold text-gray-900 w-16 text-center">
               {scores[currentHole]?.p2 || 0}
             </div>
             <button 
               onClick={() => updateScore('p2', 1)}
-              className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
+              className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
             >
-              <Plus size={20} />
+              <Plus size={18} />
             </button>
+            <div className="text-2xl font-bold text-blue-600 w-12 text-center">{status.p2Holes}</div>
           </div>
         </div>
 
-        {/* Match Score Display */}
-        <div className="bg-gray-100 rounded-2xl p-4 mb-4 flex items-center justify-between">
-          <div className="font-semibold text-gray-900">{player1FirstName}</div>
-          <div className="flex items-center gap-12">
-            <span className="text-3xl font-bold text-blue-600">{status.p1Holes}</span>
-            <span className="text-3xl font-bold text-blue-600">{status.p2Holes}</span>
-          </div>
-          <div className="font-semibold text-gray-900">{player2FirstName}</div>
+        {/* Action Buttons */}
+        <div className="flex gap-2 mb-3">
+          <button 
+            onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
+            disabled={currentHole === 0}
+            className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+          >
+            Previous
+          </button>
+          <button 
+            onClick={recordScore}
+            disabled={!scores[currentHole]?.p1 || !scores[currentHole]?.p2}
+            className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+          >
+            Next Hole
+          </button>
         </div>
 
+        {/* Match Status / Submit Button */}
+        {status.isComplete ? (
+          <button 
+            onClick={handleComplete}
+            className="w-full bg-green-600 text-white py-2.5 rounded-xl font-semibold hover:bg-green-700 transition-colors mb-3 text-sm"
+          >
+            Submit Scorecard
+          </button>
+        ) : status.needsPlayoff ? (
+          <button 
+            onClick={addPlayoffHole}
+            className="w-full bg-orange-600 text-white py-2.5 rounded-xl font-semibold hover:bg-orange-700 transition-colors mb-3 text-sm"
+          >
+            Add Playoff Hole
+          </button>
+        ) : (
+          <div className="w-full bg-gray-400 text-white py-2.5 rounded-xl font-semibold text-center mb-3 text-sm">
+            Match In Progress
+          </div>
+        )}
+
+        {/* Scorecard Table */}
+        <div className="bg-white rounded-2xl shadow-sm p-3">
+          <h4 className="font-bold text-gray-900 mb-2 text-sm">Scorecard</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-1.5 pr-2 font-semibold text-gray-700 sticky left-0 bg-white">Hole</th>
+                  {scores.slice(0, 18).map((_, idx) => {
+                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
+                    return (
+                      <th key={idx} className="px-1 py-1.5 text-center font-semibold text-gray-700 min-w-[28px]">
+                        {holeNum}
+                      </th>
+                    );
+                  })}
+                  {scores.length > 18 && scores.slice(18).map((_, idx) => (
+                    <th key={`playoff-${idx}`} className="px-1 py-1.5 text-center font-semibold text-gray-700 min-w-[28px]">
+                      P{idx + 1}
+                    </th>
+                  ))}
+                  <th className="text-center py-1.5 pl-2 font-semibold text-gray-700 border-l border-gray-200 sticky right-0 bg-white">vs Par</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Player 1 Row */}
+                <tr className="border-b border-gray-100">
+                  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">{player1FirstName}</td>
+                  {scores.map((score, idx) => {
+                    return (
+                      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
+                        !score.scored ? 'text-gray-400' :
+                        score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : 
+                        score.p1 === score.p2 ? 'text-gray-600' : 
+                        'text-gray-900'
+                      }`}>
+                        {score.scored ? score.p1 : '-'}
+                      </td>
+                    );
+                  })}
+                  <td className={`py-1.5 pl-2 text-center font-bold border-l border-gray-200 sticky right-0 bg-white ${
+                    calculateVsPar('p1').includes('-') ? 'text-green-600' : 
+                    calculateVsPar('p1').includes('+') ? 'text-red-600' : 
+                    'text-gray-900'
+                  }`}>
+                    {calculateVsPar('p1')}
+                  </td>
+                </tr>
+                
+                {/* Player 2 Row */}
+                <tr>
+                  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">{player2FirstName}</td>
+                  {scores.map((score, idx) => {
+                    return (
+                      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
+                        !score.scored ? 'text-gray-400' :
+                        score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : 
+                        score.p1 === score.p2 ? 'text-gray-600' : 
+                        'text-gray-900'
+                      }`}>
+                        {score.scored ? score.p2 : '-'}
+                      </td>
+                    );
+                  })}
+                  <td className={`py-1.5 pl-2 text-center font-bold border-l border-gray-200 sticky right-0 bg-white ${
+                    calculateVsPar('p2').includes('-') ? 'text-green-600' : 
+                    calculateVsPar('p2').includes('+') ? 'text-red-600' : 
+                    'text-gray-900'
+                  }`}>
+                    {calculateVsPar('p2')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
         {/* Action Buttons */}
         <div className="flex gap-3 mb-4">
           <button 
