@@ -234,7 +234,7 @@ const useAppData = () => {
 // PAGE COMPONENTS
 // ============================================
 
-const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, currentUser }) => {
+const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, currentUser, onViewLivescores }) => {
   const [selectedPlayer, setSelectedPlayer] = useState(() => {
     // Check localStorage for last logged-in user
     const lastUser = localStorage.getItem('lastLoggedInUser');
@@ -319,7 +319,12 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, c
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
-
+<button
+  onClick={() => onViewLiveScores()}
+  className="w-full bg-gray-100 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-200 transition-colors mb-4"
+>
+  📊 View Live Scores
+</button>
           <button
             type="submit"
             className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
@@ -1333,7 +1338,208 @@ const StandingsPage = ({
     </div>
   );
 };
+// Live Scores Page
+const LiveScoresPage = ({ onBack }) => {
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
+  const fetchLiveScores = async () => {
+    setLoading(true);
+    try {
+      const ranges = ['Matches!A:J'];
+      const response = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${GOOGLE_API_KEY}`
+      );
+      
+      if (!response.ok) throw new Error('Failed to load data');
+      
+      const data = await response.json();
+      
+      const matchesData = data.valueRanges[0].values.slice(1).map(row => ({
+        id: row[0], 
+        date: row[1], 
+        venue: row[2], 
+        player1: row[3], 
+        player2: row[4],
+        startTime: row[5], 
+        endTime: row[6], 
+        scoresJson: row[7] ? JSON.parse(row[7]) : [],
+        winner: row[8], 
+        status: row[9] || 'scheduled'
+      }));
+      
+      setMatches(matchesData);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Error loading live scores:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveScores();
+  }, []);
+
+  const calculateMatchStats = (match) => {
+    let p1Holes = 0;
+    let p2Holes = 0;
+    let lastHole = 0;
+
+    if (match.scoresJson && match.scoresJson.length > 0) {
+      match.scoresJson.forEach((score, idx) => {
+        if (score.scored) {
+          lastHole = idx + 1;
+          if (score.p1 < score.p2) p1Holes++;
+          else if (score.p2 < score.p1) p2Holes++;
+        }
+      });
+    }
+
+    return { p1Holes, p2Holes, lastHole };
+  };
+
+  const formatTimeAgo = (date) => {
+    if (!date) return 'Never';
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  };
+
+  const inProgressMatches = matches.filter(m => m.status === 'in-progress');
+  const completedToday = matches.filter(m => {
+    if (m.status !== 'Completed') return false;
+    const today = new Date().toLocaleDateString('en-NZ', { day: '2-digit', month: 'long' });
+    return m.date === today;
+  });
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <button onClick={onBack} className="mr-4">
+              <X size={24} className="text-gray-600" />
+            </button>
+            <h2 className="text-lg font-bold text-gray-900">Live Scores</h2>
+          </div>
+          <button 
+            onClick={fetchLiveScores}
+            disabled={loading}
+            className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            <div className={loading ? 'animate-spin' : ''}>
+              🔄
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-md mx-auto px-4 py-6">
+        {/* Last Updated */}
+        <p className="text-sm text-gray-500 mb-6 text-center">
+          Updated: {formatTimeAgo(lastUpdated)}
+        </p>
+
+        {/* In Progress Matches */}
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+            <h3 className="text-lg font-bold text-gray-900">
+              In Progress ({inProgressMatches.length})
+            </h3>
+          </div>
+
+          {inProgressMatches.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+              <p className="text-gray-500">No matches in progress</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {inProgressMatches.map(match => {
+                const stats = calculateMatchStats(match);
+                const p1Name = formatPlayerName(match.player1);
+                const p2Name = formatPlayerName(match.player2);
+                const p1Leading = stats.p1Holes > stats.p2Holes;
+                const p2Leading = stats.p2Holes > stats.p1Holes;
+
+                return (
+                  <div key={match.id} className="bg-white rounded-2xl shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1">
+                        <span className={`${p1Leading ? 'font-bold text-green-600' : 'text-gray-900'}`}>
+                          {p1Name} ({stats.p1Holes})
+                        </span>
+                        <span className="text-gray-400 mx-2">v</span>
+                        <span className={`${p2Leading ? 'font-bold text-green-600' : 'text-gray-900'}`}>
+                          {p2Name} ({stats.p2Holes})
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">
+                        thru {stats.lastHole === 0 ? 'starting' : stats.lastHole > 18 ? `P${stats.lastHole - 18}` : stats.lastHole}
+                      </span>
+                      <span className="text-gray-500 text-xs">{match.venue}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Completed Today */}
+        {completedToday.length > 0 && (
+          <div>
+            <div className="flex items-center mb-4">
+              <Check size={16} className="text-green-600 mr-2" />
+              <h3 className="text-lg font-bold text-gray-900">
+                Completed Today ({completedToday.length})
+              </h3>
+            </div>
+
+            <div className="space-y-3">
+              {completedToday.map(match => {
+                const stats = calculateMatchStats(match);
+                const p1Name = formatPlayerName(match.player1);
+                const p2Name = formatPlayerName(match.player2);
+                const winnerName = formatPlayerName(match.winner);
+
+                return (
+                  <div key={match.id} className="bg-white rounded-2xl shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1">
+                        <span className={`${match.winner === match.player1 ? 'font-bold text-green-600' : 'text-gray-600'}`}>
+                          {p1Name} ({stats.p1Holes})
+                        </span>
+                        <span className="text-gray-400 mx-2">v</span>
+                        <span className={`${match.winner === match.player2 ? 'font-bold text-green-600' : 'text-gray-600'}`}>
+                          {p2Name} ({stats.p2Holes})
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-green-600 font-semibold">
+                        {winnerName} won
+                      </span>
+                      <span className="text-gray-500 text-xs">{match.venue}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // Scoring Page
 const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => {
@@ -1361,7 +1567,29 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       setCurrentHole(0);
     }
   }, [match.id, startingHole, course]);
-
+useEffect(() => {
+  // Mark match as in-progress when scoring starts
+  const updateMatchStatus = async () => {
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'updateStatus',
+          matchId: match.id, 
+          status: 'in-progress' 
+        }),
+        mode: 'no-cors'
+      });
+    } catch (err) {
+      console.error('Error updating match status:', err);
+    }
+  };
+  
+  if (match.status !== 'in-progress') {
+    updateMatchStatus();
+  }
+}, [match.id]);
   // Save progress whenever scores change
   useEffect(() => {
     if (scores.length > 0) {
@@ -1907,15 +2135,15 @@ const DiscGolfApp = () => {
   };
 
   // Render appropriate page
-  if (view === 'login') {
-    return <LoginPage 
-      players={appData.players}
-      onLogin={handleLogin}
-      error={error}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-      isOnline={appData.isOnline}
-    />;
+  return <LoginPage 
+  players={appData.players}
+  onLogin={handleLogin}
+  onViewLiveScores={() => setView('liveScores')}
+  error={error}
+  darkMode={darkMode}
+  setDarkMode={setDarkMode}
+  isOnline={appData.isOnline}
+/>;
   }
 
   if (view === 'changePin') {
@@ -1931,7 +2159,9 @@ const DiscGolfApp = () => {
       setDarkMode={setDarkMode}
     />;
   }
-
+if (view === 'liveScores') {
+  return <LiveScoresPage onBack={() => setView('login')} />;
+}
   if (view === 'matches') {
     return <MatchesPage
       currentUser={currentUser}
