@@ -234,7 +234,7 @@ const useAppData = () => {
 // PAGE COMPONENTS
 // ============================================
 
-const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, currentUser, onViewLivescores }) => {
+const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, currentUser, onViewLiveScores }) => {
   const [selectedPlayer, setSelectedPlayer] = useState(() => {
     // Check localStorage for last logged-in user
     const lastUser = localStorage.getItem('lastLoggedInUser');
@@ -2135,6 +2135,7 @@ const DiscGolfApp = () => {
   };
 
   // Render appropriate page
+  if (view === 'login') {
   return <LoginPage 
   players={appData.players}
   onLogin={handleLogin}
