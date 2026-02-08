@@ -319,12 +319,7 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, c
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
-<button
-  onClick={() => onViewLiveScores()}
-  className="w-full bg-gray-100 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-200 transition-colors mb-4"
->
-  📊 View Live Scores
-</button>
+
           <button
             type="submit"
             className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
@@ -454,6 +449,7 @@ const MatchesPage = ({
   const [showStartHoleModal, setShowStartHoleModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [startingHole, setStartingHole] = useState(1);
+  const [showLiveScores, setShowLiveScores] = useState(false);
 
   const userMatches = matches.filter(m => 
     m.player1 === currentUser.name || m.player2 === currentUser.name
@@ -510,14 +506,17 @@ const MatchesPage = ({
             </div>
           </div>
           
-          <div className="flex gap-2 mt-4">
-            <button className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/20 text-white">
-              Matches
-            </button>
-            <button onClick={onViewStandings} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
-              Standings
-            </button>
-          </div>
+<div className="flex gap-2 mt-4">
+  <button className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/20 text-white">
+    Matches
+  </button>
+  <button onClick={onViewStandings} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
+    Standings
+  </button>
+  <button onClick={() => setShowLiveScores(true)} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
+    Live
+  </button>
+</div>
           
           {!isOnline && (
             <div className="bg-white/10 px-3 py-2 rounded-lg text-sm flex items-center mt-4">
@@ -682,9 +681,14 @@ const MatchesPage = ({
                 Start Match
               </button>
             </div>
+        {showLiveScores && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <LiveScoresPage onBack={() => setShowLiveScores(false)} />
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };
@@ -2139,7 +2143,6 @@ const DiscGolfApp = () => {
   return <LoginPage 
   players={appData.players}
   onLogin={handleLogin}
-  onViewLiveScores={() => setView('liveScores')}
   error={error}
   darkMode={darkMode}
   setDarkMode={setDarkMode}
@@ -2160,9 +2163,7 @@ const DiscGolfApp = () => {
       setDarkMode={setDarkMode}
     />;
   }
-if (view === 'liveScores') {
-  return <LiveScoresPage onBack={() => setView('login')} />;
-}
+
   if (view === 'matches') {
     return <MatchesPage
       currentUser={currentUser}
