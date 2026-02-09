@@ -2114,6 +2114,7 @@ const DiscGolfApp = () => {
   // Authentication
    const handleLogin = (playerName, pin) => {
      console.log('Attempting login:', playerName, pin);
+     console.log('Available players:', appData.players);
     const player = appData.players.find(p => p.name === playerName && p.pin === pin);
      console.log('Found player:', player);
     if (player) {
