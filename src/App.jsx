@@ -107,15 +107,18 @@ const useAppData = () => {
 
  const loadSheetData = async () => {
   try {
+     console.log('Fetching from:', `${APPS_SCRIPT_URL}?action=getData`);
     const response = await fetch(`${APPS_SCRIPT_URL}?action=getData`);
-    
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
     if (!response.ok) throw new Error('Failed to load data');
     
     const data = await response.json();
-    
+    console.log('Raw data from Apps Script:', data);
     const playersData = data.players.slice(1).map(row => ({
       id: row[0], name: row[1], pin: row[2]
     }));
+     console.log('Parsed players:', playersData);
     setPlayers(playersData);
     
     const coursesData = data.courses.slice(1).map(row => ({
