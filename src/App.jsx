@@ -181,9 +181,9 @@ const useAppData = () => {
 
   try {
     const match = matches.find(m => m.id === matchId);
-    const updatedMatches = matches.map(m => 
-      m.id === matchId ? { ...m, scoresJson: finalScores, winner, status: 'Completed' } : m
-    );
+  const updatedMatches = matches.map(m => 
+  m.id === matchId ? { ...m, scoresJson: finalScores, winner, status: 'Completed' } : m
+);
     setMatches(updatedMatches);
     
     // Calculate points to update in pools
@@ -1629,18 +1629,34 @@ useEffect(() => {
     return { p1Holes, p2Holes, holesPlayed, lead, leader, isComplete, needsPlayoff };
   };
 
-  const recordScore = () => {
-    if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
-      const newScores = [...scores];
-      newScores[currentHole] = { ...newScores[currentHole], scored: true };
-      setScores(newScores);
-      
-      // Always allow moving to next hole if one exists
-      if (currentHole < scores.length - 1) {
-        setCurrentHole(currentHole + 1);
-      }
+const recordScore = async () => {
+  if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
+    const newScores = [...scores];
+    newScores[currentHole] = { ...newScores[currentHole], scored: true };
+    setScores(newScores);
+    
+    // Update Google Sheets with current progress
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'updateProgress',
+          matchId: match.id, 
+          scores: newScores 
+        }),
+        mode: 'no-cors'
+      });
+    } catch (err) {
+      console.error('Error updating progress:', err);
     }
-  };
+    
+    // Always allow moving to next hole if one exists
+    if (currentHole < scores.length - 1) {
+      setCurrentHole(currentHole + 1);
+    }
+  }
+};
 
   const updateScore = (player, delta) => {
     const newScores = [...scores];
