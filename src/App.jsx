@@ -121,8 +121,10 @@ const useAppData = () => {
       throw new Error('Invalid data structure');
     }
     const playersData = data.players.slice(1).map(row => ({
-      id: row[0], name: row[1], pin: row[2]
-    }));
+  id: row[0], 
+  name: row[1], 
+  pin: String(row[2]) // Convert PIN to string
+}));
      console.log('Parsed players:', playersData);
     setPlayers(playersData);
     
