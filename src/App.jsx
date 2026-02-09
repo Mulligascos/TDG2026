@@ -5,7 +5,6 @@ import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, P
 // CONSTANTS & CONFIGURATION
 // ============================================
 const SHEET_ID = '1bzJdaMrV7sInlNtMP81hKST8-TTq2UTDujkk68w3IPU';
-const GOOGLE_API_KEY = 'AIzaSyBzu0SSydX4hR8eHIjo3yeg_eHL_FJhRKI';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby1o9A_xc6Kd24K0yNiMkFnW7ZX2E0cEHFoUjaZ98Vu_eSTzgaM6HHVGNqOX62viRh2Mw/exec';
 const BRAND_PRIMARY = '#006400';
 const BRAND_SECONDARY = '#FFD700';
@@ -106,60 +105,56 @@ const useAppData = () => {
     }
   }, [isOnline]);
 
-  const loadSheetData = async () => {
+ const loadSheetData = async () => {
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getData`);
+    
+    if (!response.ok) throw new Error('Failed to load data');
+    
+    const data = await response.json();
+    
+    const playersData = data.players.slice(1).map(row => ({
+      id: row[0], name: row[1], pin: row[2]
+    }));
+    setPlayers(playersData);
+    
+    const coursesData = data.courses.slice(1).map(row => ({
+      id: row[0], name: row[1], code: row[2], holes: parseInt(row[3]), pars: JSON.parse(row[4] || '{}')
+    }));
+    setCourses(coursesData);
+    
+    const matchesData = data.matches.slice(1).map(row => ({
+      id: row[0], date: row[1], venue: row[2], player1: row[3], player2: row[4],
+      startTime: row[5], endTime: row[6], scoresJson: row[7] ? JSON.parse(row[7]) : [],
+      winner: row[8], status: row[9] || 'scheduled'
+    }));
+    setMatches(matchesData);
+    
+    const poolsData = data.pools.slice(1).map(row => ({
+      pool: row[0], player: row[1], played: parseInt(row[2]) || 0,
+      win: parseInt(row[3]) || 0, loss: parseInt(row[4]) || 0, points: parseInt(row[5]) || 0
+    }));
+    setPools(poolsData);
+    
+    localStorage.setItem('sheet-data', JSON.stringify({
+      players: playersData, courses: coursesData, matches: matchesData, pools: poolsData
+    }));
+  } catch (err) {
+    console.error('Error loading sheet data:', err);
     try {
-      const ranges = ['Players!A:C', 'Courses!A:E', 'Matches!A:J', 'Pools!A:F'];
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${GOOGLE_API_KEY}`
-      );
-      
-      if (!response.ok) throw new Error('Failed to load data');
-      
-      const data = await response.json();
-      
-      const playersData = data.valueRanges[0].values.slice(1).map(row => ({
-        id: row[0], name: row[1], pin: row[2]
-      }));
-      setPlayers(playersData);
-      
-      const coursesData = data.valueRanges[1].values.slice(1).map(row => ({
-        id: row[0], name: row[1], code: row[2], holes: parseInt(row[3]), pars: JSON.parse(row[4] || '{}')
-      }));
-      setCourses(coursesData);
-      
-      const matchesData = data.valueRanges[2].values.slice(1).map(row => ({
-        id: row[0], date: row[1], venue: row[2], player1: row[3], player2: row[4],
-        startTime: row[5], endTime: row[6], scoresJson: row[7] ? JSON.parse(row[7]) : [],
-        winner: row[8], status: row[9] || 'scheduled'
-      }));
-      setMatches(matchesData);
-      
-      const poolsData = data.valueRanges[3]?.values.slice(1).map(row => ({
-        pool: row[0], player: row[1], played: parseInt(row[2]) || 0,
-        win: parseInt(row[3]) || 0, loss: parseInt(row[4]) || 0, points: parseInt(row[5]) || 0
-      })) || [];
-      setPools(poolsData);
-      
-      localStorage.setItem('sheet-data', JSON.stringify({
-        players: playersData, courses: coursesData, matches: matchesData, pools: poolsData
-      }));
-    } catch (err) {
-      console.error('Error loading sheet data:', err);
-      try {
-        const stored = localStorage.getItem('sheet-data');
-        if (stored) {
-          const data = JSON.parse(stored);
-          setPlayers(data.players || []);
-          setCourses(data.courses || []);
-          setMatches(data.matches || []);
-          setPools(data.pools || []);
-        }
-      } catch (e) {
-        console.error('Unable to load data');
+      const stored = localStorage.getItem('sheet-data');
+      if (stored) {
+        const data = JSON.parse(stored);
+        setPlayers(data.players || []);
+        setCourses(data.courses || []);
+        setMatches(data.matches || []);
+        setPools(data.pools || []);
       }
+    } catch (e) {
+      console.error('Unable to load data');
     }
-  };
-
+  }
+};
   const processPendingUpdates = async () => {
     try {
       const stored = localStorage.getItem('pending-updates');
@@ -1351,39 +1346,36 @@ const LiveScoresPage = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const fetchLiveScores = async () => {
-    setLoading(true);
-    try {
-      const ranges = ['Matches!A:J'];
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${GOOGLE_API_KEY}`
-      );
-      
-      if (!response.ok) throw new Error('Failed to load data');
-      
-      const data = await response.json();
-      
-      const matchesData = data.valueRanges[0].values.slice(1).map(row => ({
-        id: row[0], 
-        date: row[1], 
-        venue: row[2], 
-        player1: row[3], 
-        player2: row[4],
-        startTime: row[5], 
-        endTime: row[6], 
-        scoresJson: row[7] ? JSON.parse(row[7]) : [],
-        winner: row[8], 
-        status: row[9] || 'scheduled'
-      }));
-      
-      setMatches(matchesData);
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error('Error loading live scores:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchLiveScores = async () => {
+  setLoading(true);
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getLiveScores`);
+    
+    if (!response.ok) throw new Error('Failed to load data');
+    
+    const data = await response.json();
+    
+    const matchesData = data.matches.slice(1).map(row => ({
+      id: row[0], 
+      date: row[1], 
+      venue: row[2], 
+      player1: row[3], 
+      player2: row[4],
+      startTime: row[5], 
+      endTime: row[6], 
+      scoresJson: row[7] ? JSON.parse(row[7]) : [],
+      winner: row[8], 
+      status: row[9] || 'scheduled'
+    }));
+    
+    setMatches(matchesData);
+    setLastUpdated(new Date());
+  } catch (err) {
+    console.error('Error loading live scores:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchLiveScores();
