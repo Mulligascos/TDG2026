@@ -2113,7 +2113,9 @@ const DiscGolfApp = () => {
 
   // Authentication
    const handleLogin = (playerName, pin) => {
+     console.log("attempting login:, playerName, pin);
     const player = appData.players.find(p => p.name === playerName && p.pin === pin);
+     console.log('Found player:', player);
     if (player) {
       // Save the username to localStorage for next time
       localStorage.setItem('lastLoggedInUser', playerName);
