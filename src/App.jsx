@@ -2113,7 +2113,7 @@ const DiscGolfApp = () => {
 
   // Authentication
    const handleLogin = (playerName, pin) => {
-     console.log("attempting login:, playerName, pin);
+     console.log('Attempting login:', playerName, pin);
     const player = appData.players.find(p => p.name === playerName && p.pin === pin);
      console.log('Found player:', player);
     if (player) {
