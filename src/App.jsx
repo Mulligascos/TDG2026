@@ -115,6 +115,11 @@ const useAppData = () => {
     
     const data = await response.json();
     console.log('Raw data from Apps Script:', data);
+
+    if (!data.players || !Array.isArray(data.players)) {
+      console.error('Invalid data structure:', data);
+      throw new Error('Invalid data structure');
+    }
     const playersData = data.players.slice(1).map(row => ({
       id: row[0], name: row[1], pin: row[2]
     }));
