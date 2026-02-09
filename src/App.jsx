@@ -123,7 +123,7 @@ const useAppData = () => {
     const playersData = data.players.slice(1).map(row => ({
   id: row[0], 
   name: row[1], 
-  pin: String(row[2]) // Convert PIN to string
+  pin: String(row[2]) // Convert PIN to string to resolve error
 }));
      console.log('Parsed players:', playersData);
     setPlayers(playersData);
