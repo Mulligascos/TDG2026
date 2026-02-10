@@ -706,6 +706,7 @@ const StandingsPage = ({
   currentUser, 
   matches, 
   pools,
+  players,
   onLogout, 
   onChangePin, 
   onViewMatches,
