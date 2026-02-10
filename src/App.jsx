@@ -1986,7 +1986,7 @@ const ReviewPage = ({ match, onCancel }) => {
         </h2>
         <div className="flex items-center text-sm text-gray-500 mb-4">
           <MapPin size={14} className="mr-1" /> {match.venue} 
-          <span className="text-xs text-gray-500">{new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+          <span className="text-xs text-gray-500"> - {new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
         </div>
 
         {/* Match Summary */}
