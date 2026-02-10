@@ -553,7 +553,7 @@ const MatchesPage = ({
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar size={14} className="mr-1" />
-                      <span>{match.date}</span>
+                      <span>{new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                       <Clock size={14} className="ml-3 mr-1" />
                       <span>{match.startTime}</span>
                     </div>
@@ -640,7 +640,7 @@ const MatchesPage = ({
                     <p className="font-bold text-gray-900">
                       {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
                     </p>
-                    <span className="text-xs text-gray-500">{match.date}</span>
+                    <span className="text-xs text-gray-500">{new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-sm text-gray-600">
@@ -1985,7 +1985,8 @@ const ReviewPage = ({ match, onCancel }) => {
           {player1Name} <span className="text-gray-400 font-normal">vs</span> {player2Name}
         </h2>
         <div className="flex items-center text-sm text-gray-500 mb-4">
-          <MapPin size={14} className="mr-1" /> {match.venue}
+          <MapPin size={14} className="mr-1" /> {match.venue} 
+          <span className="text-xs text-gray-500">{new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
         </div>
 
         {/* Match Summary */}
