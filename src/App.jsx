@@ -1137,25 +1137,25 @@ const StandingsPage = ({
   return { bracket: null, hasMatches: false };
 };
 
-  const generateCrossoverMatches = () => {
-    const allPools = getPoolNames().filter(p => 
-      !p.toLowerCase().includes('cup') && 
-      !p.toLowerCase().includes('shield') && 
-      !p.toLowerCase().includes('plate') &&
-      !p.toLowerCase().includes('crossover')
-    );
-    
-    if (allPools.length < 4) return { week1: [], week2: [] };
-    
-    const poolStandings = allPools.map(poolName => ({
-      pool: poolName,
-      standings: calculateStandings(poolName)
-    }));
-    
-    const poolA = poolStandings[0]?.standings || [];
-    const poolB = poolStandings[1]?.standings || [];
-    const poolC = poolStandings[2]?.standings || [];
-    const poolD = poolStandings[3]?.standings || [];
+const generateCrossoverMatches = () => {
+  const allPools = getPoolNames().filter(p => 
+    !p.toLowerCase().includes('cup') && 
+    !p.toLowerCase().includes('shield') && 
+    !p.toLowerCase().includes('plate') &&
+    !p.toLowerCase().includes('crossover')
+  );
+  
+  if (allPools.length < 4) return { week1: [], week2: [] };
+  
+  const poolStandings = allPools.map(poolName => ({
+    pool: poolName,
+    standings: calculateStandings(poolName).filter(s => s.status === 'Active') // Filter active only
+  }));
+  
+  const poolA = poolStandings[0]?.standings || [];
+  const poolB = poolStandings[1]?.standings || [];
+  const poolC = poolStandings[2]?.standings || [];
+  const poolD = poolStandings[3]?.standings || [];
     
     const crossoverMatches = matches.filter(m => {
       const id = m.id?.toLowerCase() || '';
