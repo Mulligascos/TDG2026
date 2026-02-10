@@ -123,7 +123,8 @@ const useAppData = () => {
     const playersData = data.players.slice(1).map(row => ({
   id: row[0], 
   name: row[1], 
-  pin: String(row[2]) // Convert PIN to string to resolve error
+  pin: String(row[2]),
+  status: row[3] || 'Active' // Add status column
 }));
      console.log('Parsed players:', playersData);
     setPlayers(playersData);
@@ -717,6 +718,8 @@ const StandingsPage = ({
     const poolPlayers = pools.filter(p => p.pool === poolName);
     
     const standings = poolPlayers.map(player => {
+      const playerData = players.find(p => p.name === player.player);
+      const status = playerData?.status || 'Active';
       const poolMatches = matches.filter(m => 
         m.status === 'Completed' && 
         (m.player1 === player.player || m.player2 === player.player)
@@ -761,6 +764,7 @@ const StandingsPage = ({
       
       return {
         name: player.player,
+        status: status,
         points: calculatedPoints,
         holesWon,
         holesLost,
@@ -800,10 +804,13 @@ const StandingsPage = ({
     let participants = [];
     
     poolStandings.forEach(({ pool, standings }) => {
-      standings.slice(0, 3).forEach((player, idx) => {
-        participants.push({ ...player, pool, seed: idx + 1 });
-      });
+      const activeStandings = standings.filter(s => s.status === 'Active');
+    
+    // Take top 3 from active players
+    activeStandings.slice(0, 3).forEach((player, idx) => {
+      participants.push({ ...player, pool, seed: idx + 1 });
     });
+  });
     
     if (participants.length === 0) {
       return { bracket: null, hasMatches: false };
@@ -960,10 +967,13 @@ const StandingsPage = ({
     let allNonCupPlayers = [];
     
     poolStandings.forEach(({ pool, standings }) => {
-      standings.slice(3).forEach((player) => {
-        allNonCupPlayers.push({ ...player, pool });
-      });
+      const activeStandings = standings.filter(s => s.status === 'Active');
+    
+    // Take players ranked 4th and below
+    activeStandings.slice(3).forEach((player) => {
+      allNonCupPlayers.push({ ...player, pool });
     });
+  });
     
     if (allNonCupPlayers.length === 0) {
       return { bracket: null, hasMatches: false };
@@ -1291,13 +1301,18 @@ const StandingsPage = ({
                           </thead>
                           <tbody>
                             {standings.map((standing, idx) => (
-                              <tr 
+                             <tr 
                                 key={standing.name} 
-                                className={`border-b border-gray-100 ${standing.name === currentUser.name ? 'bg-green-50' : ''}`}
+                                  className={`border-b border-gray-100 ${
+                                  standing.name === currentUser.name ? 'bg-green-50' : ''
+                                  } ${
+                                  standing.status === 'Inactive' ? 'opacity-50 text-gray-400' : ''
+                                  }`}
                               >
                                 <td className="py-3 pr-2 text-gray-600 font-semibold text-xs">{idx + 1}</td>
                                 <td className="py-3 pr-2 font-semibold text-gray-900 text-xs">
                                   {formatPlayerName(standing.name)}
+                                  {standing.status === 'Inactive' && <span className="ml-1 text-orange-500">⚠️</span>}
                                 </td>
                                 <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.played}</td>
                                 <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.win}</td>
