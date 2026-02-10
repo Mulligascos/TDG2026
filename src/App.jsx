@@ -783,39 +783,27 @@ const StandingsPage = ({
     return [...new Set(pools.map(p => p.pool))].sort();
   };
 
-  const generatePlayoffBrackets = (playoffType) => {
-    const allPools = getPoolNames().filter(p => 
-      !p.toLowerCase().includes('cup') && 
-      !p.toLowerCase().includes('shield') && 
-      !p.toLowerCase().includes('plate')
-    );
-    
-    const poolStandings = allPools.map(poolName => ({
-      pool: poolName,
-      standings: calculateStandings(poolName)
-    }));
-    
+ const generatePlayoffBrackets = (playoffType) => {
+  const allPools = getPoolNames().filter(p => 
+    !p.toLowerCase().includes('cup') && 
+    !p.toLowerCase().includes('shield') && 
+    !p.toLowerCase().includes('plate')
+  );
+  
+  const poolStandings = allPools.map(poolName => ({
+    pool: poolName,
+    standings: calculateStandings(poolName)
+  }));
+  
+  // CUP FINAL - unchanged (top 3 from each pool)
+  if (playoffType === 'Cup') {
     let participants = [];
     
-    if (playoffType === 'Cup') {
-      poolStandings.forEach(({ pool, standings }) => {
-        standings.slice(0, 3).forEach((player, idx) => {
-          participants.push({ ...player, pool, seed: idx + 1 });
-        });
+    poolStandings.forEach(({ pool, standings }) => {
+      standings.slice(0, 3).forEach((player, idx) => {
+        participants.push({ ...player, pool, seed: idx + 1 });
       });
-    } else if (playoffType === 'Shield') {
-      poolStandings.forEach(({ pool, standings }) => {
-        standings.slice(3, 6).forEach((player, idx) => {
-          participants.push({ ...player, pool, seed: idx + 4 });
-        });
-      });
-    } else if (playoffType === 'Plate') {
-      poolStandings.forEach(({ pool, standings }) => {
-        standings.slice(6).forEach((player, idx) => {
-          participants.push({ ...player, pool, seed: idx + 7 });
-        });
-      });
-    }
+    });
     
     if (participants.length === 0) {
       return { bracket: null, hasMatches: false };
@@ -829,8 +817,7 @@ const StandingsPage = ({
     const playoffMatches = matches.filter(m => {
       const id = m.id?.toLowerCase() || '';
       const venue = m.venue?.toLowerCase() || '';
-      const type = playoffType.toLowerCase();
-      return (id.includes(type) || venue.includes(type)) && m.status === 'Completed';
+      return (id.includes('cup') || venue.includes('cup')) && m.status === 'Completed';
     });
     
     const findWinner = (p1Name, p2Name) => {
@@ -965,7 +952,177 @@ const StandingsPage = ({
     }
     
     return { bracket, hasMatches: true };
-  };
+  }
+  
+  // SHIELD FINAL - NEW ranking-based system
+  if (playoffType === 'Shield') {
+    // Collect all non-Cup players (4th place and below from each pool)
+    let allNonCupPlayers = [];
+    
+    poolStandings.forEach(({ pool, standings }) => {
+      standings.slice(3).forEach((player) => {
+        allNonCupPlayers.push({ ...player, pool });
+      });
+    });
+    
+    if (allNonCupPlayers.length === 0) {
+      return { bracket: null, hasMatches: false };
+    }
+    
+    // Sort by points, then hole differential, then wins
+    allNonCupPlayers.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.holeDiff !== a.holeDiff) return b.holeDiff - a.holeDiff;
+      return b.win - a.win;
+    });
+    
+    // Determine bracket size based on player count
+    let bracketSize;
+    if (allNonCupPlayers.length >= 16) bracketSize = 16;
+    else if (allNonCupPlayers.length >= 12) bracketSize = 12;
+    else if (allNonCupPlayers.length >= 8) bracketSize = 8;
+    else return { bracket: null, hasMatches: false }; // Not enough players
+    
+    // Take top N players
+    const shieldPlayers = allNonCupPlayers.slice(0, bracketSize);
+    
+    const playoffMatches = matches.filter(m => {
+      const id = m.id?.toLowerCase() || '';
+      const venue = m.venue?.toLowerCase() || '';
+      return (id.includes('shield') || venue.includes('shield')) && m.status === 'Completed';
+    });
+    
+    const findWinner = (p1Name, p2Name) => {
+      const match = playoffMatches.find(m => 
+        (m.player1 === p1Name && m.player2 === p2Name) ||
+        (m.player1 === p2Name && m.player2 === p1Name)
+      );
+      return match?.winner;
+    };
+    
+    const bracket = { r16: [], qf: [], sf: [], final: null };
+    
+    // Generate R16 matches (for 16-player bracket)
+    if (bracketSize === 16) {
+      for (let i = 0; i < 8; i++) {
+        const seed1 = i;
+        const seed2 = 15 - i;
+        const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
+        bracket.r16.push({
+          id: `R16-${i + 1}`,
+          player1: shieldPlayers[seed1].name,
+          player2: shieldPlayers[seed2].name,
+          winner: winner,
+          seed1: seed1 + 1,
+          seed2: seed2 + 1
+        });
+      }
+    }
+    
+    // Generate QF matches
+    if (bracketSize === 16) {
+      // QF comes from R16 winners
+      for (let i = 0; i < 4; i++) {
+        const r16Match1 = bracket.r16[i * 2];
+        const r16Match2 = bracket.r16[i * 2 + 1];
+        const p1 = r16Match1?.winner || `Winner R16-${i * 2 + 1}`;
+        const p2 = r16Match2?.winner || `Winner R16-${i * 2 + 2}`;
+        const winner = findWinner(p1, p2);
+        bracket.qf.push({
+          id: `QF${i + 1}`,
+          player1: p1,
+          player2: p2,
+          winner: winner
+        });
+      }
+    } else if (bracketSize === 12) {
+      // Top 4 get byes, seeds 5-12 play
+      for (let i = 0; i < 4; i++) {
+        const seed1 = 4 + i;
+        const seed2 = 11 - i;
+        const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
+        bracket.r16.push({
+          id: `R16-${i + 1}`,
+          player1: shieldPlayers[seed1].name,
+          player2: shieldPlayers[seed2].name,
+          winner: winner,
+          seed1: seed1 + 1,
+          seed2: seed2 + 1
+        });
+      }
+      
+      // QF: Top 4 seeds vs R16 winners
+      for (let i = 0; i < 4; i++) {
+        const topSeed = shieldPlayers[i].name;
+        const r16Winner = bracket.r16[3 - i]?.winner || `Winner R16-${4 - i}`;
+        const winner = findWinner(topSeed, r16Winner);
+        bracket.qf.push({
+          id: `QF${i + 1}`,
+          player1: topSeed,
+          player2: r16Winner,
+          winner: winner,
+          seed1: i + 1
+        });
+      }
+    } else if (bracketSize === 8) {
+      // Direct to QF
+      for (let i = 0; i < 4; i++) {
+        const seed1 = i;
+        const seed2 = 7 - i;
+        const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
+        bracket.qf.push({
+          id: `QF${i + 1}`,
+          player1: shieldPlayers[seed1].name,
+          player2: shieldPlayers[seed2].name,
+          winner: winner,
+          seed1: seed1 + 1,
+          seed2: seed2 + 1
+        });
+      }
+    }
+    
+    // Generate SF matches
+    if (bracket.qf.length >= 2) {
+      const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
+      const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
+      const winner = findWinner(qf1Winner, qf4Winner);
+      bracket.sf.push({
+        id: 'SF1',
+        player1: qf1Winner,
+        player2: qf4Winner,
+        winner: winner
+      });
+    }
+    if (bracket.qf.length >= 3) {
+      const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
+      const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
+      const winner = findWinner(qf2Winner, qf3Winner);
+      bracket.sf.push({
+        id: 'SF2',
+        player1: qf2Winner,
+        player2: qf3Winner,
+        winner: winner
+      });
+    }
+    
+    // Generate Final
+    if (bracket.sf.length >= 2) {
+      const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
+      const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
+      const winner = findWinner(sf1Winner, sf2Winner);
+      bracket.final = {
+        id: 'Final',
+        player1: sf1Winner,
+        player2: sf2Winner,
+        winner: winner
+      };
+    }
+    
+    return { bracket, hasMatches: true, bracketSize };
+  }
+  
+  return { bracket: null, hasMatches: false };
+};
 
   const generateCrossoverMatches = () => {
     const allPools = getPoolNames().filter(p => 
@@ -1230,7 +1387,7 @@ const StandingsPage = ({
               })()}
             </div>
               
-            {['Cup', 'Shield', 'Plate'].map(playoffType => {
+            {['Cup', 'Shield'].map(playoffType => {
               const { bracket, hasMatches } = generatePlayoffBrackets(playoffType);
               const icon = playoffType === 'Cup' ? '🏆' : playoffType === 'Shield' ? '🛡️' : '🥉';
               
@@ -1242,10 +1399,9 @@ const StandingsPage = ({
                       {playoffType} Final
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      {playoffType === 'Cup' && "Top 3 from each pool"}
-                      {playoffType === 'Shield' && "Next 3 from each pool"}
-                      {playoffType === 'Plate' && "Remaining players"}
-                    </p>
+  {playoffType === 'Cup' && "Top 3 from each pool"}
+  {playoffType === 'Shield' && "Ranked by overall performance"}
+</p>
                   </div>
                   
                   {!hasMatches ? (
