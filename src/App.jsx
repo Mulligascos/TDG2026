@@ -715,15 +715,17 @@ const StandingsPage = ({
   pendingUpdates
 }) => {
   const calculateStandings = (poolName) => {
-    const poolPlayers = pools.filter(p => p.pool === poolName);
+  const poolPlayers = pools.filter(p => p.pool === poolName);
+  
+  const standings = poolPlayers.map(player => {
+    // Get player status
+    const playerData = players.find(p => p.name === player.player);
+    const status = playerData?.status || 'Active';
     
-    const standings = poolPlayers.map(player => {
-      const playerData = players.find(p => p.name === player.player);
-      const status = playerData?.status || 'Active';
-      const poolMatches = matches.filter(m => 
-        m.status === 'Completed' && 
-        (m.player1 === player.player || m.player2 === player.player)
-      );
+    const poolMatches = matches.filter(m => 
+      m.status === 'Completed' && 
+      (m.player1 === player.player || m.player2 === player.player)
+    );
 
       let holesWon = 0;
       let holesLost = 0;
@@ -2403,19 +2405,20 @@ const DiscGolfApp = () => {
 }
 
    if (view === 'standings') {
-    return <StandingsPage
-      currentUser={currentUser}
-      matches={appData.matches}
-      pools={appData.pools}
-      onLogout={handleLogout}
-      onChangePin={() => setView('changePin')}
-      onViewMatches={() => setView('matches')}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-      isOnline={appData.isOnline}
-      pendingUpdates={appData.pendingUpdates}
-    />;
-  }          
+  return <StandingsPage
+    currentUser={currentUser}
+    matches={appData.matches}
+    pools={appData.pools}
+    players={appData.players} // Add this line
+    onLogout={handleLogout}
+    onChangePin={() => setView('changePin')}
+    onViewMatches={() => setView('matches')}
+    darkMode={darkMode}
+    setDarkMode={setDarkMode}
+    isOnline={appData.isOnline}
+    pendingUpdates={appData.pendingUpdates}
+  />;
+}         
 if (view === 'review') {
     return (
       <ReviewPage
