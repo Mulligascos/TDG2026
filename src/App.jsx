@@ -1774,7 +1774,7 @@ useEffect(() => {
         body: JSON.stringify({ 
           action: 'updateStatus',
           matchId: match.id, 
-          status: 'in-progress' 
+          status: 'In-progress' 
         }),
         mode: 'no-cors'
       });
@@ -2465,7 +2465,7 @@ const DiscGolfApp = () => {
         // Update local state
         const updatedMatches = appData.matches.map(m => 
           m.id === selectedMatch.match.id 
-            ? { ...m, scoresJson: [], winner: '', status: '' } 
+            ? { ...m, scoresJson: [], winner: '', status: (null) } 
             : m
         );
         appData.setMatches(updatedMatches);
