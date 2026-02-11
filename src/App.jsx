@@ -1574,23 +1574,28 @@ const fetchLiveScores = async () => {
     fetchLiveScores();
   }, []);
 
-  const calculateMatchStats = (match) => {
-    let p1Holes = 0;
-    let p2Holes = 0;
-    let lastHole = 0;
+const calculateMatchStats = (match) => {
+  let p1Holes = 0;
+  let p2Holes = 0;
+  let lastHole = 0;
 
-    if (match.scoresJson && match.scoresJson.length > 0) {
-      match.scoresJson.forEach((score, idx) => {
-        if (score.scored) {
-          lastHole = idx + 1;
-          if (score.p1 < score.p2) p1Holes++;
-          else if (score.p2 < score.p1) p2Holes++;
-        }
-      });
-    }
+  if (match.scoresJson && match.scoresJson.length > 0) {
+    match.scoresJson.forEach((score, idx) => {
+      if (score.scored) {
+        lastHole = idx + 1;
+        
+        // Apply junior handicap
+        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+        
+        if (p1Adjusted < p2Adjusted) p1Holes++;
+        else if (p2Adjusted < p1Adjusted) p2Holes++;
+      }
+    });
+  }
 
-    return { p1Holes, p2Holes, lastHole };
-  };
+  return { p1Holes, p2Holes, lastHole };
+};
 
   const formatTimeAgo = (date) => {
     if (!date) return 'Never';
@@ -2209,29 +2214,37 @@ const ReviewPage = ({ match, onCancel }) => {
           <div className="flex items-center justify-between">
             <div className="text-center flex-1">
               <div className="text-sm text-gray-500 mb-1">{player1Name}</div>
-              <div className="text-3xl font-bold text-blue-600">
-                {(() => {
-                  let p1Holes = 0;
-                  scores.forEach(score => {
-                    if (score.scored && score.p1 < score.p2) p1Holes++;
-                  });
-                  return p1Holes;
-                })()}
-              </div>
+<div className="text-3xl font-bold text-blue-600">
+  {(() => {
+    let p1Holes = 0;
+    scores.forEach(score => {
+      if (score.scored) {
+        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+        if (p1Adjusted < p2Adjusted) p1Holes++;
+      }
+    });
+    return p1Holes;
+  })()}
+</div>
               <div className="text-xs text-gray-500 mt-1">Holes Won</div>
             </div>
             <div className="text-2xl text-gray-400 font-light px-4">—</div>
             <div className="text-center flex-1">
               <div className="text-sm text-gray-500 mb-1">{player2Name}</div>
-              <div className="text-3xl font-bold text-blue-600">
-                {(() => {
-                  let p2Holes = 0;
-                  scores.forEach(score => {
-                    if (score.scored && score.p2 < score.p1) p2Holes++;
-                  });
-                  return p2Holes;
-                })()}
-              </div>
+<div className="text-3xl font-bold text-blue-600">
+  {(() => {
+    let p2Holes = 0;
+    scores.forEach(score => {
+      if (score.scored) {
+        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+        if (p2Adjusted < p1Adjusted) p2Holes++;
+      }
+    });
+    return p2Holes;
+  })()}
+</div>
               <div className="text-xs text-gray-500 mt-1">Holes Won</div>
             </div>
           </div>
