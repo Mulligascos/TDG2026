@@ -2438,50 +2438,48 @@ const DiscGolfApp = () => {
     />;
   }
 
-  if (view === 'scoring') {
+if (view === 'scoring') {
   return <ScoringPage
     match={selectedMatch.match}
     startingHole={selectedMatch.startingHole}
     courses={appData.courses}
-   onCancel={async () => {
-  if (selectedMatch && selectedMatch.match) {
-    // Confirm cancellation
-    if (window.confirm('Cancel this match? All progress will be lost.')) {
-      try {
-        // Clear local storage
-        localStorage.removeItem(`match-progress-${selectedMatch.match.id}`);
-        
-        // Clear match data in Google Sheets
-        await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            action: 'cancelMatch',
-            matchId: selectedMatch.match.id
-          }),
-          mode: 'no-cors'
-        });
-        
-        // Update local state
-        const updatedMatches = appData.matches.map(m => 
-          m.id === selectedMatch.match.id 
-            ? { ...m, scoresJson: [], winner: '', status: (null) } 
-            : m
-        );
-        appData.setMatches(updatedMatches);
-        
-      } catch (err) {
-        console.error('Error cancelling match:', err);
+    onCancel={async () => {
+      if (selectedMatch && selectedMatch.match) {
+        // Confirm cancellation
+        if (window.confirm('Cancel this match? All progress will be lost.')) {
+          try {
+            // Clear local storage
+            localStorage.removeItem(`match-progress-${selectedMatch.match.id}`);
+            
+            // Clear match data in Google Sheets
+            await fetch(APPS_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                action: 'cancelMatch',
+                matchId: selectedMatch.match.id
+              }),
+              mode: 'no-cors'
+            });
+            
+            // Update local state
+            const updatedMatches = appData.matches.map(m => 
+              m.id === selectedMatch.match.id 
+                ? { ...m, scoresJson: [], winner: '', status: '' } 
+                : m
+            );
+            appData.setMatches(updatedMatches);
+            
+          } catch (err) {
+            console.error('Error cancelling match:', err);
+          }
+        }
       }
       
+      // Always clear and return to matches after cancel
       setSelectedMatch(null);
       setView('matches');
-    }
-  } else {
-    setSelectedMatch(null);
-    setView('matches');
-  }
-}}
+    }}
     onComplete={(scores, winner) => {
       appData.submitMatchToSheet(selectedMatch.match.id, scores, winner);
       setSelectedMatch(null);
