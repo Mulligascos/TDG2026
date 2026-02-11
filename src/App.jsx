@@ -23,7 +23,13 @@ const formatPlayerName = (fullName) => {
   const lastInitial = parts[parts.length - 1][0];
   return `${firstName} ${lastInitial}`;
 };
+const isJuniorPlayer = (playerName) => {
+  return playerName && playerName.includes('(J)');
+};
 
+const applyJuniorHandicap = (score, playerName) => {
+  return isJuniorPlayer(playerName) ? Math.max(1, score - 1) : score;
+};
 // Dark Mode Hook
 const useDarkMode = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -715,11 +721,10 @@ const StandingsPage = ({
   isOnline,
   pendingUpdates
 }) => {
-  const calculateStandings = (poolName) => {
+const calculateStandings = (poolName) => {
   const poolPlayers = pools.filter(p => p.pool === poolName);
   
   const standings = poolPlayers.map(player => {
-    // Get player status
     const playerData = players.find(p => p.name === player.player);
     const status = playerData?.status || 'Active';
     
@@ -728,26 +733,30 @@ const StandingsPage = ({
       (m.player1 === player.player || m.player2 === player.player)
     );
 
-      let holesWon = 0;
-      let holesLost = 0;
-      let matchWins = 0;
-      let matchLosses = 0;
-      let matchTies = 0;
+    let holesWon = 0;
+    let holesLost = 0;
+    let matchWins = 0;
+    let matchLosses = 0;
+    let matchTies = 0;
 
-      poolMatches.forEach(match => {
-        const isPlayer1 = match.player1 === player.player;
-        
-        let p1Holes = 0;
-        let p2Holes = 0;
-        
-        if (match.scoresJson && match.scoresJson.length > 0) {
-          match.scoresJson.forEach(score => {
-            if (score.scored) {
-              if (score.p1 < score.p2) p1Holes++;
-              else if (score.p2 < score.p1) p2Holes++;
-            }
-          });
-        }
+    poolMatches.forEach(match => {
+      const isPlayer1 = match.player1 === player.player;
+      
+      let p1Holes = 0;
+      let p2Holes = 0;
+      
+      if (match.scoresJson && match.scoresJson.length > 0) {
+        match.scoresJson.forEach(score => {
+          if (score.scored) {
+            // Apply junior handicap
+            const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+            const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+            
+            if (p1Adjusted < p2Adjusted) p1Holes++;
+            else if (p2Adjusted < p1Adjusted) p2Holes++;
+          }
+        });
+      }
 
         if (isPlayer1) {
           holesWon += p1Holes;
@@ -1786,18 +1795,23 @@ useEffect(() => {
     }
   }, [scores, currentHole, match.id, startingHole]);
 
-  const calculateMatchStatus = () => {
-    let p1Holes = 0;
-    let p2Holes = 0;
-    let holesPlayed = 0;
-    
-    scores.forEach((score) => {
-      if (score.scored) {
-        holesPlayed++;
-        if (score.p1 < score.p2) p1Holes++;
-        else if (score.p2 < score.p1) p2Holes++;
-      }
-    });
+const calculateMatchStatus = () => {
+  let p1Holes = 0;
+  let p2Holes = 0;
+  let holesPlayed = 0;
+  
+  scores.forEach((score) => {
+    if (score.scored) {
+      holesPlayed++;
+      
+      // Apply junior handicap for comparison
+      const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+      const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+      
+      if (p1Adjusted < p2Adjusted) p1Holes++;
+      else if (p2Adjusted < p1Adjusted) p2Holes++;
+    }
+  });
     
     const lead = Math.abs(p1Holes - p2Holes);
     const leader = p1Holes > p2Holes ? match.player1 : 
@@ -2049,21 +2063,34 @@ const recordScore = async () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Player 1 Row */}
-                <tr className="border-b border-gray-100">
-                  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">{player1FirstName}</td>
-                  {scores.map((score, idx) => {
-                    return (
-                      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
-                        !score.scored ? 'text-gray-400' :
-                        score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : 
-                        score.p1 === score.p2 ? 'text-gray-600' : 
-                        'text-gray-900'
-                      }`}>
-                        {score.scored ? score.p1 : '-'}
-                      </td>
-                    );
-                  })}
+{/* Player 1 Row */}
+<tr className="border-b border-gray-100">
+  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">
+    {player1FirstName}
+    {isJuniorPlayer(match.player1) && <span className="ml-1 text-xs text-blue-600">(J)</span>}
+  </td>
+  {scores.map((score, idx) => {
+    const adjustedP1 = applyJuniorHandicap(score.p1, match.player1);
+    const adjustedP2 = applyJuniorHandicap(score.p2, match.player2);
+    
+    return (
+      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
+        !score.scored ? 'text-gray-400' :
+        adjustedP1 < adjustedP2 ? 'text-blue-600 bg-blue-50' : 
+        adjustedP1 === adjustedP2 ? 'text-gray-600' : 
+        'text-gray-900'
+      }`}>
+        {score.scored ? (
+          <>
+            {score.p1}
+            {isJuniorPlayer(match.player1) && score.p1 > 1 && (
+              <span className="text-xs text-blue-600"> (-1)</span>
+            )}
+          </>
+        ) : '-'}
+      </td>
+    );
+  })}
                   <td className={`py-1.5 pl-2 text-center font-bold border-l border-gray-200 sticky right-0 bg-white ${
                     calculateVsPar('p1').includes('-') ? 'text-green-600' : 
                     calculateVsPar('p1').includes('+') ? 'text-red-600' : 
@@ -2073,21 +2100,34 @@ const recordScore = async () => {
                   </td>
                 </tr>
                 
-                {/* Player 2 Row */}
-                <tr>
-                  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">{player2FirstName}</td>
-                  {scores.map((score, idx) => {
-                    return (
-                      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
-                        !score.scored ? 'text-gray-400' :
-                        score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : 
-                        score.p1 === score.p2 ? 'text-gray-600' : 
-                        'text-gray-900'
-                      }`}>
-                        {score.scored ? score.p2 : '-'}
-                      </td>
-                    );
-                  })}
+               {/* Player 2 Row */}
+<tr>
+  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">
+    {player2FirstName}
+    {isJuniorPlayer(match.player2) && <span className="ml-1 text-xs text-blue-600">(J)</span>}
+  </td>
+  {scores.map((score, idx) => {
+    const adjustedP1 = applyJuniorHandicap(score.p1, match.player1);
+    const adjustedP2 = applyJuniorHandicap(score.p2, match.player2);
+    
+    return (
+      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
+        !score.scored ? 'text-gray-400' :
+        adjustedP2 < adjustedP1 ? 'text-blue-600 bg-blue-50' : 
+        adjustedP1 === adjustedP2 ? 'text-gray-600' : 
+        'text-gray-900'
+      }`}>
+        {score.scored ? (
+          <>
+            {score.p2}
+            {isJuniorPlayer(match.player2) && score.p2 > 1 && (
+              <span className="text-xs text-blue-600"> (-1)</span>
+            )}
+          </>
+        ) : '-'}
+      </td>
+    );
+  })}
                   <td className={`py-1.5 pl-2 text-center font-bold border-l border-gray-200 sticky right-0 bg-white ${
                     calculateVsPar('p2').includes('-') ? 'text-green-600' : 
                     calculateVsPar('p2').includes('+') ? 'text-red-600' : 
