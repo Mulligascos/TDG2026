@@ -764,46 +764,55 @@ const calculateStandings = (poolName) => {
         });
       }
 
-        if (isPlayer1) {
-          holesWon += p1Holes;
-          holesLost += p2Holes;
-          if (match.winner === player.player) matchWins++;
+      if (isPlayer1) {
+        holesWon += p1Holes;
+        holesLost += p2Holes;
+        if (match.winner === player.player) matchWins++;
         else if (match.winner && match.winner !== player.player) matchLosses++;
-        else if (p1Holes === p2Holes) matchTies++; // tie condition
-        } else {
-          holesWon += p2Holes;
-          holesLost += p1Holes;
-          if (match.winner === player.player) matchWins++;
+        else if (p1Holes === p2Holes) matchTies++;
+      } else {
+        holesWon += p2Holes;
+        holesLost += p1Holes;
+        if (match.winner === player.player) matchWins++;
         else if (match.winner && match.winner !== player.player) matchLosses++;
-        else if (p1Holes === p2Holes) matchTies++; // tie condition
-        }
-      });
-       const calculatedPoints = (matchWins * 3) + (matchTies * 1);
-      
-      return {
-        name: player.player,
-        status: status,
-        points: calculatedPoints,
-        holesWon,
-        holesLost,
-        holeDiff: holesWon - holesLost,
-        played: poolMatches.length,
+        else if (p1Holes === p2Holes) matchTies++;
+      }
+    });
+    
+    const calculatedPoints = (matchWins * 3) + (matchTies * 1);
+    
+    return {
+      name: player.player,
+      status: status,
+      points: calculatedPoints,
+      holesWon,
+      holesLost,
+      holeDiff: holesWon - holesLost,
+      played: poolMatches.length,
       win: matchWins,
       loss: matchLosses
-      };
-    });
+    };
+  });
 
-    standings.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.holeDiff - a.holeDiff;
-    });
+  // Separate active and inactive players
+  const activePlayers = standings.filter(s => s.status === 'Active');
+  const inactivePlayers = standings.filter(s => s.status === 'Inactive');
 
-    return standings;
-  };
+  // Sort active players
+  activePlayers.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    return b.holeDiff - a.holeDiff;
+  });
 
-  const getPoolNames = () => {
-    return [...new Set(pools.map(p => p.pool))].sort();
-  };
+  // Sort inactive players
+  inactivePlayers.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    return b.holeDiff - a.holeDiff;
+  });
+
+  // Combine: active players first, then inactive
+  return [...activePlayers, ...inactivePlayers];
+};
 
  const generatePlayoffBrackets = (playoffType) => {
   const allPools = getPoolNames().filter(p => 
