@@ -813,7 +813,9 @@ const calculateStandings = (poolName) => {
   // Combine: active players first, then inactive
   return [...activePlayers, ...inactivePlayers];
 };
-
+const getPoolNames = () => {
+  return [...new Set(pools.map(p => p.pool))].sort();
+};
  const generatePlayoffBrackets = (playoffType) => {
   const allPools = getPoolNames().filter(p => 
     !p.toLowerCase().includes('cup') && 
