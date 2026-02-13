@@ -453,7 +453,7 @@ const MatchesPage = ({
   darkMode,
   setDarkMode,
   isOnline,
-  pendingUpdates
+  pendingUpdates,
   onRefresh
 }) => {
   const [matchFilter, setMatchFilter] = useState('player');
