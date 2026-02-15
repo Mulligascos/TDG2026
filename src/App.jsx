@@ -1943,11 +1943,8 @@ const recordScore = async () => {
         <div className="max-w-md mx-auto px-4 pt-4 pb-2">
         <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
           ← Cancel Match
-        </button>
-        <button 
-          onClick={() => setShowLiveScores(true)}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
-        >
+        </button> 
+        <button onClick={() => setShowLiveScores(true)} className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2">
           Live Scores
         </button>
           </div>
@@ -2505,7 +2502,7 @@ if (view === 'scoring') {
             // Update local state
             const updatedMatches = appData.matches.map(m => 
               m.id === selectedMatch.match.id 
-                ? { ...m, scoresJson: [], winner: '', status: '' } 
+                ? { ...m, scoresJson: [], winner: '', status: 'scheduled' } 
                 : m
             );
             appData.setMatches(updatedMatches);
@@ -2513,6 +2510,9 @@ if (view === 'scoring') {
           } catch (err) {
             console.error('Error cancelling match:', err);
           }
+        } else {
+          // User clicked "No" on confirm, don't cancel
+          return;
         }
       }
       
