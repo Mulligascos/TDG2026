@@ -1939,7 +1939,8 @@ const recordScore = async () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
            {/* Minimal header with just cancel button */}
-      <div className="max-w-md mx-auto px-4 pt-4 pb-2">
+      <div className="flex items-center justify-between">
+        <div className="max-w-md mx-auto px-4 pt-4 pb-2">
         <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
           ← Cancel Match
         </button>
@@ -1947,9 +1948,10 @@ const recordScore = async () => {
           onClick={() => setShowLiveScores(true)}
           className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
         >
-          📊 Live Scores
+          Live Scores
         </button>
-              </div>
+          </div>
+      </div>
 
      <div className="max-w-md mx-auto px-4 py-2">
         {/* Hole Header */}
