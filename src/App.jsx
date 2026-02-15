@@ -2475,6 +2475,7 @@ const DiscGolfApp = () => {
     />;
   }
 
+// In the main app, update the scoring view cancel handler:
 if (view === 'scoring') {
   return <ScoringPage
     match={selectedMatch.match}
@@ -2488,6 +2489,22 @@ if (view === 'scoring') {
             // Clear local storage
             localStorage.removeItem(`match-progress-${selectedMatch.match.id}`);
             
+            // Update local state - clear scores and set status back to scheduled
+            const updatedMatches = appData.matches.map(m => 
+              m.id === selectedMatch.match.id 
+                ? { ...m, scoresJson: [], winner: '', status: 'scheduled' }
+                : m
+            );
+            appData.setMatches(updatedMatches);
+            
+            // Update localStorage
+            localStorage.setItem('sheet-data', JSON.stringify({
+              players: appData.players,
+              courses: appData.courses,
+              matches: updatedMatches,
+              pools: appData.pools
+            }));
+            
             // Clear match data in Google Sheets
             await fetch(APPS_SCRIPT_URL, {
               method: 'POST',
@@ -2499,26 +2516,16 @@ if (view === 'scoring') {
               mode: 'no-cors'
             });
             
-            // Update local state
-            const updatedMatches = appData.matches.map(m => 
-              m.id === selectedMatch.match.id 
-                ? { ...m, scoresJson: [], winner: '', status: 'scheduled' } 
-                : m
-            );
-            appData.setMatches(updatedMatches);
+            // Clear and return to matches after successful cancel
+            setSelectedMatch(null);
+            setView('matches');
             
           } catch (err) {
             console.error('Error cancelling match:', err);
           }
-        } else {
-          // User clicked "No" on confirm, don't cancel
-          return;
         }
+        // If user clicks "No", do nothing - stay on scoring page
       }
-      
-      // Always clear and return to matches after cancel
-      setSelectedMatch(null);
-      setView('matches');
     }}
     onComplete={(scores, winner) => {
       appData.submitMatchToSheet(selectedMatch.match.id, scores, winner);
