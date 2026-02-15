@@ -1631,7 +1631,7 @@ const calculateMatchStats = (match) => {
     return `${hours} hour${hours > 1 ? 's' : ''} ago`;
   };
 
-  const inProgressMatches = matches.filter(m => m.status === 'in-progress');
+  const inProgressMatches = matches.filter(m => m.status === 'In-progress');
   const completedToday = matches.filter(m => {
     if (m.status !== 'Completed') return false;
     const today = new Date().toLocaleDateString('en-NZ', { day: '2-digit', month: 'long' });
@@ -1766,7 +1766,7 @@ const calculateMatchStats = (match) => {
 const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => {
   const [scores, setScores] = useState([]);
   const [currentHole, setCurrentHole] = useState(0);
-
+  const [showLiveScores, setShowLiveScores] = useState(false);
   const course = courses.find(c => c.name === match.venue || c.code === match.venue);
 
   // Initialize scores on mount or when match changes
@@ -1807,7 +1807,7 @@ useEffect(() => {
     }
   };
   
-  if (match.status !== 'in-progress') {
+  if (match.status !== 'In-progress') {
     updateMatchStatus();
   }
 }, [match.id]);
@@ -1942,6 +1942,12 @@ const recordScore = async () => {
       <div className="max-w-md mx-auto px-4 pt-4 pb-2">
         <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
           ← Cancel Match
+        </button>
+        <button 
+          onClick={() => setShowLiveScores(true)}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+        >
+          📊 Live Scores
         </button>
               </div>
 
@@ -2170,6 +2176,13 @@ const recordScore = async () => {
           </div>
                   </div>
       </div>
+      {showLiveScores && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <LiveScoresPage onBack={() => setShowLiveScores(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
