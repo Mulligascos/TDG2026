@@ -704,7 +704,7 @@ const MatchesPage = ({
         </div>
       )}
 
-      {showLiveScores && (
+     {showLiveScores && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
             <LiveScoresPage onBack={() => setShowLiveScores(false)} />
@@ -1937,17 +1937,20 @@ const recordScore = async () => {
   const player2FirstName = formatPlayerName(match.player2);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-6">
-           {/* Minimal header with just cancel button */}
-      <div className="flex items-center justify-between">
-        <div className="max-w-md mx-auto px-4 pt-4 pb-2">
-        <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
-          ← Cancel Match
-        </button> 
-        <button onClick={() => setShowLiveScores(true)} className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2">
-          Live Scores
-        </button>
-          </div>
+ <div className="min-h-screen bg-gray-50 pb-6">
+      {/* Minimal header with cancel and live scores button */}
+      <div className="max-w-md mx-auto px-4 pt-4 pb-2 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
+            ← Cancel Match
+          </button>
+          <button 
+            onClick={() => setShowLiveScores(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+          >
+            📊 Live Scores
+          </button>
+        </div>
       </div>
 
      <div className="max-w-md mx-auto px-4 py-2">
