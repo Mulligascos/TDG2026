@@ -1534,7 +1534,7 @@ const StandingsPage = ({
             </div>
 
             <div className="mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Crossover Matches</h2
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Crossover Matches</h2>
               {(() => {
                 const { week1, week2 } = generateCrossoverMatches();
                 
