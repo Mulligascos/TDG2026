@@ -1274,7 +1274,7 @@ const generateCrossoverMatches = () => {
             </div>
              <div className="flex gap-2">
     <button 
-                onClick={() => appData.loadSheetData()} 
+                onClick={onRefresh} 
                 disabled={isLoading}
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
