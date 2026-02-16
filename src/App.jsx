@@ -649,7 +649,7 @@ const MatchesPage = ({
             </button>
             <button onClick={() => {
               triggerHaptic('light');
-              onView();
+              onViewStandings();
             }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
               
             </button>
