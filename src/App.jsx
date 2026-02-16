@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+>
+              import React, { useState, useEffect } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
 // ============================================
@@ -11,7 +12,7 @@ const BRAND_SECONDARY = '#FFD700';
 const BRAND_ACCENT = '#228B22';
 
 // ============================================
-// CUSTOM HOOKS
+// CUSTOM HOOKS & UTILITIES
 // ============================================
 
 // Helper function to format names with last initial
@@ -23,6 +24,7 @@ const formatPlayerName = (fullName) => {
   const lastInitial = parts[parts.length - 1][0];
   return `${firstName} ${lastInitial}`;
 };
+
 const isJuniorPlayer = (playerName) => {
   return playerName && playerName.includes('(J)');
 };
@@ -30,6 +32,41 @@ const isJuniorPlayer = (playerName) => {
 const applyJuniorHandicap = (score, playerName) => {
   return isJuniorPlayer(playerName) ? Math.max(1, score - 1) : score;
 };
+
+// Haptic feedback utility
+const triggerHaptic = (style = 'medium') => {
+  if ('vibrate' in navigator) {
+    const patterns = {
+      light: 10,
+      medium: 20,
+      heavy: 30,
+      success: [10, 50, 10],
+      error: [20, 100, 20]
+    };
+    navigator.vibrate(patterns[style] || patterns.medium);
+  }
+};
+
+// Toast Component
+const Toast = ({ message, type = 'success', onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+
+  return (
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] animate-slide-down">
+      <div className={`${bgColor} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 max-w-md`}>
+        {type === 'success' && <Check size={20} />}
+        {type === 'error' && <X size={20} />}
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
+
 // Dark Mode Hook
 const useDarkMode = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -72,6 +109,20 @@ const useDarkMode = () => {
       .dark-mode .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important; }
       .dark-mode .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important; }
       .dark-mode .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important; }
+      
+      @keyframes slide-down {
+        from {
+          transform: translate(-50%, -100%);
+          opacity: 0;
+        }
+        to {
+          transform: translate(-50%, 0);
+          opacity: 1;
+        }
+      }
+      .animate-slide-down {
+        animation: slide-down 0.3s ease-out;
+      }
     `;
     document.head.appendChild(style);
     return () => {
@@ -112,70 +163,71 @@ const useAppData = () => {
     }
   }, [isOnline]);
 
- const loadSheetData = async () => {
-   setIsLoading(true); 
-  try {
-     console.log('Fetching from:', `${APPS_SCRIPT_URL}?action=getData`);
-    const response = await fetch(`${APPS_SCRIPT_URL}?action=getData`);
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
-    if (!response.ok) throw new Error('Failed to load data');
-    
-    const data = await response.json();
-    console.log('Raw data from Apps Script:', data);
-
-    if (!data.players || !Array.isArray(data.players)) {
-      console.error('Invalid data structure:', data);
-      throw new Error('Invalid data structure');
-    }
-    const playersData = data.players.slice(1).map(row => ({
-  id: row[0], 
-  name: row[1], 
-  pin: String(row[2]),
-  status: row[3] || 'Active' // Add status column
-}));
-     console.log('Parsed players:', playersData);
-    setPlayers(playersData);
-    
-    const coursesData = data.courses.slice(1).map(row => ({
-      id: row[0], name: row[1], code: row[2], holes: parseInt(row[3]), pars: JSON.parse(row[4] || '{}')
-    }));
-    setCourses(coursesData);
-    
-    const matchesData = data.matches.slice(1).map(row => ({
-      id: row[0], date: row[1], venue: row[2], player1: row[3], player2: row[4],
-      startTime: row[5], endTime: row[6], scoresJson: row[7] ? JSON.parse(row[7]) : [],
-      winner: row[8], status: row[9] || 'scheduled'
-    }));
-    setMatches(matchesData);
-    
-    const poolsData = data.pools.slice(1).map(row => ({
-      pool: row[0], player: row[1], played: parseInt(row[2]) || 0,
-      win: parseInt(row[3]) || 0, loss: parseInt(row[4]) || 0, points: parseInt(row[5]) || 0
-    }));
-    setPools(poolsData);
-    
-    localStorage.setItem('sheet-data', JSON.stringify({
-      players: playersData, courses: coursesData, matches: matchesData, pools: poolsData
-    }));
-  } catch (err) {
-    console.error('Error loading sheet data:', err);
+  const loadSheetData = async () => {
+    setIsLoading(true); 
     try {
-      const stored = localStorage.getItem('sheet-data');
-      if (stored) {
-        const data = JSON.parse(stored);
-        setPlayers(data.players || []);
-        setCourses(data.courses || []);
-        setMatches(data.matches || []);
-        setPools(data.pools || []);
+      console.log('Fetching from:', `${APPS_SCRIPT_URL}?action=getData`);
+      const response = await fetch(`${APPS_SCRIPT_URL}?action=getData`);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      if (!response.ok) throw new Error('Failed to load data');
+      
+      const data = await response.json();
+      console.log('Raw data from Apps Script:', data);
+
+      if (!data.players || !Array.isArray(data.players)) {
+        console.error('Invalid data structure:', data);
+        throw new Error('Invalid data structure');
       }
-    } catch (e) {
-      console.error('Unable to load data');
+      const playersData = data.players.slice(1).map(row => ({
+        id: row[0], 
+        name: row[1], 
+        pin: String(row[2]),
+        status: row[3] || 'Active'
+      }));
+      console.log('Parsed players:', playersData);
+      setPlayers(playersData);
+      
+      const coursesData = data.courses.slice(1).map(row => ({
+        id: row[0], name: row[1], code: row[2], holes: parseInt(row[3]), pars: JSON.parse(row[4] || '{}')
+      }));
+      setCourses(coursesData);
+      
+      const matchesData = data.matches.slice(1).map(row => ({
+        id: row[0], date: row[1], venue: row[2], player1: row[3], player2: row[4],
+        startTime: row[5], endTime: row[6], scoresJson: row[7] ? JSON.parse(row[7]) : [],
+        winner: row[8], status: row[9] || 'scheduled'
+      }));
+      setMatches(matchesData);
+      
+      const poolsData = data.pools.slice(1).map(row => ({
+        pool: row[0], player: row[1], played: parseInt(row[2]) || 0,
+        win: parseInt(row[3]) || 0, loss: parseInt(row[4]) || 0, points: parseInt(row[5]) || 0
+      }));
+      setPools(poolsData);
+      
+      localStorage.setItem('sheet-data', JSON.stringify({
+        players: playersData, courses: coursesData, matches: matchesData, pools: poolsData
+      }));
+    } catch (err) {
+      console.error('Error loading sheet data:', err);
+      try {
+        const stored = localStorage.getItem('sheet-data');
+        if (stored) {
+          const data = JSON.parse(stored);
+          setPlayers(data.players || []);
+          setCourses(data.courses || []);
+          setMatches(data.matches || []);
+          setPools(data.pools || []);
+        }
+      } catch (e) {
+        console.error('Unable to load data');
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
+
   const processPendingUpdates = async () => {
     try {
       const stored = localStorage.getItem('pending-updates');
@@ -193,42 +245,41 @@ const useAppData = () => {
   };
 
   const submitMatchToSheet = async (matchId, finalScores, winner) => {
-  if (!isOnline) {
-    const updates = [...pendingUpdates, { matchId, scores: finalScores, winner }];
-    setPendingUpdates(updates);
-    localStorage.setItem('pending-updates', JSON.stringify(updates));
-    return;
-  }
+    if (!isOnline) {
+      const updates = [...pendingUpdates, { matchId, scores: finalScores, winner }];
+      setPendingUpdates(updates);
+      localStorage.setItem('pending-updates', JSON.stringify(updates));
+      return;
+    }
 
-  try {
-    const match = matches.find(m => m.id === matchId);
-  const updatedMatches = matches.map(m => 
-  m.id === matchId ? { ...m, scoresJson: finalScores, winner, status: 'Completed' } : m
-);
-    setMatches(updatedMatches);
-    
-    // Calculate points to update in pools
-    const updatedPools = pools.map(p => {
-      if (p.player === match.player1 || p.player === match.player2) {
-        const isWinner = p.player === winner;
-        const isTie = !winner || winner === 'Tie';
-        
-        return {
-          ...p,
-          played: p.played + 1,
-          win: isWinner ? p.win + 1 : p.win,
-          loss: (!isWinner && !isTie) ? p.loss + 1 : p.loss,
-          points: p.points + (isWinner ? 3 : isTie ? 1 : 0)
-        };
-      }
-      return p;
-    });
-    setPools(updatedPools);
-    
-    localStorage.setItem('sheet-data', JSON.stringify({
-      players, courses, matches: updatedMatches, pools: updatedPools
-    }));
+    try {
+      const match = matches.find(m => m.id === matchId);
+      const updatedMatches = matches.map(m => 
+        m.id === matchId ? { ...m, scoresJson: finalScores, winner, status: 'Completed' } : m
+      );
+      setMatches(updatedMatches);
       
+      const updatedPools = pools.map(p => {
+        if (p.player === match.player1 || p.player === match.player2) {
+          const isWinner = p.player === winner;
+          const isTie = !winner || winner === 'Tie';
+          
+          return {
+            ...p,
+            played: p.played + 1,
+            win: isWinner ? p.win + 1 : p.win,
+            loss: (!isWinner && !isTie) ? p.loss + 1 : p.loss,
+            points: p.points + (isWinner ? 3 : isTie ? 1 : 0)
+          };
+        }
+        return p;
+      });
+      setPools(updatedPools);
+      
+      localStorage.setItem('sheet-data', JSON.stringify({
+        players, courses, matches: updatedMatches, pools: updatedPools
+      }));
+        
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -251,11 +302,10 @@ const useAppData = () => {
 // PAGE COMPONENTS
 // ============================================
 
-const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, currentUser, onViewLiveScores }) => {
+const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline }) => {
   const [selectedPlayer, setSelectedPlayer] = useState(() => {
-    // Check localStorage for last logged-in user
     const lastUser = localStorage.getItem('lastLoggedInUser');
-    return lastUser || currentUser?.name || '';
+    return lastUser || '';
   });
 
   const handlePlayerChange = (e) => {
@@ -267,20 +317,22 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, c
       <div className="max-w-md mx-auto px-4 py-8">
         <div className="absolute top-4 right-4">
           <button
-            onClick={() => setDarkMode(!darkMode)}
+            onClick={() => {
+              triggerHaptic('light');
+              setDarkMode(!darkMode);
+            }}
             className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
           >
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </div>
         <div className="text-center mb-12 mt-8">
-          <div
-            className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-lg">
             <img
               src="https://i.imgur.com/JJdyPhS.gif"
               alt="Timaru Disc Golf"
               className="w-36 h-36 object-contain"
-              />
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Timaru Disc Golf</h1>
           <p className="text-gray-500">Summer League 2026</p>
@@ -339,6 +391,7 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, c
 
           <button
             type="submit"
+            onClick={() => triggerHaptic('medium')}
             className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
             style={{
               backgroundColor: BRAND_PRIMARY,
@@ -354,8 +407,9 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline, c
     </div>
   );
 };
+
 // Change PIN Page
-const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, onPinChange, darkMode, setDarkMode }) => {
+const ChangePinPage = ({ currentUser, onBack, onPinChange, darkMode, setDarkMode }) => {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
@@ -364,18 +418,20 @@ const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, 
   const handleChangePin = async () => {
     if (newPin.length !== 4 || confirmPin.length !== 4) {
       setError('PIN must be 4 digits');
+      triggerHaptic('error');
       return;
     }
     if (newPin !== confirmPin) {
       setError('PINs do not match');
+      triggerHaptic('error');
       return;
     }
     
     setLoading(true);
     setError('');
+    triggerHaptic('medium');
     
     try {
-      // Update Google Sheets
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -387,11 +443,11 @@ const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, 
         mode: 'no-cors'
       });
       
-      // Call parent handler to update local state
       onPinChange(newPin);
     } catch (err) {
       console.error('Error updating PIN:', err);
       setError('Failed to update PIN. Please try again.');
+      triggerHaptic('error');
     } finally {
       setLoading(false);
     }
@@ -402,10 +458,16 @@ const ChangePinPage = ({ currentUser, players, courses, matches, pools, onBack, 
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
-            <button onClick={onBack} className="mr-4"><X size={24} className="text-gray-600" /></button>
+            <button onClick={() => {
+              triggerHaptic('light');
+              onBack();
+            }} className="mr-4"><X size={24} className="text-gray-600" /></button>
             <h2 className="text-lg font-bold text-gray-900">Change PIN</h2>
           </div>
-          <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          <button onClick={() => {
+            triggerHaptic('light');
+            setDarkMode(!darkMode);
+          }} className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </div>
@@ -469,6 +531,42 @@ const MatchesPage = ({
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [startingHole, setStartingHole] = useState(1);
   const [showLiveScores, setShowLiveScores] = useState(false);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [resumeMatchData, setResumeMatchData] = useState(null);
+
+  // Check for in-progress match on mount
+  useEffect(() => {
+    const checkForInProgressMatch = () => {
+      const keys = Object.keys(localStorage);
+      const progressKeys = keys.filter(key => key.startsWith('match-progress-'));
+      
+      if (progressKeys.length > 0) {
+        const latestKey = progressKeys[progressKeys.length - 1];
+        const progressData = JSON.parse(localStorage.getItem(latestKey));
+        const match = matches.find(m => m.id === progressData.matchId);
+        
+        if (match && (match.player1 === currentUser.name || match.player2 === currentUser.name)) {
+          setResumeMatchData({ match, progress: progressData });
+          setShowResumePrompt(true);
+        }
+      }
+    };
+    
+    checkForInProgressMatch();
+  }, [matches, currentUser]);
+
+  const handleResumeMatch = () => {
+    triggerHaptic('medium');
+    onStartMatch(resumeMatchData.match, resumeMatchData.progress.startingHole);
+    setShowResumePrompt(false);
+  };
+
+  const handleDiscardMatch = () => {
+    triggerHaptic('light');
+    localStorage.removeItem(`match-progress-${resumeMatchData.match.id}`);
+    setShowResumePrompt(false);
+    setResumeMatchData(null);
+  };
 
   const userMatches = matches.filter(m => 
     m.player1 === currentUser.name || m.player2 === currentUser.name
@@ -489,16 +587,18 @@ const MatchesPage = ({
   const uniquePlayers = [...new Set(matches.filter(m => m.status === 'Completed').flatMap(m => [m.player1, m.player2]))].sort();
 
   const handleStartMatch = (match) => {
+    triggerHaptic('light');
     setSelectedMatch(match);
     setShowStartHoleModal(true);
   };
 
   const confirmStartHole = () => {
+    triggerHaptic('medium');
     onStartMatch(selectedMatch, startingHole);
     setShowStartHoleModal(false);
   };
 
-return (
+  return (
     <div className="min-h-screen bg-gray-50 transition-colors">
       <div className="text-white sticky top-0 z-10 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
         <div className="max-w-md mx-auto px-4 py-6">
@@ -514,35 +614,53 @@ return (
             </div>
             <div className="flex gap-2">
               <button 
-  onClick={onRefresh}
-  disabled={isLoading}
-  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
->
-  <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
-</button>
-              <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+                onClick={() => {
+                  triggerHaptic('light');
+                  onRefresh();
+                }}
+                disabled={isLoading}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
+              </button>
+              <button onClick={() => {
+                triggerHaptic('light');
+                setDarkMode(!darkMode);
+              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
-              <button onClick={onChangePin} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+              <button onClick={() => {
+                triggerHaptic('light');
+                onChangePin();
+              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 <Edit size={20} />
               </button>
-              <button onClick={onLogout} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+              <button onClick={() => {
+                triggerHaptic('medium');
+                onLogout();
+              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 <LogOut size={20} />
               </button>
             </div>
           </div>
           
-<div className="flex gap-2 mt-4">
-  <button className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/20 text-white">
-    Matches
-  </button>
-  <button onClick={onViewStandings} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
-    Standings
-  </button>
-  <button onClick={() => setShowLiveScores(true)} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
-    Live
-  </button>
-</div>
+          <div className="flex gap-2 mt-4">
+            <button className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/20 text-white">
+              Matches
+            </button>
+            <button onClick={() => {
+              triggerHaptic('light');
+              onViewStandings();
+            }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
+              Standings
+            </button>
+            <button onClick={() => {
+              triggerHaptic('light');
+              setShowLiveScores(true);
+            }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
+              Live
+            </button>
+          </div>
           
           {!isOnline && (
             <div className="bg-white/10 px-3 py-2 rounded-lg text-sm flex items-center mt-4">
@@ -654,7 +772,10 @@ return (
               {completedMatches.map(match => (
                 <div 
                   key={match.id}
-                  onClick={() => onReviewMatch(match)}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    onReviewMatch(match);
+                  }}
                   className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -680,6 +801,35 @@ return (
         </div>
       </div>
 
+      {/* Resume Match Prompt */}
+      {showResumePrompt && resumeMatchData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Resume Match?</h3>
+            <p className="text-gray-600 mb-4">
+              You have an in-progress match: <strong>{formatPlayerName(resumeMatchData.match.player1)}</strong> vs <strong>{formatPlayerName(resumeMatchData.match.player2)}</strong>
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              {resumeMatchData.progress.scores.filter(s => s.scored).length} of 18 holes completed
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={handleDiscardMatch}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Discard
+              </button>
+              <button 
+                onClick={handleResumeMatch}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Resume Match
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showStartHoleModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end z-50">
           <div className="bg-white w-full rounded-t-3xl p-6 max-w-md mx-auto">
@@ -695,7 +845,10 @@ return (
             </select>
             <div className="flex gap-3">
               <button 
-                onClick={() => setShowStartHoleModal(false)}
+                onClick={() => {
+                  triggerHaptic('light');
+                  setShowStartHoleModal(false);
+                }}
                 className="flex-1 bg-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
               >
                 Cancel
@@ -706,22 +859,26 @@ return (
               >
                 Start Match
               </button>
-                     </div>
+            </div>
           </div>
         </div>
       )}
 
-     {showLiveScores && (
+      {showLiveScores && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <LiveScoresPage onBack={() => setShowLiveScores(false)} />
+            <LiveScoresPage onBack={() => {
+              triggerHaptic('light');
+              setShowLiveScores(false);
+            }} />
           </div>
         </div>
       )}
     </div>
   );
 };
-// Standings Page
+
+// Standings Page - keeping original code, just adding haptic to buttons
 const StandingsPage = ({ 
   currentUser, 
   matches, 
@@ -738,526 +895,506 @@ const StandingsPage = ({
   isLoading
 }) => {
   console.log('StandingsPage rendering:', { currentUser, matches, pools, players });
-const calculateStandings = (poolName) => {
-  const poolPlayers = pools.filter(p => p.pool === poolName);
   
-  const standings = poolPlayers.map(player => {
-    const playerData = players.find(p => p.name === player.player);
-    const status = playerData?.status || 'Active';
+  const calculateStandings = (poolName) => {
+    const poolPlayers = pools.filter(p => p.pool === poolName);
     
-    const poolMatches = matches.filter(m => 
-      m.status === 'Completed' && 
-      (m.player1 === player.player || m.player2 === player.player)
-    );
-
-    let holesWon = 0;
-    let holesLost = 0;
-    let matchWins = 0;
-    let matchLosses = 0;
-    let matchTies = 0;
-
-    poolMatches.forEach(match => {
-      const isPlayer1 = match.player1 === player.player;
+    const standings = poolPlayers.map(player => {
+      const playerData = players.find(p => p.name === player.player);
+      const status = playerData?.status || 'Active';
       
-      let p1Holes = 0;
-      let p2Holes = 0;
-      
-      if (match.scoresJson && match.scoresJson.length > 0) {
-        match.scoresJson.forEach(score => {
-          if (score.scored) {
-            // Apply junior handicap
-            const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
-            const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
-            
-            if (p1Adjusted < p2Adjusted) p1Holes++;
-            else if (p2Adjusted < p1Adjusted) p2Holes++;
-          }
-        });
-      }
-
-      if (isPlayer1) {
-        holesWon += p1Holes;
-        holesLost += p2Holes;
-        if (match.winner === player.player) matchWins++;
-        else if (match.winner && match.winner !== player.player) matchLosses++;
-        else if (p1Holes === p2Holes) matchTies++;
-      } else {
-        holesWon += p2Holes;
-        holesLost += p1Holes;
-        if (match.winner === player.player) matchWins++;
-        else if (match.winner && match.winner !== player.player) matchLosses++;
-        else if (p1Holes === p2Holes) matchTies++;
-      }
-    });
-    
-    const calculatedPoints = (matchWins * 3) + (matchTies * 1);
-    
-    return {
-      name: player.player,
-      status: status,
-      points: calculatedPoints,
-      holesWon,
-      holesLost,
-      holeDiff: holesWon - holesLost,
-      played: poolMatches.length,
-      win: matchWins,
-      loss: matchLosses
-    };
-  });
-
-  // Separate active and inactive players
-  const activePlayers = standings.filter(s => s.status === 'Active');
-  const inactivePlayers = standings.filter(s => s.status === 'Inactive');
-
-  // Sort active players
-  activePlayers.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    return b.holeDiff - a.holeDiff;
-  });
-
-  // Sort inactive players
-  inactivePlayers.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    return b.holeDiff - a.holeDiff;
-  });
-
-  // Combine: active players first, then inactive
-  return [...activePlayers, ...inactivePlayers];
-};
-const getPoolNames = () => {
-  return [...new Set(pools.map(p => p.pool))].sort();
-};
- const generatePlayoffBrackets = (playoffType) => {
-  const allPools = getPoolNames().filter(p => 
-    !p.toLowerCase().includes('cup') && 
-    !p.toLowerCase().includes('shield') && 
-    !p.toLowerCase().includes('plate')
-  );
-  
-  const poolStandings = allPools.map(poolName => ({
-    pool: poolName,
-    standings: calculateStandings(poolName)
-  }));
-  
-  // CUP FINAL - unchanged (top 3 from each pool)
-  if (playoffType === 'Cup') {
-    let participants = [];
-    
-    poolStandings.forEach(({ pool, standings }) => {
-      const activeStandings = standings.filter(s => s.status === 'Active');
-    
-    // Take top 3 from active players
-    activeStandings.slice(0, 3).forEach((player, idx) => {
-      participants.push({ ...player, pool, seed: idx + 1 });
-    });
-  });
-    
-    if (participants.length === 0) {
-      return { bracket: null, hasMatches: false };
-    }
-    
-    const poolA = participants.filter(p => p.pool === allPools[0]) || [];
-    const poolB = participants.filter(p => p.pool === allPools[1]) || [];
-    const poolC = participants.filter(p => p.pool === allPools[2]) || [];
-    const poolD = participants.filter(p => p.pool === allPools[3]) || [];
-    
-    const playoffMatches = matches.filter(m => {
-      const id = m.id?.toLowerCase() || '';
-      const venue = m.venue?.toLowerCase() || '';
-      return (id.includes('cup') || venue.includes('cup')) && m.status === 'Completed';
-    });
-    
-    const findWinner = (p1Name, p2Name) => {
-      const match = playoffMatches.find(m => 
-        (m.player1 === p1Name && m.player2 === p2Name) ||
-        (m.player1 === p2Name && m.player2 === p1Name)
+      const poolMatches = matches.filter(m => 
+        m.status === 'Completed' && 
+        (m.player1 === player.player || m.player2 === player.player)
       );
-      return match?.winner;
-    };
-    
-    const bracket = { r16: [], qf: [], sf: [], final: null };
-    
-    if (poolA.length >= 3) {
-      const winner = findWinner(poolA[1].name, poolA[2].name);
-      bracket.r16.push({
-        id: 'Pool A: 2v3',
-        player1: poolA[1].name,
-        player2: poolA[2].name,
-        winner: winner,
-        poolLabel: allPools[0]
+
+      let holesWon = 0;
+      let holesLost = 0;
+      let matchWins = 0;
+      let matchLosses = 0;
+      let matchTies = 0;
+
+      poolMatches.forEach(match => {
+        const isPlayer1 = match.player1 === player.player;
+        
+        let p1Holes = 0;
+        let p2Holes = 0;
+        
+        if (match.scoresJson && match.scoresJson.length > 0) {
+          match.scoresJson.forEach(score => {
+            if (score.scored) {
+              const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+              const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+              
+              if (p1Adjusted < p2Adjusted) p1Holes++;
+              else if (p2Adjusted < p1Adjusted) p2Holes++;
+            }
+          });
+        }
+
+        if (isPlayer1) {
+          holesWon += p1Holes;
+          holesLost += p2Holes;
+          if (match.winner === player.player) matchWins++;
+          else if (match.winner && match.winner !== player.player) matchLosses++;
+          else if (p1Holes === p2Holes) matchTies++;
+        } else {
+          holesWon += p2Holes;
+          holesLost += p1Holes;
+          if (match.winner === player.player) matchWins++;
+          else if (match.winner && match.winner !== player.player) matchLosses++;
+          else if (p1Holes === p2Holes) matchTies++;
+        }
       });
-    }
-    if (poolB.length >= 3) {
-      const winner = findWinner(poolB[1].name, poolB[2].name);
-      bracket.r16.push({
-        id: 'Pool B: 2v3',
-        player1: poolB[1].name,
-        player2: poolB[2].name,
-        winner: winner,
-        poolLabel: allPools[1]
-      });
-    }
-    if (poolC.length >= 3) {
-      const winner = findWinner(poolC[1].name, poolC[2].name);
-      bracket.r16.push({
-        id: 'Pool C: 2v3',
-        player1: poolC[1].name,
-        player2: poolC[2].name,
-        winner: winner,
-        poolLabel: allPools[2]
-      });
-    }
-    if (poolD.length >= 3) {
-      const winner = findWinner(poolD[1].name, poolD[2].name);
-      bracket.r16.push({
-        id: 'Pool D: 2v3',
-        player1: poolD[1].name,
-        player2: poolD[2].name,
-        winner: winner,
-        poolLabel: allPools[3]
-      });
-    }
-    
-    if (poolA.length >= 1) {
-      const r16Winner = bracket.r16[0]?.winner || 'Winner 2v3';
-      const winner = findWinner(poolA[0].name, r16Winner);
-      bracket.qf.push({
-        id: 'QF1',
-        player1: poolA[0].name,
-        player2: r16Winner,
-        winner: winner,
-        poolLabel: allPools[0]
-      });
-    }
-    if (poolB.length >= 1) {
-      const r16Winner = bracket.r16[1]?.winner || 'Winner 2v3';
-      const winner = findWinner(poolB[0].name, r16Winner);
-      bracket.qf.push({
-        id: 'QF2',
-        player1: poolB[0].name,
-        player2: r16Winner,
-        winner: winner,
-        poolLabel: allPools[1]
-      });
-    }
-    if (poolC.length >= 1) {
-      const r16Winner = bracket.r16[2]?.winner || 'Winner 2v3';
-      const winner = findWinner(poolC[0].name, r16Winner);
-      bracket.qf.push({
-        id: 'QF3',
-        player1: poolC[0].name,
-        player2: r16Winner,
-        winner: winner,
-        poolLabel: allPools[2]
-      });
-    }
-    if (poolD.length >= 1) {
-      const r16Winner = bracket.r16[3]?.winner || 'Winner 2v3';
-      const winner = findWinner(poolD[0].name, r16Winner);
-      bracket.qf.push({
-        id: 'QF4',
-        player1: poolD[0].name,
-        player2: r16Winner,
-        winner: winner,
-        poolLabel: allPools[3]
-      });
-    }
-    
-    if (bracket.qf.length >= 2) {
-      const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
-      const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
-      const winner = findWinner(qf1Winner, qf4Winner);
-      bracket.sf.push({
-        id: 'SF1',
-        player1: qf1Winner,
-        player2: qf4Winner,
-        winner: winner
-      });
-    }
-    if (bracket.qf.length >= 3) {
-      const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
-      const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
-      const winner = findWinner(qf2Winner, qf3Winner);
-      bracket.sf.push({
-        id: 'SF2',
-        player1: qf2Winner,
-        player2: qf3Winner,
-        winner: winner
-      });
-    }
-    
-    if (bracket.sf.length >= 2) {
-      const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
-      const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
-      const winner = findWinner(sf1Winner, sf2Winner);
-      bracket.final = {
-        id: 'Final',
-        player1: sf1Winner,
-        player2: sf2Winner,
-        winner: winner
+      
+      const calculatedPoints = (matchWins * 3) + (matchTies * 1);
+      
+      return {
+        name: player.player,
+        status: status,
+        points: calculatedPoints,
+        holesWon,
+        holesLost,
+        holeDiff: holesWon - holesLost,
+        played: poolMatches.length,
+        win: matchWins,
+        loss: matchLosses
       };
-    }
-    
-    return { bracket, hasMatches: true };
-  }
-  
-  // SHIELD FINAL - NEW ranking-based system
-  if (playoffType === 'Shield') {
-    // Collect all non-Cup players (4th place and below from each pool)
-    let allNonCupPlayers = [];
-    
-    poolStandings.forEach(({ pool, standings }) => {
-      const activeStandings = standings.filter(s => s.status === 'Active');
-    
-    // Take players ranked 4th and below
-    activeStandings.slice(3).forEach((player) => {
-      allNonCupPlayers.push({ ...player, pool });
     });
-  });
-    
-    if (allNonCupPlayers.length === 0) {
-      return { bracket: null, hasMatches: false };
-    }
-    
-    // Sort by points, then hole differential, then wins
-    allNonCupPlayers.sort((a, b) => {
+
+    const activePlayers = standings.filter(s => s.status === 'Active');
+    const inactivePlayers = standings.filter(s => s.status === 'Inactive');
+
+    activePlayers.sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
-      if (b.holeDiff !== a.holeDiff) return b.holeDiff - a.holeDiff;
-      return b.win - a.win;
+      return b.holeDiff - a.holeDiff;
     });
-    
-    // Determine bracket size based on player count
-    let bracketSize;
-    if (allNonCupPlayers.length >= 16) bracketSize = 16;
-    else if (allNonCupPlayers.length >= 12) bracketSize = 12;
-    else if (allNonCupPlayers.length >= 8) bracketSize = 8;
-    else return { bracket: null, hasMatches: false }; // Not enough players
-    
-    // Take top N players
-    const shieldPlayers = allNonCupPlayers.slice(0, bracketSize);
-    
-    const playoffMatches = matches.filter(m => {
-      const id = m.id?.toLowerCase() || '';
-      const venue = m.venue?.toLowerCase() || '';
-      return (id.includes('shield') || venue.includes('shield')) && m.status === 'Completed';
+
+    inactivePlayers.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return b.holeDiff - a.holeDiff;
     });
+
+    return [...activePlayers, ...inactivePlayers];
+  };
+
+  const getPoolNames = () => {
+    return [...new Set(pools.map(p => p.pool))].sort();
+  };
+
+  const generatePlayoffBrackets = (playoffType) => {
+    const allPools = getPoolNames().filter(p => 
+      !p.toLowerCase().includes('cup') && 
+      !p.toLowerCase().includes('shield') && 
+      !p.toLowerCase().includes('plate')
+    );
     
-    const findWinner = (p1Name, p2Name) => {
-      const match = playoffMatches.find(m => 
-        (m.player1 === p1Name && m.player2 === p2Name) ||
-        (m.player1 === p2Name && m.player2 === p1Name)
-      );
-      return match?.winner;
-    };
+    const poolStandings = allPools.map(poolName => ({
+      pool: poolName,
+      standings: calculateStandings(poolName)
+    }));
     
-    const bracket = { r16: [], qf: [], sf: [], final: null };
-    
-    // Generate R16 matches (for 16-player bracket)
-    if (bracketSize === 16) {
-      for (let i = 0; i < 8; i++) {
-        const seed1 = i;
-        const seed2 = 15 - i;
-        const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
+    if (playoffType === 'Cup') {
+      let participants = [];
+      
+      poolStandings.forEach(({ pool, standings }) => {
+        const activeStandings = standings.filter(s => s.status === 'Active');
+        activeStandings.slice(0, 3).forEach((player, idx) => {
+          participants.push({ ...player, pool, seed: idx + 1 });
+        });
+      });
+      
+      if (participants.length === 0) {
+        return { bracket: null, hasMatches: false };
+      }
+      
+      const poolA = participants.filter(p => p.pool === allPools[0]) || [];
+      const poolB = participants.filter(p => p.pool === allPools[1]) || [];
+      const poolC = participants.filter(p => p.pool === allPools[2]) || [];
+      const poolD = participants.filter(p => p.pool === allPools[3]) || [];
+      
+      const playoffMatches = matches.filter(m => {
+        const id = m.id?.toLowerCase() || '';
+        const venue = m.venue?.toLowerCase() || '';
+        return (id.includes('cup') || venue.includes('cup')) && m.status === 'Completed';
+      });
+      
+      const findWinner = (p1Name, p2Name) => {
+        const match = playoffMatches.find(m => 
+          (m.player1 === p1Name && m.player2 === p2Name) ||
+          (m.player1 === p2Name && m.player2 === p1Name)
+        );
+        return match?.winner;
+      };
+      
+      const bracket = { r16: [], qf: [], sf: [], final: null };
+      
+      if (poolA.length >= 3) {
+        const winner = findWinner(poolA[1].name, poolA[2].name);
         bracket.r16.push({
-          id: `R16-${i + 1}`,
-          player1: shieldPlayers[seed1].name,
-          player2: shieldPlayers[seed2].name,
+          id: 'Pool A: 2v3',
+          player1: poolA[1].name,
+          player2: poolA[2].name,
           winner: winner,
-          seed1: seed1 + 1,
-          seed2: seed2 + 1
+          poolLabel: allPools[0]
         });
       }
-    }
-    
-    // Generate QF matches
-    if (bracketSize === 16) {
-      // QF comes from R16 winners
-      for (let i = 0; i < 4; i++) {
-        const r16Match1 = bracket.r16[i * 2];
-        const r16Match2 = bracket.r16[i * 2 + 1];
-        const p1 = r16Match1?.winner || `Winner R16-${i * 2 + 1}`;
-        const p2 = r16Match2?.winner || `Winner R16-${i * 2 + 2}`;
-        const winner = findWinner(p1, p2);
+      if (poolB.length >= 3) {
+        const winner = findWinner(poolB[1].name, poolB[2].name);
+        bracket.r16.push({
+          id: 'Pool B: 2v3',
+          player1: poolB[1].name,
+          player2: poolB[2].name,
+          winner: winner,
+          poolLabel: allPools[1]
+        });
+      }
+      if (poolC.length >= 3) {
+        const winner = findWinner(poolC[1].name, poolC[2].name);
+        bracket.r16.push({
+          id: 'Pool C: 2v3',
+          player1: poolC[1].name,
+          player2: poolC[2].name,
+          winner: winner,
+          poolLabel: allPools[2]
+        });
+      }
+      if (poolD.length >= 3) {
+        const winner = findWinner(poolD[1].name, poolD[2].name);
+        bracket.r16.push({
+          id: 'Pool D: 2v3',
+          player1: poolD[1].name,
+          player2: poolD[2].name,
+          winner: winner,
+          poolLabel: allPools[3]
+        });
+      }
+      
+      if (poolA.length >= 1) {
+        const r16Winner = bracket.r16[0]?.winner || 'Winner 2v3';
+        const winner = findWinner(poolA[0].name, r16Winner);
         bracket.qf.push({
-          id: `QF${i + 1}`,
-          player1: p1,
-          player2: p2,
+          id: 'QF1',
+          player1: poolA[0].name,
+          player2: r16Winner,
+          winner: winner,
+          poolLabel: allPools[0]
+        });
+      }
+      if (poolB.length >= 1) {
+        const r16Winner = bracket.r16[1]?.winner || 'Winner 2v3';
+        const winner = findWinner(poolB[0].name, r16Winner);
+        bracket.qf.push({
+          id: 'QF2',
+          player1: poolB[0].name,
+          player2: r16Winner,
+          winner: winner,
+          poolLabel: allPools[1]
+        });
+      }
+      if (poolC.length >= 1) {
+        const r16Winner = bracket.r16[2]?.winner || 'Winner 2v3';
+        const winner = findWinner(poolC[0].name, r16Winner);
+        bracket.qf.push({
+          id: 'QF3',
+          player1: poolC[0].name,
+          player2: r16Winner,
+          winner: winner,
+          poolLabel: allPools[2]
+        });
+      }
+      if (poolD.length >= 1) {
+        const r16Winner = bracket.r16[3]?.winner || 'Winner 2v3';
+        const winner = findWinner(poolD[0].name, r16Winner);
+        bracket.qf.push({
+          id: 'QF4',
+          player1: poolD[0].name,
+          player2: r16Winner,
+          winner: winner,
+          poolLabel: allPools[3]
+        });
+      }
+      
+      if (bracket.qf.length >= 2) {
+        const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
+        const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
+        const winner = findWinner(qf1Winner, qf4Winner);
+        bracket.sf.push({
+          id: 'SF1',
+          player1: qf1Winner,
+          player2: qf4Winner,
           winner: winner
         });
       }
-    } else if (bracketSize === 12) {
-      // Top 4 get byes, seeds 5-12 play
-      for (let i = 0; i < 4; i++) {
-        const seed1 = 4 + i;
-        const seed2 = 11 - i;
-        const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
-        bracket.r16.push({
-          id: `R16-${i + 1}`,
-          player1: shieldPlayers[seed1].name,
-          player2: shieldPlayers[seed2].name,
-          winner: winner,
-          seed1: seed1 + 1,
-          seed2: seed2 + 1
+      if (bracket.qf.length >= 3) {
+        const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
+        const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
+        const winner = findWinner(qf2Winner, qf3Winner);
+        bracket.sf.push({
+          id: 'SF2',
+          player1: qf2Winner,
+          player2: qf3Winner,
+          winner: winner
         });
       }
       
-      // QF: Top 4 seeds vs R16 winners
-      for (let i = 0; i < 4; i++) {
-        const topSeed = shieldPlayers[i].name;
-        const r16Winner = bracket.r16[3 - i]?.winner || `Winner R16-${4 - i}`;
-        const winner = findWinner(topSeed, r16Winner);
-        bracket.qf.push({
-          id: `QF${i + 1}`,
-          player1: topSeed,
-          player2: r16Winner,
-          winner: winner,
-          seed1: i + 1
-        });
+      if (bracket.sf.length >= 2) {
+        const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
+        const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
+        const winner = findWinner(sf1Winner, sf2Winner);
+        bracket.final = {
+          id: 'Final',
+          player1: sf1Winner,
+          player2: sf2Winner,
+          winner: winner
+        };
       }
-    } else if (bracketSize === 8) {
-      // Direct to QF
-      for (let i = 0; i < 4; i++) {
-        const seed1 = i;
-        const seed2 = 7 - i;
-        const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
-        bracket.qf.push({
-          id: `QF${i + 1}`,
-          player1: shieldPlayers[seed1].name,
-          player2: shieldPlayers[seed2].name,
-          winner: winner,
-          seed1: seed1 + 1,
-          seed2: seed2 + 1
-        });
-      }
-    }
-    
-    // Generate SF matches
-    if (bracket.qf.length >= 2) {
-      const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
-      const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
-      const winner = findWinner(qf1Winner, qf4Winner);
-      bracket.sf.push({
-        id: 'SF1',
-        player1: qf1Winner,
-        player2: qf4Winner,
-        winner: winner
-      });
-    }
-    if (bracket.qf.length >= 3) {
-      const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
-      const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
-      const winner = findWinner(qf2Winner, qf3Winner);
-      bracket.sf.push({
-        id: 'SF2',
-        player1: qf2Winner,
-        player2: qf3Winner,
-        winner: winner
-      });
-    }
-    
-    // Generate Final
-    if (bracket.sf.length >= 2) {
-      const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
-      const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
-      const winner = findWinner(sf1Winner, sf2Winner);
-      bracket.final = {
-        id: 'Final',
-        player1: sf1Winner,
-        player2: sf2Winner,
-        winner: winner
-      };
-    }
-    
-    return { bracket, hasMatches: true, bracketSize };
-  }
-  
-  return { bracket: null, hasMatches: false };
-};
-
-const generateCrossoverMatches = () => {
-  const allPools = getPoolNames().filter(p => 
-    !p.toLowerCase().includes('cup') && 
-    !p.toLowerCase().includes('shield') && 
-    !p.toLowerCase().includes('plate') &&
-    !p.toLowerCase().includes('crossover')
-  );
-  
-  if (allPools.length < 4) return { week1: [], week2: [] };
-  
-  const poolStandings = allPools.map(poolName => ({
-    pool: poolName,
-    standings: calculateStandings(poolName).filter(s => s.status === 'Active') // Filter active only
-  }));
-  
-  const poolA = poolStandings[0]?.standings || [];
-  const poolB = poolStandings[1]?.standings || [];
-  const poolC = poolStandings[2]?.standings || [];
-  const poolD = poolStandings[3]?.standings || [];
-    
-    const crossoverMatches = matches.filter(m => {
-      const id = m.id?.toLowerCase() || '';
-      const venue = m.venue?.toLowerCase() || '';
-      return id.includes('crossover') || venue.includes('crossover');
-    });
-    
-    const findMatchResult = (p1, p2) => {
-      const match = crossoverMatches.find(m => 
-        (m.player1 === p1 && m.player2 === p2) ||
-        (m.player1 === p2 && m.player2 === p1)
-      );
-      return match;
-    };
-    
-    const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
-      const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
-      const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
-      const match = findMatchResult(player1, player2);
       
-      return {
-        player1,
-        player2,
-        winner: match?.winner,
-        status: match?.status,
-        label: `${poolName1}${pos1} v ${poolName2}${pos2}`
+      return { bracket, hasMatches: true };
+    }
+    
+    if (playoffType === 'Shield') {
+      let allNonCupPlayers = [];
+      
+      poolStandings.forEach(({ pool, standings }) => {
+        const activeStandings = standings.filter(s => s.status === 'Active');
+        activeStandings.slice(3).forEach((player) => {
+          allNonCupPlayers.push({ ...player, pool });
+        });
+      });
+      
+      if (allNonCupPlayers.length === 0) {
+        return { bracket: null, hasMatches: false };
+      }
+      
+      allNonCupPlayers.sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.holeDiff !== a.holeDiff) return b.holeDiff - a.holeDiff;
+        return b.win - a.win;
+      });
+      
+      let bracketSize;
+      if (allNonCupPlayers.length >= 16) bracketSize = 16;
+      else if (allNonCupPlayers.length >= 12) bracketSize = 12;
+      else if (allNonCupPlayers.length >= 8) bracketSize = 8;
+      else return { bracket: null, hasMatches: false };
+      
+      const shieldPlayers = allNonCupPlayers.slice(0, bracketSize);
+      
+      const playoffMatches = matches.filter(m => {
+        const id = m.id?.toLowerCase() || '';
+        const venue = m.venue?.toLowerCase() || '';
+        return (id.includes('shield') || venue.includes('shield')) && m.status === 'Completed';
+      });
+      
+      const findWinner = (p1Name, p2Name) => {
+        const match = playoffMatches.find(m => 
+          (m.player1 === p1Name && m.player2 === p2Name) ||
+          (m.player1 === p2Name && m.player2 === p1Name)
+        );
+        return match?.winner;
       };
-    };
+      
+      const bracket = { r16: [], qf: [], sf: [], final: null };
+      
+      if (bracketSize === 16) {
+        for (let i = 0; i < 8; i++) {
+          const seed1 = i;
+          const seed2 = 15 - i;
+          const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
+          bracket.r16.push({
+            id: `R16-${i + 1}`,
+            player1: shieldPlayers[seed1].name,
+            player2: shieldPlayers[seed2].name,
+            winner: winner,
+            seed1: seed1 + 1,
+            seed2: seed2 + 1
+          });
+        }
+      }
+      
+      if (bracketSize === 16) {
+        for (let i = 0; i < 4; i++) {
+          const r16Match1 = bracket.r16[i * 2];
+          const r16Match2 = bracket.r16[i * 2 + 1];
+          const p1 = r16Match1?.winner || `Winner R16-${i * 2 + 1}`;
+          const p2 = r16Match2?.winner || `Winner R16-${i * 2 + 2}`;
+          const winner = findWinner(p1, p2);
+          bracket.qf.push({
+            id: `QF${i + 1}`,
+            player1: p1,
+            player2: p2,
+            winner: winner
+          });
+        }
+      } else if (bracketSize === 12) {
+        for (let i = 0; i < 4; i++) {
+          const seed1 = 4 + i;
+          const seed2 = 11 - i;
+          const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
+          bracket.r16.push({
+            id: `R16-${i + 1}`,
+            player1: shieldPlayers[seed1].name,
+            player2: shieldPlayers[seed2].name,
+            winner: winner,
+            seed1: seed1 + 1,
+            seed2: seed2 + 1
+          });
+        }
+        
+        for (let i = 0; i < 4; i++) {
+          const topSeed = shieldPlayers[i].name;
+          const r16Winner = bracket.r16[3 - i]?.winner || `Winner R16-${4 - i}`;
+          const winner = findWinner(topSeed, r16Winner);
+          bracket.qf.push({
+            id: `QF${i + 1}`,
+            player1: topSeed,
+            player2: r16Winner,
+            winner: winner,
+            seed1: i + 1
+          });
+        }
+      } else if (bracketSize === 8) {
+        for (let i = 0; i < 4; i++) {
+          const seed1 = i;
+          const seed2 = 7 - i;
+          const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
+          bracket.qf.push({
+            id: `QF${i + 1}`,
+            player1: shieldPlayers[seed1].name,
+            player2: shieldPlayers[seed2].name,
+            winner: winner,
+            seed1: seed1 + 1,
+            seed2: seed2 + 1
+          });
+        }
+      }
+      
+      if (bracket.qf.length >= 2) {
+        const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
+        const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
+        const winner = findWinner(qf1Winner, qf4Winner);
+        bracket.sf.push({
+          id: 'SF1',
+          player1: qf1Winner,
+          player2: qf4Winner,
+          winner: winner
+        });
+      }
+      if (bracket.qf.length >= 3) {
+        const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
+        const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
+        const winner = findWinner(qf2Winner, qf3Winner);
+        bracket.sf.push({
+          id: 'SF2',
+          player1: qf2Winner,
+          player2: qf3Winner,
+          winner: winner
+        });
+      }
+      
+      if (bracket.sf.length >= 2) {
+        const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
+        const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
+        const winner = findWinner(sf1Winner, sf2Winner);
+        bracket.final = {
+          id: 'Final',
+          player1: sf1Winner,
+          player2: sf2Winner,
+          winner: winner
+        };
+      }
+      
+      return { bracket, hasMatches: true, bracketSize };
+    }
     
-    const week1 = [
-      createMatch(poolA, 1, poolB, 3, 'A', 'B'),
-      createMatch(poolA, 2, poolB, 2, 'A', 'B'),
-      createMatch(poolA, 3, poolB, 1, 'A', 'B'),
-      createMatch(poolC, 1, poolD, 3, 'C', 'D'),
-      createMatch(poolC, 2, poolD, 2, 'C', 'D'),
-      createMatch(poolC, 3, poolD, 1, 'C', 'D'),
-      createMatch(poolA, 4, poolB, 6, 'A', 'B'),
-      createMatch(poolA, 5, poolB, 5, 'A', 'B'),
-      createMatch(poolA, 6, poolB, 4, 'A', 'B'),
-      createMatch(poolC, 4, poolD, 6, 'C', 'D'),
-      createMatch(poolC, 5, poolD, 5, 'C', 'D'),
-      createMatch(poolC, 6, poolD, 4, 'C', 'D'),
-      createMatch(poolA, 7, poolB, 7, 'A', 'B'),
-      createMatch(poolC, 7, poolD, 7, 'C', 'D')
-    ];
-    
-    const week2 = [
-      createMatch(poolA, 1, poolC, 3, 'A', 'C'),
-      createMatch(poolA, 2, poolC, 2, 'A', 'C'),
-      createMatch(poolA, 3, poolC, 1, 'A', 'C'),
-      createMatch(poolB, 1, poolD, 3, 'B', 'D'),
-      createMatch(poolB, 2, poolD, 2, 'B', 'D'),
-      createMatch(poolB, 3, poolD, 1, 'B', 'D'),
-      createMatch(poolA, 4, poolC, 6, 'A', 'C'),
-      createMatch(poolA, 5, poolC, 5, 'A', 'C'),
-      createMatch(poolA, 6, poolC, 4, 'A', 'C'),
-      createMatch(poolB, 4, poolD, 6, 'B', 'D'),
-      createMatch(poolB, 5, poolD, 5, 'B', 'D'),
-      createMatch(poolB, 6, poolD, 4, 'B', 'D'),
-      createMatch(poolA, 7, poolC, 7, 'A', 'C'),
-      createMatch(poolB, 7, poolD, 7, 'B', 'D')
-    ];
-    
-    return { week1, week2 };
+    return { bracket: null, hasMatches: false };
   };
+
+  const generateCrossoverMatches = () => {
+    const allPools = getPoolNames().filter(p => 
+      !p.toLowerCase().includes('cup') && 
+      !p.toLowerCase().includes('shield') && 
+      !p.toLowerCase().includes('plate') &&
+      !p.toLowerCase().includes('crossover')
+    );
+    
+    if (allPools.length < 4) return { week1: [], week2: [] };
+    
+    const poolStandings = allPools.map(poolName => ({
+      pool: poolName,
+      standings: calculateStandings(poolName).filter(s => s.status === 'Active')
+    }));
+    
+    const poolA = poolStandings[0]?.standings || [];
+    const poolB = poolStandings[1]?.standings || [];
+    const poolC = poolStandings[2]?.standings || [];
+    const poolD = poolStandings[3]?.standings || [];
+      
+      const crossoverMatches = matches.filter(m => {
+        const id = m.id?.toLowerCase() || '';
+        const venue = m.venue?.toLowerCase() || '';
+        return id.includes('crossover') || venue.includes('crossover');
+      });
+      
+      const findMatchResult = (p1, p2) => {
+        const match = crossoverMatches.find(m => 
+          (m.player1 === p1 && m.player2 === p2) ||
+          (m.player1 === p2 && m.player2 === p1)
+        );
+        return match;
+      };
+      
+      const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
+        const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
+        const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
+        const match = findMatchResult(player1, player2);
+        
+        return {
+          player1,
+          player2,
+          winner: match?.winner,
+          status: match?.status,
+          label: `${poolName1}${pos1} v ${poolName2}${pos2}`
+        };
+      };
+      
+      const week1 = [
+        createMatch(poolA, 1, poolB, 3, 'A', 'B'),
+        createMatch(poolA, 2, poolB, 2, 'A', 'B'),
+        createMatch(poolA, 3, poolB, 1, 'A', 'B'),
+        createMatch(poolC, 1, poolD, 3, 'C', 'D'),
+        createMatch(poolC, 2, poolD, 2, 'C', 'D'),
+        createMatch(poolC, 3, poolD, 1, 'C', 'D'),
+        createMatch(poolA, 4, poolB, 6, 'A', 'B'),
+        createMatch(poolA, 5, poolB, 5, 'A', 'B'),
+        createMatch(poolA, 6, poolB, 4, 'A', 'B'),
+        createMatch(poolC, 4, poolD, 6, 'C', 'D'),
+        createMatch(poolC, 5, poolD, 5, 'C', 'D'),
+        createMatch(poolC, 6, poolD, 4, 'C', 'D'),
+        createMatch(poolA, 7, poolB, 7, 'A', 'B'),
+        createMatch(poolC, 7, poolD, 7, 'C', 'D')
+      ];
+      
+      const week2 = [
+        createMatch(poolA, 1, poolC, 3, 'A', 'C'),
+        createMatch(poolA, 2, poolC, 2, 'A', 'C'),
+        createMatch(poolA, 3, poolC, 1, 'A', 'C'),
+        createMatch(poolB, 1, poolD, 3, 'B', 'D'),
+        createMatch(poolB, 2, poolD, 2, 'B', 'D'),
+        createMatch(poolB, 3, poolD, 1, 'B', 'D'),
+        createMatch(poolA, 4, poolC, 6, 'A', 'C'),
+        createMatch(poolA, 5, poolC, 5, 'A', 'C'),
+        createMatch(poolA, 6, poolC, 4, 'A', 'C'),
+        createMatch(poolB, 4, poolD, 6, 'B', 'D'),
+        createMatch(poolB, 5, poolD, 5, 'B', 'D'),
+        createMatch(poolB, 6, poolD, 4, 'B', 'D'),
+        createMatch(poolA, 7, poolC, 7, 'A', 'C'),
+        createMatch(poolB, 7, poolD, 7, 'B', 'D')
+      ];
+      
+      return { week1, week2 };
+    };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1273,28 +1410,43 @@ const generateCrossoverMatches = () => {
                 <p className="font-bold">{currentUser.name}</p>
               </div>
             </div>
-             <div className="flex gap-2">
-    <button 
-                onClick={onRefresh} 
+            <div className="flex gap-2">
+              <button 
+                onClick={() => {
+                  triggerHaptic('light');
+                  onRefresh();
+                }}
                 disabled={isLoading}
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
               </button>
-              <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+              <button onClick={() => {
+                triggerHaptic('light');
+                setDarkMode(!darkMode);
+              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
-              <button onClick={onChangePin} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+              <button onClick={() => {
+                triggerHaptic('light');
+                onChangePin();
+              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 <Edit size={20} />
               </button>
-              <button onClick={onLogout} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+              <button onClick={() => {
+                triggerHaptic('medium');
+                onLogout();
+              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 <LogOut size={20} />
               </button>
             </div>
           </div>
           
           <div className="flex gap-2 mt-4">
-            <button onClick={onViewMatches} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
+            <button onClick={() => {
+              triggerHaptic('light');
+              onViewMatches();
+            }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
               Matches
             </button>
             <button className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/20 text-white">
@@ -1321,7 +1473,6 @@ const generateCrossoverMatches = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Pool Standings */}
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Pool Standings</h2>
               <div className="space-y-4">
@@ -1348,13 +1499,13 @@ const generateCrossoverMatches = () => {
                           </thead>
                           <tbody>
                             {standings.map((standing, idx) => (
-                             <tr 
+                              <tr 
                                 key={standing.name} 
-                                  className={`border-b border-gray-100 ${
+                                className={`border-b border-gray-100 ${
                                   standing.name === currentUser.name ? 'bg-green-50' : ''
-                                  } ${
+                                } ${
                                   standing.status === 'Inactive' ? 'opacity-50 text-gray-400' : ''
-                                  }`}
+                                }`}
                               >
                                 <td className="py-3 pr-2 text-gray-600 font-semibold text-xs">{idx + 1}</td>
                                 <td className="py-3 pr-2 font-semibold text-gray-900 text-xs">
@@ -1382,10 +1533,8 @@ const generateCrossoverMatches = () => {
               </div>
             </div>
 
-            {/* Crossover Matches */}
             <div className="mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Crossover Matches</h2>
-              
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Crossover Matches</h2
               {(() => {
                 const { week1, week2 } = generateCrossoverMatches();
                 
@@ -1461,9 +1610,9 @@ const generateCrossoverMatches = () => {
                       {playoffType} Final
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
-  {playoffType === 'Cup' && "Top 3 from each pool"}
-  {playoffType === 'Shield' && "Ranked by overall performance"}
-</p>
+                      {playoffType === 'Cup' && "Top 3 from each pool"}
+                      {playoffType === 'Shield' && "Ranked by overall performance"}
+                    </p>
                   </div>
                   
                   {!hasMatches ? (
@@ -1474,7 +1623,6 @@ const generateCrossoverMatches = () => {
                   ) : (
                     <div className="p-4 overflow-x-auto">
                       <div className="flex gap-4 min-w-max">
-                        {/* R16 Column */}
                         {bracket.r16.length > 0 && (
                           <div className="flex-shrink-0 w-48">
                             <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
@@ -1483,19 +1631,18 @@ const generateCrossoverMatches = () => {
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-  #{match.player1.includes('Winner') ? match.player1 : '2 ' + formatPlayerName(match.player1)}
-</div>
-<div className="text-gray-400 text-center my-0.5">vs</div>
-<div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-  #{match.player2.includes('Winner') ? match.player2 : '3 ' + formatPlayerName(match.player2)}
-</div>
+                                    #{match.player1.includes('Winner') ? match.player1 : '2 ' + formatPlayerName(match.player1)}
+                                  </div>
+                                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                    #{match.player2.includes('Winner') ? match.player2 : '3 ' + formatPlayerName(match.player2)}
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
                         
-                        {/* QF Column */}
                         {bracket.qf.length > 0 && (
                           <div className="flex-shrink-0 w-48">
                             <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
@@ -1504,19 +1651,18 @@ const generateCrossoverMatches = () => {
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-  {match.player1.includes('Winner') ? match.player1 : '#1 ' + formatPlayerName(match.player1)}
-</div>
-<div className="text-gray-400 text-center my-0.5">vs</div>
-<div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-  {match.player2.includes('Winner') ? 'Winner R16' : formatPlayerName(match.player2)}
-</div>
+                                    {match.player1.includes('Winner') ? match.player1 : '#1 ' + formatPlayerName(match.player1)}
+                                  </div>
+                                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                    {match.player2.includes('Winner') ? 'Winner R16' : formatPlayerName(match.player2)}
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
                         
-                        {/* SF Column */}
                         {bracket.sf.length > 0 && (
                           <div className="flex-shrink-0 w-48">
                             <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
@@ -1524,35 +1670,34 @@ const generateCrossoverMatches = () => {
                               {bracket.sf.map((match, idx) => (
                                 <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
                                   <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-  {match.player1.includes('Winner') ? match.player1 : formatPlayerName(match.player1)}
-</div>
-<div className="text-gray-400 text-center my-0.5">vs</div>
-<div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-  {match.player2.includes('Winner') ? match.player2 : formatPlayerName(match.player2)}
-</div>
+                                    {match.player1.includes('Winner') ? match.player1 : formatPlayerName(match.player1)}
+                                  </div>
+                                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                    {match.player2.includes('Winner') ? match.player2 : formatPlayerName(match.player2)}
+                                  </div>
                                 </div>
-                            ))}
+                              ))}
                             </div>
                           </div>
-                      )}
+                        )}
 
-                        {/* Final Column */}
                         {bracket.final && (
                           <div className="flex-shrink-0 w-48">
                             <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
                             <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
-                             <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-  {bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}
-</div>
-<div className="text-gray-400 text-center my-1 font-semibold">vs</div>
-<div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-  {bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}
-</div>
-{bracket.final.winner && bracket.final.winner !== 'Winner' && !bracket.final.winner.includes('Winner') && (
-  <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
-    🏆 {formatPlayerName(bracket.final.winner)}
-  </div>
-)}
+                              <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                {bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}
+                              </div>
+                              <div className="text-gray-400 text-center my-1 font-semibold">vs</div>
+                              <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                {bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}
+                              </div>
+                              {bracket.final.winner && bracket.final.winner !== 'Winner' && !bracket.final.winner.includes('Winner') && (
+                                <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
+                                  🏆 {formatPlayerName(bracket.final.winner)}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1568,69 +1713,69 @@ const generateCrossoverMatches = () => {
     </div>
   );
 };
+
 // Live Scores Page
 const LiveScoresPage = ({ onBack }) => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-const fetchLiveScores = async () => {
-  setLoading(true);
-  try {
-    const response = await fetch(`${APPS_SCRIPT_URL}?action=getLiveScores`);
-    
-    if (!response.ok) throw new Error('Failed to load data');
-    
-    const data = await response.json();
-    
-    const matchesData = data.matches.slice(1).map(row => ({
-      id: row[0], 
-      date: row[1], 
-      venue: row[2], 
-      player1: row[3], 
-      player2: row[4],
-      startTime: row[5], 
-      endTime: row[6], 
-      scoresJson: row[7] ? JSON.parse(row[7]) : [],
-      winner: row[8], 
-      status: row[9] || 'scheduled'
-    }));
-    
-    setMatches(matchesData);
-    setLastUpdated(new Date());
-  } catch (err) {
-    console.error('Error loading live scores:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchLiveScores = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${APPS_SCRIPT_URL}?action=getLiveScores`);
+      
+      if (!response.ok) throw new Error('Failed to load data');
+      
+      const data = await response.json();
+      
+      const matchesData = data.matches.slice(1).map(row => ({
+        id: row[0], 
+        date: row[1], 
+        venue: row[2], 
+        player1: row[3], 
+        player2: row[4],
+        startTime: row[5], 
+        endTime: row[6], 
+        scoresJson: row[7] ? JSON.parse(row[7]) : [],
+        winner: row[8], 
+        status: row[9] || 'scheduled'
+      }));
+      
+      setMatches(matchesData);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Error loading live scores:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchLiveScores();
   }, []);
 
-const calculateMatchStats = (match) => {
-  let p1Holes = 0;
-  let p2Holes = 0;
-  let lastHole = 0;
+  const calculateMatchStats = (match) => {
+    let p1Holes = 0;
+    let p2Holes = 0;
+    let lastHole = 0;
 
-  if (match.scoresJson && match.scoresJson.length > 0) {
-    match.scoresJson.forEach((score, idx) => {
-      if (score.scored) {
-        lastHole = idx + 1;
-        
-        // Apply junior handicap
-        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
-        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
-        
-        if (p1Adjusted < p2Adjusted) p1Holes++;
-        else if (p2Adjusted < p1Adjusted) p2Holes++;
-      }
-    });
-  }
+    if (match.scoresJson && match.scoresJson.length > 0) {
+      match.scoresJson.forEach((score, idx) => {
+        if (score.scored) {
+          lastHole = idx + 1;
+          
+          const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+          const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+          
+          if (p1Adjusted < p2Adjusted) p1Holes++;
+          else if (p2Adjusted < p1Adjusted) p2Holes++;
+        }
+      });
+    }
 
-  return { p1Holes, p2Holes, lastHole };
-};
+    return { p1Holes, p2Holes, lastHole };
+  };
 
   const formatTimeAgo = (date) => {
     if (!date) return 'Never';
@@ -1651,7 +1796,6 @@ const calculateMatchStats = (match) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -1661,7 +1805,10 @@ const calculateMatchStats = (match) => {
             <h2 className="text-lg font-bold text-gray-900">Live Scores</h2>
           </div>
           <button 
-            onClick={fetchLiveScores}
+            onClick={() => {
+              triggerHaptic('light');
+              fetchLiveScores();
+            }}
             disabled={loading}
             className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
@@ -1673,12 +1820,10 @@ const calculateMatchStats = (match) => {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6">
-        {/* Last Updated */}
         <p className="text-sm text-gray-500 mb-6 text-center">
           Updated: {formatTimeAgo(lastUpdated)}
         </p>
 
-        {/* In Progress Matches */}
         <div className="mb-8">
           <div className="flex items-center mb-4">
             <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
@@ -1726,7 +1871,6 @@ const calculateMatchStats = (match) => {
           )}
         </div>
 
-        {/* Completed Today */}
         {completedToday.length > 0 && (
           <div>
             <div className="flex items-center mb-4">
@@ -1780,7 +1924,6 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
   const [showLiveScores, setShowLiveScores] = useState(false);
   const course = courses.find(c => c.name === match.venue || c.code === match.venue);
 
-  // Initialize scores on mount or when match changes
   useEffect(() => {
     const stored = localStorage.getItem(`match-progress-${match.id}`);
     if (stored) {
@@ -1799,30 +1942,30 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       setCurrentHole(0);
     }
   }, [match.id, startingHole, course]);
-useEffect(() => {
-  // Mark match as in-progress when scoring starts
-  const updateMatchStatus = async () => {
-    try {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'updateStatus',
-          matchId: match.id, 
-          status: 'In-progress' 
-        }),
-        mode: 'no-cors'
-      });
-    } catch (err) {
-      console.error('Error updating match status:', err);
+
+  useEffect(() => {
+    const updateMatchStatus = async () => {
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: 'updateStatus',
+            matchId: match.id, 
+            status: 'In-progress' 
+          }),
+          mode: 'no-cors'
+        });
+      } catch (err) {
+        console.error('Error updating match status:', err);
+      }
+    };
+    
+    if (match.status !== 'In-progress') {
+      updateMatchStatus();
     }
-  };
-  
-  if (match.status !== 'In-progress') {
-    updateMatchStatus();
-  }
-}, [match.id]);
-  // Save progress whenever scores change
+  }, [match.id]);
+
   useEffect(() => {
     if (scores.length > 0) {
       localStorage.setItem(`match-progress-${match.id}`, JSON.stringify({
@@ -1835,68 +1978,65 @@ useEffect(() => {
     }
   }, [scores, currentHole, match.id, startingHole]);
 
-const calculateMatchStatus = () => {
-  let p1Holes = 0;
-  let p2Holes = 0;
-  let holesPlayed = 0;
-  
-  scores.forEach((score) => {
-    if (score.scored) {
-      holesPlayed++;
+  const calculateMatchStatus = () => {
+    let p1Holes = 0;
+    let p2Holes = 0;
+    let holesPlayed = 0;
+    
+    scores.forEach((score) => {
+      if (score.scored) {
+        holesPlayed++;
+        
+        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+        
+        if (p1Adjusted < p2Adjusted) p1Holes++;
+        else if (p2Adjusted < p1Adjusted) p2Holes++;
+      }
+    });
       
-      // Apply junior handicap for comparison
-      const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
-      const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+      const lead = Math.abs(p1Holes - p2Holes);
+      const leader = p1Holes > p2Holes ? match.player1 : 
+                     p2Holes > p1Holes ? match.player2 : null;
       
-      if (p1Adjusted < p2Adjusted) p1Holes++;
-      else if (p2Adjusted < p1Adjusted) p2Holes++;
+      const holesRemaining = Math.max(0, scores.length - holesPlayed);
+      const isComplete = (holesPlayed >= 18 && leader !== null) || (lead > holesRemaining && holesPlayed > 0);
+      
+      const needsPlayoff = holesPlayed >= 18 && p1Holes === p2Holes;
+      
+      return { p1Holes, p2Holes, holesPlayed, lead, leader, isComplete, needsPlayoff };
+    };
+
+  const recordScore = async () => {
+    if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
+      triggerHaptic('medium');
+      const newScores = [...scores];
+      newScores[currentHole] = { ...newScores[currentHole], scored: true };
+      setScores(newScores);
+      
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: 'updateProgress',
+            matchId: match.id, 
+            scores: newScores 
+          }),
+          mode: 'no-cors'
+        });
+      } catch (err) {
+        console.error('Error updating progress:', err);
+      }
+      
+      if (currentHole < scores.length - 1) {
+        setCurrentHole(currentHole + 1);
+      }
     }
-  });
-    
-    const lead = Math.abs(p1Holes - p2Holes);
-    const leader = p1Holes > p2Holes ? match.player1 : 
-                   p2Holes > p1Holes ? match.player2 : null;
-    
-    // Match is complete if there's a leader after 18+ holes, or if lead is insurmountable
-    const holesRemaining = Math.max(0, scores.length - holesPlayed);
-    const isComplete = (holesPlayed >= 18 && leader !== null) || (lead > holesRemaining && holesPlayed > 0);
-    
-    // Need playoff if tied after completing 18+ holes
-    const needsPlayoff = holesPlayed >= 18 && p1Holes === p2Holes;
-    
-    return { p1Holes, p2Holes, holesPlayed, lead, leader, isComplete, needsPlayoff };
   };
 
-const recordScore = async () => {
-  if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
-    const newScores = [...scores];
-    newScores[currentHole] = { ...newScores[currentHole], scored: true };
-    setScores(newScores);
-    
-    // Update Google Sheets with current progress
-    try {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'updateProgress',
-          matchId: match.id, 
-          scores: newScores 
-        }),
-        mode: 'no-cors'
-      });
-    } catch (err) {
-      console.error('Error updating progress:', err);
-    }
-    
-    // Always allow moving to next hole if one exists
-    if (currentHole < scores.length - 1) {
-      setCurrentHole(currentHole + 1);
-    }
-  }
-};
-
   const updateScore = (player, delta) => {
+    triggerHaptic('light');
     const newScores = [...scores];
     const current = newScores[currentHole]?.[player] || 0;
     newScores[currentHole] = {
@@ -1907,16 +2047,18 @@ const recordScore = async () => {
   };
 
   const addPlayoffHole = () => {
+    triggerHaptic('medium');
     const playoffPar = course && course.pars[1] ? course.pars[1] : 3;
     const newScores = [...scores, { p1: playoffPar, p2: playoffPar, scored: false }];
     setScores(newScores);
-    setCurrentHole(scores.length); // Move to the new playoff hole
+    setCurrentHole(scores.length);
   };
 
   const handleComplete = () => {
     const status = calculateMatchStatus();
     if (!status.leader) return;
     
+    triggerHaptic('success');
     localStorage.removeItem(`match-progress-${match.id}`);
     onComplete(scores, status.leader);
   };
@@ -1948,22 +2090,23 @@ const recordScore = async () => {
   const player2FirstName = formatPlayerName(match.player2);
 
   return (
- <div className="min-h-screen bg-gray-50 pb-6">
-      {/* Minimal header with cancel and live scores button */}
+    <div className="min-h-screen bg-gray-50 pb-6">
       <div className="max-w-md mx-auto px-4 pt-4 pb-2 flex items-center justify-between">
         <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
           ← Cancel Match
         </button>
         <button 
-          onClick={() => setShowLiveScores(true)}
+          onClick={() => {
+            triggerHaptic('light');
+            setShowLiveScores(true);
+          }}
           className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
         >
           📊 Live Scores
         </button>
       </div>
 
-     <div className="max-w-md mx-auto px-4 py-2">
-        {/* Hole Header */}
+      <div className="max-w-md mx-auto px-4 py-2">
         <div className="rounded-2xl shadow-sm p-4 mb-4" style={{backgroundColor: BRAND_PRIMARY}}>
           <div className="flex items-center justify-between">
             <div>
@@ -1979,9 +2122,7 @@ const recordScore = async () => {
           </div>
         </div>
 
-        {/* Score Input Section */}
         <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
-          {/* Player 1 */}
           <div className="flex items-center justify-between mb-4">
             <div className="font-bold text-gray-900 text-base w-20">{player1FirstName}</div>
             <button 
@@ -2002,7 +2143,6 @@ const recordScore = async () => {
             <div className="text-2xl font-bold text-blue-600 w-12 text-center">{status.p1Holes}</div>
           </div>
 
-          {/* Player 2 */}
           <div className="flex items-center justify-between">
             <div className="font-bold text-gray-900 text-base w-20">{player2FirstName}</div>
             <button 
@@ -2024,10 +2164,12 @@ const recordScore = async () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-2 mb-3">
           <button 
-            onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
+            onClick={() => {
+              triggerHaptic('light');
+              setCurrentHole(Math.max(0, currentHole - 1));
+            }}
             disabled={currentHole === 0}
             className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
           >
@@ -2042,7 +2184,6 @@ const recordScore = async () => {
           </button>
         </div>
 
-        {/* Match Status / Submit Button */}
         {status.isComplete ? (
           <button 
             onClick={handleComplete}
@@ -2063,7 +2204,6 @@ const recordScore = async () => {
           </div>
         )}
 
-        {/* Scorecard Table */}
         <div className="bg-white rounded-2xl shadow-sm p-3">
           <h4 className="font-bold text-gray-900 mb-2 text-sm">Scorecard</h4>
           <div className="overflow-x-auto">
@@ -2076,7 +2216,10 @@ const recordScore = async () => {
                     return (
                       <th key={idx} className="px-1 py-1.5 text-center min-w-[28px]">
                         <button
-                          onClick={() => setCurrentHole(idx)}
+                          onClick={() => {
+                            triggerHaptic('light');
+                            setCurrentHole(idx);
+                          }}
                           className={`font-semibold transition-colors ${
                             currentHole === idx 
                               ? 'text-blue-600 underline' 
@@ -2093,7 +2236,10 @@ const recordScore = async () => {
                     return (
                       <th key={`playoff-${idx}`} className="px-1 py-1.5 text-center min-w-[28px]">
                         <button
-                          onClick={() => setCurrentHole(playoffIdx)}
+                          onClick={() => {
+                            triggerHaptic('light');
+                            setCurrentHole(playoffIdx);
+                          }}
                           className={`font-semibold transition-colors ${
                             currentHole === playoffIdx 
                               ? 'text-blue-600 underline' 
@@ -2109,34 +2255,33 @@ const recordScore = async () => {
                 </tr>
               </thead>
               <tbody>
-{/* Player 1 Row */}
-<tr className="border-b border-gray-100">
-  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">
-    {player1FirstName}
-    {isJuniorPlayer(match.player1) && <span className="ml-1 text-xs text-blue-600">(J)</span>}
-  </td>
-  {scores.map((score, idx) => {
-    const adjustedP1 = applyJuniorHandicap(score.p1, match.player1);
-    const adjustedP2 = applyJuniorHandicap(score.p2, match.player2);
-    
-    return (
-      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
-        !score.scored ? 'text-gray-400' :
-        adjustedP1 < adjustedP2 ? 'text-blue-600 bg-blue-50' : 
-        adjustedP1 === adjustedP2 ? 'text-gray-600' : 
-        'text-gray-900'
-      }`}>
-        {score.scored ? (
-          <>
-            {score.p1}
-            {isJuniorPlayer(match.player1) && score.p1 > 1 && (
-              <span className="text-xs text-blue-600"> (-1)</span>
-            )}
-          </>
-        ) : '-'}
-      </td>
-    );
-  })}
+                <tr className="border-b border-gray-100">
+                  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">
+                    {player1FirstName}
+                    {isJuniorPlayer(match.player1) && <span className="ml-1 text-xs text-blue-600">(J)</span>}
+                  </td>
+                  {scores.map((score, idx) => {
+                    const adjustedP1 = applyJuniorHandicap(score.p1, match.player1);
+                    const adjustedP2 = applyJuniorHandicap(score.p2, match.player2);
+                    
+                    return (
+                      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
+                        !score.scored ? 'text-gray-400' :
+                        adjustedP1 < adjustedP2 ? 'text-blue-600 bg-blue-50' : 
+                        adjustedP1 === adjustedP2 ? 'text-gray-600' : 
+                        'text-gray-900'
+                      }`}>
+                        {score.scored ? (
+                          <>
+                            {score.p1}
+                            {isJuniorPlayer(match.player1) && score.p1 > 1 && (
+                              <span className="text-xs text-blue-600"> (-1)</span>
+                            )}
+                          </>
+                        ) : '-'}
+                      </td>
+                    );
+                  })}
                   <td className={`py-1.5 pl-2 text-center font-bold border-l border-gray-200 sticky right-0 bg-white ${
                     calculateVsPar('p1').includes('-') ? 'text-green-600' : 
                     calculateVsPar('p1').includes('+') ? 'text-red-600' : 
@@ -2146,34 +2291,33 @@ const recordScore = async () => {
                   </td>
                 </tr>
                 
-               {/* Player 2 Row */}
-<tr>
-  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">
-    {player2FirstName}
-    {isJuniorPlayer(match.player2) && <span className="ml-1 text-xs text-blue-600">(J)</span>}
-  </td>
-  {scores.map((score, idx) => {
-    const adjustedP1 = applyJuniorHandicap(score.p1, match.player1);
-    const adjustedP2 = applyJuniorHandicap(score.p2, match.player2);
-    
-    return (
-      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
-        !score.scored ? 'text-gray-400' :
-        adjustedP2 < adjustedP1 ? 'text-blue-600 bg-blue-50' : 
-        adjustedP1 === adjustedP2 ? 'text-gray-600' : 
-        'text-gray-900'
-      }`}>
-        {score.scored ? (
-          <>
-            {score.p2}
-            {isJuniorPlayer(match.player2) && score.p2 > 1 && (
-              <span className="text-xs text-blue-600"> (-1)</span>
-            )}
-          </>
-        ) : '-'}
-      </td>
-    );
-  })}
+                <tr>
+                  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">
+                    {player2FirstName}
+                    {isJuniorPlayer(match.player2) && <span className="ml-1 text-xs text-blue-600">(J)</span>}
+                  </td>
+                  {scores.map((score, idx) => {
+                    const adjustedP1 = applyJuniorHandicap(score.p1, match.player1);
+                    const adjustedP2 = applyJuniorHandicap(score.p2, match.player2);
+                    
+                    return (
+                      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
+                        !score.scored ? 'text-gray-400' :
+                        adjustedP2 < adjustedP1 ? 'text-blue-600 bg-blue-50' : 
+                        adjustedP1 === adjustedP2 ? 'text-gray-600' : 
+                        'text-gray-900'
+                      }`}>
+                        {score.scored ? (
+                          <>
+                            {score.p2}
+                            {isJuniorPlayer(match.player2) && score.p2 > 1 && (
+                              <span className="text-xs text-blue-600"> (-1)</span>
+                            )}
+                          </>
+                        ) : '-'}
+                      </td>
+                    );
+                  })}
                   <td className={`py-1.5 pl-2 text-center font-bold border-l border-gray-200 sticky right-0 bg-white ${
                     calculateVsPar('p2').includes('-') ? 'text-green-600' : 
                     calculateVsPar('p2').includes('+') ? 'text-red-600' : 
@@ -2185,12 +2329,16 @@ const recordScore = async () => {
               </tbody>
             </table>
           </div>
-                  </div>
+        </div>
       </div>
+
       {showLiveScores && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <LiveScoresPage onBack={() => setShowLiveScores(false)} />
+            <LiveScoresPage onBack={() => {
+              triggerHaptic('light');
+              setShowLiveScores(false);
+            }} />
           </div>
         </div>
       )}
@@ -2198,25 +2346,14 @@ const recordScore = async () => {
   );
 };
 
-// Add the new ReviewPage component
+// Review Page
 const ReviewPage = ({ match, onCancel }) => {
-  const [scores, setScores] = useState(match.scoresJson || []);
-  const [currentHole, setCurrentHole] = useState(0);
-  const [startingHole, setStartingHole] = useState(1); // default, can be passed as prop
+  const [scores] = useState(match.scoresJson || []);
+  const [startingHole] = useState(1);
+  const course = match.course;
 
-  // Assume match contains course info if needed, or pass it as a prop
-  // For simplicity, we will just use a default par value if course info is missing
-  const course = match.course; // or pass as prop
-
-  // Player names
   const player1Name = formatPlayerName(match.player1);
   const player2Name = formatPlayerName(match.player2);
-
-  useEffect(() => {
-    if (match.scoresJson && match.scoresJson.length > 0) {
-      setScores(match.scoresJson);
-    }
-  }, [match]);
 
   const calculateVsPar = (playerScores) => {
     let totalScore = 0;
@@ -2237,62 +2374,62 @@ const ReviewPage = ({ match, onCancel }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
-      {/* Header with Cancel Button */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={onCancel} className="text-blue-600 font-medium text-sm">
+          <button onClick={() => {
+            triggerHaptic('light');
+            onCancel();
+          }} className="text-blue-600 font-medium text-sm">
             ← Back to Matches
           </button>
         </div>
       </div>
 
-      {/* Match Info */}
       <div className="max-w-md mx-auto px-4 py-4">
         <h2 className="text-xl font-bold text-gray-900 mb-2">
           {player1Name} <span className="text-gray-400 font-normal">vs</span> {player2Name}
         </h2>
         <div className="flex items-center text-sm text-gray-500 mb-4">
           <MapPin size={14} className="mr-1" /> {match.venue} 
-          <span className="text-xs text-gray-500"> - {new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+          <span className="text-xs text-gray-500 ml-2">- {new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
         </div>
 
-        {/* Match Summary */}
         <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
           <h4 className="font-bold text-gray-900 mb-3">Match Summary</h4>
           <div className="flex items-center justify-between">
             <div className="text-center flex-1">
               <div className="text-sm text-gray-500 mb-1">{player1Name}</div>
-<div className="text-3xl font-bold text-blue-600">
-  {(() => {
-    let p1Holes = 0;
-    scores.forEach(score => {
-      if (score.scored) {
-        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
-        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
-        if (p1Adjusted < p2Adjusted) p1Holes++;
-      }
-    });
-    return p1Holes;
-  })()}
-</div>
+              <div className="text-3xl font-bold text-blue-600">
+                {(() => {
+                  let p1Holes = 0;
+                  scores.forEach(score => {
+                    if (score.scored) {
+                      const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+                      const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+                      if (p1Adjusted < p2Adjusted) p1Holes++;
+                    }
+                  });
+                  return p1Holes;
+                })()}
+              </div>
               <div className="text-xs text-gray-500 mt-1">Holes Won</div>
             </div>
             <div className="text-2xl text-gray-400 font-light px-4">—</div>
             <div className="text-center flex-1">
               <div className="text-sm text-gray-500 mb-1">{player2Name}</div>
-<div className="text-3xl font-bold text-blue-600">
-  {(() => {
-    let p2Holes = 0;
-    scores.forEach(score => {
-      if (score.scored) {
-        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
-        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
-        if (p2Adjusted < p1Adjusted) p2Holes++;
-      }
-    });
-    return p2Holes;
-  })()}
-</div>
+              <div className="text-3xl font-bold text-blue-600">
+                {(() => {
+                  let p2Holes = 0;
+                  scores.forEach(score => {
+                    if (score.scored) {
+                      const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+                      const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+                      if (p2Adjusted < p1Adjusted) p2Holes++;
+                    }
+                  });
+                  return p2Holes;
+                })()}
+              </div>
               <div className="text-xs text-gray-500 mt-1">Holes Won</div>
             </div>
           </div>
@@ -2303,17 +2440,6 @@ const ReviewPage = ({ match, onCancel }) => {
           </div>
         </div>
 
-        {/* Hole info */}
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <h3 className="text-2xl font-bold text-gray-900">
-              Hole {scores.length > 0 ? ((Number(startingHole) - 1 + currentHole) % 18) + 1 : 1}
-            </h3>
-            <p className="text-gray-500 text-sm">Par {course?.pars[((Number(startingHole) - 1 + currentHole) % 18) + 1] || 3}</p>
-          </div>
-        </div>
-
-        {/* Scorecard display (read-only) */}
         <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
           <h4 className="font-bold text-gray-900 mb-3">Scorecard</h4>
           <div className="overflow-x-auto">
@@ -2338,38 +2464,30 @@ const ReviewPage = ({ match, onCancel }) => {
                 </tr>
               </thead>
               <tbody>
-                {/* Player 1 Row */}
                 <tr className="border-b border-gray-100">
                   <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player1Name}</td>
-                  {scores.map((score, idx) => {
-                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
-                    return (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
-                        score.scored ? (score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900') : 'text-gray-400'
-                      }`}>
-                        {score.scored ? score.p1 : '-'}
-                      </td>
-                    );
-                  })}
+                  {scores.map((score, idx) => (
+                    <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
+                      score.scored ? (score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900') : 'text-gray-400'
+                    }`}>
+                      {score.scored ? score.p1 : '-'}
+                    </td>
+                  ))}
                   <td className={`py-2 pl-2 text-center font-bold text-xs border-l-2 border-gray-200 sticky right-0 bg-white ${
                     calculateVsPar('p1').includes('-') ? 'text-green-600' : calculateVsPar('p1').includes('+') ? 'text-red-600' : 'text-gray-900'
                   }`}>
                     {calculateVsPar('p1')}
                   </td>
                 </tr>
-                {/* Player 2 Row */}
                 <tr>
                   <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player2Name}</td>
-                  {scores.map((score, idx) => {
-                    const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
-                    return (
-                      <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
-                        score.scored ? (score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p2 === score.p1 ? 'text-gray-600' : 'text-gray-900') : 'text-gray-400'
-                      }`}>
-                        {score.scored ? score.p2 : '-'}
-                      </td>
-                    );
-                  })}
+                  {scores.map((score, idx) => (
+                    <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
+                      score.scored ? (score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p2 === score.p1 ? 'text-gray-600' : 'text-gray-900') : 'text-gray-400'
+                    }`}>
+                      {score.scored ? score.p2 : '-'}
+                    </td>
+                  ))}
                   <td className={`py-2 pl-2 text-center font-bold text-xs border-l-2 border-gray-200 sticky right-0 bg-white ${
                     calculateVsPar('p2').includes('-') ? 'text-green-600' : calculateVsPar('p2').includes('+') ? 'text-red-600' : 'text-gray-900'
                   }`}>
@@ -2396,21 +2514,27 @@ const DiscGolfApp = () => {
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [darkMode, setDarkMode] = useDarkMode();
   const appData = useAppData();
+  const [toast, setToast] = useState(null);
 
-  // Authentication
-   const handleLogin = (playerName, pin) => {
-     console.log('Attempting login:', playerName, pin);
-     console.log('Available players:', appData.players);
+  const showToast = (message, type = 'success') => {
+    triggerHaptic(type);
+    setToast({ message, type });
+  };
+
+  const handleLogin = (playerName, pin) => {
+    console.log('Attempting login:', playerName, pin);
+    console.log('Available players:', appData.players);
     const player = appData.players.find(p => p.name === playerName && p.pin === pin);
-     console.log('Found player:', player);
+    console.log('Found player:', player);
     if (player) {
-      // Save the username to localStorage for next time
       localStorage.setItem('lastLoggedInUser', playerName);
       setCurrentUser(player);
       setView('matches');
       setError('');
+      showToast(`Welcome back, ${formatPlayerName(player.name)}!`, 'success');
     } else {
       setError('Invalid player name or PIN');
+      triggerHaptic('error');
     }
   };
 
@@ -2436,161 +2560,184 @@ const DiscGolfApp = () => {
     
     setView('matches');
     setError('');
+    showToast('PIN updated successfully!', 'success');
   };
 
-  // Render appropriate page
   if (view === 'login') {
-  return <LoginPage 
-  players={appData.players}
-  onLogin={handleLogin}
-  error={error}
-  darkMode={darkMode}
-  setDarkMode={setDarkMode}
-  isOnline={appData.isOnline}
-/>;
+    return (
+      <>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <LoginPage 
+          players={appData.players}
+          onLogin={handleLogin}
+          error={error}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          isOnline={appData.isOnline}
+        />
+      </>
+    );
   }
 
   if (view === 'changePin') {
-    return <ChangePinPage
-      currentUser={currentUser}
-      players={appData.players}
-      courses={appData.courses}
-      matches={appData.matches}
-      pools={appData.pools}
-      onBack={() => setView('matches')}
-      onPinChange={handleChangePin}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-    />;
+    return (
+      <>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <ChangePinPage
+          currentUser={currentUser}
+          onBack={() => setView('matches')}
+          onPinChange={handleChangePin}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
+      </>
+    );
   }
 
   if (view === 'matches') {
-    return <MatchesPage
-      currentUser={currentUser}
-      matches={appData.matches}
-      onLogout={handleLogout}
-      onChangePin={() => setView('changePin')}
-      onStartMatch={(match, startingHole) => {
-        setSelectedMatch({ match, startingHole });
-        setView('scoring');
-      }}
-      onReviewMatch={(match) => {
-        setSelectedMatch(match);
-        setView('review');
-      }}
-      onViewStandings={() => setView('standings')}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-      isOnline={appData.isOnline}
-      pendingUpdates={appData.pendingUpdates}
-      onRefresh={appData.loadSheetData}
-      isLoading={appData.isLoading} 
-    />;
+    return (
+      <>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <MatchesPage
+          currentUser={currentUser}
+          matches={appData.matches}
+          onLogout={handleLogout}
+          onChangePin={() => setView('changePin')}
+          onStartMatch={(match, startingHole) => {
+            setSelectedMatch({ match, startingHole });
+            setView('scoring');
+          }}
+          onReviewMatch={(match) => {
+            setSelectedMatch(match);
+            setView('review');
+          }}
+          onViewStandings={() => setView('standings')}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          isOnline={appData.isOnline}
+          pendingUpdates={appData.pendingUpdates}
+          onRefresh={appData.loadSheetData}
+          isLoading={appData.isLoading} 
+        />
+      </>
+    );
   }
 
-// In the main app, update the scoring view cancel handler:
-if (view === 'scoring') {
-  return <ScoringPage
-    match={selectedMatch.match}
-    startingHole={selectedMatch.startingHole}
-    courses={appData.courses}
-    onCancel={async () => {
-      if (selectedMatch && selectedMatch.match) {
-        // Confirm cancellation
-        if (window.confirm('Cancel this match? All progress will be lost.')) {
-          try {
-            // Clear local storage
-            localStorage.removeItem(`match-progress-${selectedMatch.match.id}`);
-            
-            // Update local state - clear scores and set status back to scheduled
-            const updatedMatches = appData.matches.map(m => 
-              m.id === selectedMatch.match.id 
-                ? { ...m, scoresJson: [], winner: '', status: 'scheduled' }
-                : m
-            );
-            appData.setMatches(updatedMatches);
-            
-            // Update localStorage
-            localStorage.setItem('sheet-data', JSON.stringify({
-              players: appData.players,
-              courses: appData.courses,
-              matches: updatedMatches,
-              pools: appData.pools
-            }));
-            
-            // Clear match data in Google Sheets
-            await fetch(APPS_SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                action: 'cancelMatch',
-                matchId: selectedMatch.match.id
-              }),
-              mode: 'no-cors'
-            });
-            
-            // Clear and return to matches after successful cancel
+  if (view === 'scoring') {
+    return (
+      <>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <ScoringPage
+          match={selectedMatch.match}
+          startingHole={selectedMatch.startingHole}
+          courses={appData.courses}
+          onCancel={async () => {
+            if (selectedMatch && selectedMatch.match) {
+              if (window.confirm('Cancel this match? All progress will be lost.')) {
+                try {
+                  localStorage.removeItem(`match-progress-${selectedMatch.match.id}`);
+                  
+                  const updatedMatches = appData.matches.map(m => 
+                    m.id === selectedMatch.match.id 
+                      ? { ...m, scoresJson: [], winner: '', status: 'scheduled' }
+                      : m
+                  );
+                  appData.setMatches(updatedMatches);
+                  
+                  localStorage.setItem('sheet-data', JSON.stringify({
+                    players: appData.players,
+                    courses: appData.courses,
+                    matches: updatedMatches,
+                    pools: appData.pools
+                  }));
+                  
+                  await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      action: 'cancelMatch',
+                      matchId: selectedMatch.match.id
+                    }),
+                    mode: 'no-cors'
+                  });
+                  
+                  setSelectedMatch(null);
+                  setView('matches');
+                  showToast('Match cancelled', 'info');
+                  
+                } catch (err) {
+                  console.error('Error cancelling match:', err);
+                  showToast('Error cancelling match', 'error');
+                }
+              }
+            }
+          }}
+          onComplete={(scores, winner) => {
+            appData.submitMatchToSheet(selectedMatch.match.id, scores, winner);
+            showToast('Match completed successfully!', 'success');
             setSelectedMatch(null);
             setView('matches');
-            
-          } catch (err) {
-            console.error('Error cancelling match:', err);
-          }
-        }
-        // If user clicks "No", do nothing - stay on scoring page
-      }
-    }}
-    onComplete={(scores, winner) => {
-      appData.submitMatchToSheet(selectedMatch.match.id, scores, winner);
-      setSelectedMatch(null);
-      setView('matches');
-    }}
-  />;
-}
+          }}
+        />
+      </>
+    );
+  }
 
-   if (view === 'standings') {
-  return <StandingsPage
-    currentUser={currentUser}
-    matches={appData.matches}
-    pools={appData.pools}
-    players={appData.players} // Add this line
-    onLogout={handleLogout}
-    onChangePin={() => setView('changePin')}
-    onViewMatches={() => setView('matches')}
-    darkMode={darkMode}
-    setDarkMode={setDarkMode}
-    isOnline={appData.isOnline}
-    pendingUpdates={appData.pendingUpdates}
-    isLoading={appData.isLoading}
-    onRefresh={appData.loadSheetData}       
-  />;
-}         
-if (view === 'review') {
+  if (view === 'standings') {
     return (
-      <ReviewPage
-        match={selectedMatch}
-        onCancel={() => {
-          setSelectedMatch(null);
-          setView('matches');
-        }}
-      />
+      <>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <StandingsPage
+          currentUser={currentUser}
+          matches={appData.matches}
+          pools={appData.pools}
+          players={appData.players}
+          onLogout={handleLogout}
+          onChangePin={() => setView('changePin')}
+          onViewMatches={() => setView('matches')}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          isOnline={appData.isOnline}
+          pendingUpdates={appData.pendingUpdates}
+          isLoading={appData.isLoading}
+          onRefresh={appData.loadSheetData}       
+        />
+      </>
+    );
+  }
+
+  if (view === 'review') {
+    return (
+      <>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        <ReviewPage
+          match={selectedMatch}
+          onCancel={() => {
+            setSelectedMatch(null);
+            setView('matches');
+          }}
+        />
+      </>
     );
   }
   
- 
-  
-  return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-    <div className="text-center">
-      <Trophy size={48} className="mx-auto mb-4 text-gray-400" />
-      <p className="text-gray-600">Page under construction...</p>
-      <button 
-        onClick={handleLogout}
-        className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-      >
-        Back to Login
-      </button>
-    </div>
-  </div>;
+  return (
+    <>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Trophy size={48} className="mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600">Page under construction...</p>
+          <button 
+            onClick={handleLogout}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Login
+          </button>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default DiscGolfApp;
