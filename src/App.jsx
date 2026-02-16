@@ -1599,7 +1599,7 @@ const fetchLiveScores = async () => {
   } catch (err) {
     console.error('Error loading live scores:', err);
   } finally {
-    setIsLoading(false);
+    setLoading(false);
   }
 };
 
