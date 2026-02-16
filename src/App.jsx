@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Trophy, User, LogOut, ChevronRight, Edit, X, Clock, MapPin, Calendar, Plus, Minus, Check, Moon, Sun } from 'lucide-react';
 
 // ============================================
@@ -11,10 +11,9 @@ const BRAND_SECONDARY = '#FFD700';
 const BRAND_ACCENT = '#228B22';
 
 // ============================================
-// CUSTOM HOOKS & UTILITIES
+// UTILITY FUNCTIONS
 // ============================================
 
-// Helper function to format names with last initial
 const formatPlayerName = (fullName) => {
   if (!fullName) return '';
   const parts = fullName.split(' ');
@@ -24,15 +23,11 @@ const formatPlayerName = (fullName) => {
   return `${firstName} ${lastInitial}`;
 };
 
-const isJuniorPlayer = (playerName) => {
-  return playerName && playerName.includes('(J)');
-};
+const isJuniorPlayer = (playerName) => playerName && playerName.includes('(J)');
 
-const applyJuniorHandicap = (score, playerName) => {
-  return isJuniorPlayer(playerName) ? Math.max(1, score - 1) : score;
-};
+const applyJuniorHandicap = (score, playerName) => 
+  isJuniorPlayer(playerName) ? Math.max(1, score - 1) : score;
 
-// Haptic feedback utility
 const triggerHaptic = (style = 'medium') => {
   if ('vibrate' in navigator) {
     const patterns = {
@@ -46,7 +41,41 @@ const triggerHaptic = (style = 'medium') => {
   }
 };
 
-// Toast Component
+const calculateMatchStats = (match) => {
+  let p1Holes = 0;
+  let p2Holes = 0;
+  let lastHole = 0;
+
+  if (match.scoresJson?.length > 0) {
+    match.scoresJson.forEach((score, idx) => {
+      if (score.scored) {
+        lastHole = idx + 1;
+        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+        
+        if (p1Adjusted < p2Adjusted) p1Holes++;
+        else if (p2Adjusted < p1Adjusted) p2Holes++;
+      }
+    });
+  }
+
+  return { p1Holes, p2Holes, lastHole };
+};
+
+const formatTimeAgo = (date) => {
+  if (!date) return 'Never';
+  const seconds = Math.floor((new Date() - date) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+};
+
+// ============================================
+// REUSABLE COMPONENTS
+// ============================================
+
 const Toast = ({ message, type = 'success', onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
@@ -66,7 +95,163 @@ const Toast = ({ message, type = 'success', onClose }) => {
   );
 };
 
-// Dark Mode Hook
+const Header = ({ currentUser, onLogout, onChangePin, darkMode, setDarkMode, onRefresh, isLoading, isOnline, pendingUpdates, showTabs, activeTab, onTabChange }) => (
+  <div className="text-white sticky top-0 z-10 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
+    <div className="max-w-md mx-auto px-4 py-6">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
+            <User size={20} />
+          </div>
+          <div>
+            <p className="text-sm opacity-90">Signed in as</p>
+            <p className="font-bold">{currentUser.name}</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {onRefresh && (
+            <button 
+              onClick={() => {
+                triggerHaptic('light');
+                onRefresh();
+              }}
+              disabled={isLoading}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
+            </button>
+          )}
+          <button onClick={() => {
+            triggerHaptic('light');
+            setDarkMode(!darkMode);
+          }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <button onClick={() => {
+            triggerHaptic('light');
+            onChangePin();
+          }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+            <Edit size={20} />
+          </button>
+          <button onClick={() => {
+            triggerHaptic('medium');
+            onLogout();
+          }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+            <LogOut size={20} />
+          </button>
+        </div>
+      </div>
+      
+      {showTabs && (
+        <div className="flex gap-2 mt-4">
+          <button 
+            onClick={() => {
+              triggerHaptic('light');
+              onTabChange('matches');
+            }}
+            className={`flex-1 py-2 px-4 rounded-lg font-semibold ${
+              activeTab === 'matches' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
+            }`}
+          >
+            Matches
+          </button>
+          <button 
+            onClick={() => {
+              triggerHaptic('light');
+              onTabChange('standings');
+            }}
+            className={`flex-1 py-2 px-4 rounded-lg font-semibold ${
+              activeTab === 'standings' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
+            }`}
+          >
+            Standings
+          </button>
+        </div>
+      )}
+      
+      {!isOnline && (
+        <div className="bg-white/10 px-3 py-2 rounded-lg text-sm flex items-center mt-4">
+          <div className="w-2 h-2 bg-orange-300 rounded-full mr-2"></div>
+          Offline • {pendingUpdates.length} pending updates
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const MatchCard = ({ match, onClick, showResult = false }) => (
+  <div 
+    onClick={onClick}
+    className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
+  >
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center text-sm text-gray-500">
+        <Calendar size={14} className="mr-1" />
+        <span>{new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+        <Clock size={14} className="ml-3 mr-1" />
+        <span>{match.startTime}</span>
+      </div>
+      {!showResult && <ChevronRight className="text-blue-600" size={20} />}
+    </div>
+    <div>
+      <p className="font-bold text-gray-900 text-lg mb-1">
+        {formatPlayerName(match.player1)} <span className="text-gray-400 font-normal">vs</span> {formatPlayerName(match.player2)}
+      </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-sm text-gray-600">
+          <MapPin size={14} className="mr-1" />
+          {match.venue}
+        </div>
+        {showResult && match.winner && (
+          <div className="flex items-center">
+            <Check size={16} className="text-green-600 mr-1" />
+            <span className="text-sm font-semibold text-green-600">{formatPlayerName(match.winner)} won</span>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const CollapsibleSection = ({ title, subtitle, isExpanded, onToggle, children, headerStyle = 'primary' }) => {
+  const getHeaderClass = () => {
+    if (headerStyle === 'primary') {
+      return { background: `linear-gradient(to right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`, textColor: 'text-white' };
+    } else if (headerStyle === 'secondary') {
+      return { background: `linear-gradient(to right, ${BRAND_SECONDARY}, ${BRAND_PRIMARY})`, textColor: 'text-gray-900' };
+    } else {
+      return { background: 'bg-gray-100', textColor: 'text-gray-900' };
+    }
+  };
+
+  const style = getHeaderClass();
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-3 flex items-center justify-between"
+        style={typeof style.background === 'string' && style.background.includes('gradient') ? { background: style.background } : {}}
+        {...(style.background === 'bg-gray-100' ? { className: `w-full px-4 py-3 flex items-center justify-between ${style.background}` } : {})}
+      >
+        <div className="text-left">
+          <h2 className={`text-lg font-bold ${style.textColor}`}>{title}</h2>
+          {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+        </div>
+        <ChevronRight 
+          size={20} 
+          className={`${style.textColor} transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+        />
+      </button>
+      {isExpanded && children}
+    </div>
+  );
+};
+
+// ============================================
+// CUSTOM HOOKS
+// ============================================
+
 const useDarkMode = () => {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
@@ -76,11 +261,7 @@ const useDarkMode = () => {
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
-    if (darkMode) {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
-    }
+    document.body.classList.toggle('dark-mode', darkMode);
   }, [darkMode]);
 
   useEffect(() => {
@@ -110,31 +291,18 @@ const useDarkMode = () => {
       .dark-mode .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important; }
       
       @keyframes slide-down {
-        from {
-          transform: translate(-50%, -100%);
-          opacity: 0;
-        }
-        to {
-          transform: translate(-50%, 0);
-          opacity: 1;
-        }
+        from { transform: translate(-50%, -100%); opacity: 0; }
+        to { transform: translate(-50%, 0); opacity: 1; }
       }
-      .animate-slide-down {
-        animation: slide-down 0.3s ease-out;
-      }
+      .animate-slide-down { animation: slide-down 0.3s ease-out; }
     `;
     document.head.appendChild(style);
-    return () => {
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-    };
+    return () => style.remove();
   }, []);
 
   return [darkMode, setDarkMode];
 };
 
-// Data Management Hook
 const useAppData = () => {
   const [players, setPlayers] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -162,51 +330,65 @@ const useAppData = () => {
     }
   }, [isOnline]);
 
-  const loadSheetData = async () => {
-    setIsLoading(true); 
+  const loadSheetData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      console.log('Fetching from:', `${APPS_SCRIPT_URL}?action=getData`);
       const response = await fetch(`${APPS_SCRIPT_URL}?action=getData`);
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
       if (!response.ok) throw new Error('Failed to load data');
       
       const data = await response.json();
-      console.log('Raw data from Apps Script:', data);
 
       if (!data.players || !Array.isArray(data.players)) {
-        console.error('Invalid data structure:', data);
         throw new Error('Invalid data structure');
       }
+
       const playersData = data.players.slice(1).map(row => ({
         id: row[0], 
         name: row[1], 
         pin: String(row[2]),
         status: row[3] || 'Active'
       }));
-      console.log('Parsed players:', playersData);
-      setPlayers(playersData);
       
       const coursesData = data.courses.slice(1).map(row => ({
-        id: row[0], name: row[1], code: row[2], holes: parseInt(row[3]), pars: JSON.parse(row[4] || '{}')
+        id: row[0], 
+        name: row[1], 
+        code: row[2], 
+        holes: parseInt(row[3]), 
+        pars: JSON.parse(row[4] || '{}')
       }));
-      setCourses(coursesData);
       
       const matchesData = data.matches.slice(1).map(row => ({
-        id: row[0], date: row[1], venue: row[2], player1: row[3], player2: row[4],
-        startTime: row[5], endTime: row[6], scoresJson: row[7] ? JSON.parse(row[7]) : [],
-        winner: row[8], status: row[9] || 'scheduled'
+        id: row[0], 
+        date: row[1], 
+        venue: row[2], 
+        player1: row[3], 
+        player2: row[4],
+        startTime: row[5], 
+        endTime: row[6], 
+        scoresJson: row[7] ? JSON.parse(row[7]) : [],
+        winner: row[8], 
+        status: row[9] || 'scheduled'
       }));
-      setMatches(matchesData);
       
       const poolsData = data.pools.slice(1).map(row => ({
-        pool: row[0], player: row[1], played: parseInt(row[2]) || 0,
-        win: parseInt(row[3]) || 0, loss: parseInt(row[4]) || 0, points: parseInt(row[5]) || 0
+        pool: row[0], 
+        player: row[1], 
+        played: parseInt(row[2]) || 0,
+        win: parseInt(row[3]) || 0, 
+        loss: parseInt(row[4]) || 0, 
+        points: parseInt(row[5]) || 0
       }));
+      
+      setPlayers(playersData);
+      setCourses(coursesData);
+      setMatches(matchesData);
       setPools(poolsData);
       
       localStorage.setItem('sheet-data', JSON.stringify({
-        players: playersData, courses: coursesData, matches: matchesData, pools: poolsData
+        players: playersData, 
+        courses: coursesData, 
+        matches: matchesData, 
+        pools: poolsData
       }));
     } catch (err) {
       console.error('Error loading sheet data:', err);
@@ -225,9 +407,9 @@ const useAppData = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const processPendingUpdates = async () => {
+  const processPendingUpdates = useCallback(async () => {
     try {
       const stored = localStorage.getItem('pending-updates');
       if (stored) {
@@ -241,9 +423,9 @@ const useAppData = () => {
     } catch (err) {
       console.error('Error processing pending updates:', err);
     }
-  };
+  }, []);
 
-  const submitMatchToSheet = async (matchId, finalScores, winner) => {
+  const submitMatchToSheet = useCallback(async (matchId, finalScores, winner) => {
     if (!isOnline) {
       const updates = [...pendingUpdates, { matchId, scores: finalScores, winner }];
       setPendingUpdates(updates);
@@ -288,11 +470,19 @@ const useAppData = () => {
     } catch (err) {
       console.error('Error submitting match:', err);
     }
-  };
+  }, [isOnline, matches, pools, players, courses, pendingUpdates]);
 
   return {
-    players, setPlayers, courses, matches, setMatches, pools,
-    isOnline, pendingUpdates, submitMatchToSheet, loadSheetData,
+    players, 
+    setPlayers, 
+    courses, 
+    matches, 
+    setMatches, 
+    pools,
+    isOnline, 
+    pendingUpdates, 
+    submitMatchToSheet, 
+    loadSheetData,
     isLoading
   };
 };
@@ -302,14 +492,9 @@ const useAppData = () => {
 // ============================================
 
 const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline }) => {
-  const [selectedPlayer, setSelectedPlayer] = useState(() => {
-    const lastUser = localStorage.getItem('lastLoggedInUser');
-    return lastUser || '';
-  });
-
-  const handlePlayerChange = (e) => {
-    setSelectedPlayer(e.target.value);
-  };
+  const [selectedPlayer, setSelectedPlayer] = useState(() => 
+    localStorage.getItem('lastLoggedInUser') || ''
+  );
 
   return (
     <div className="min-h-screen bg-white transition-colors">
@@ -325,6 +510,7 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline })
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </div>
+        
         <div className="text-center mb-12 mt-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 shadow-lg">
             <img
@@ -358,13 +544,11 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline })
               required
               className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2"
               value={selectedPlayer}
-              onChange={handlePlayerChange}
+              onChange={(e) => setSelectedPlayer(e.target.value)}
             >
               <option value="">Choose your name</option>
               {players.map((p) => (
-                <option key={p.id} value={p.name}>
-                  {p.name}
-                </option>
+                <option key={p.id} value={p.name}>{p.name}</option>
               ))}
             </select>
           </div>
@@ -407,7 +591,6 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline })
   );
 };
 
-// Change PIN Page
 const ChangePinPage = ({ currentUser, onBack, onPinChange, darkMode, setDarkMode }) => {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -460,7 +643,9 @@ const ChangePinPage = ({ currentUser, onBack, onPinChange, darkMode, setDarkMode
             <button onClick={() => {
               triggerHaptic('light');
               onBack();
-            }} className="mr-4"><X size={24} className="text-gray-600" /></button>
+            }} className="mr-4">
+              <X size={24} className="text-gray-600" />
+            </button>
             <h2 className="text-lg font-bold text-gray-900">Change PIN</h2>
           </div>
           <button onClick={() => {
@@ -476,16 +661,28 @@ const ChangePinPage = ({ currentUser, onBack, onPinChange, darkMode, setDarkMode
         <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">New PIN</label>
-            <input type="password" maxLength="4" pattern="[0-9]{4}" placeholder="4 digits" value={newPin}
-                   onChange={(e) => setNewPin(e.target.value)}
-                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input 
+              type="password" 
+              maxLength="4" 
+              pattern="[0-9]{4}" 
+              placeholder="4 digits" 
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            />
           </div>
           
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm PIN</label>
-            <input type="password" maxLength="4" pattern="[0-9]{4}" placeholder="4 digits" value={confirmPin}
-                   onChange={(e) => setConfirmPin(e.target.value)}
-                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input 
+              type="password" 
+              maxLength="4" 
+              pattern="[0-9]{4}" 
+              placeholder="4 digits" 
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            />
           </div>
           
           {error && (
@@ -507,7 +704,10 @@ const ChangePinPage = ({ currentUser, onBack, onPinChange, darkMode, setDarkMode
   );
 };
 
-// Matches Page
+// ============================================
+// MATCHES PAGE
+// ============================================
+
 const MatchesPage = ({ 
   currentUser, 
   matches, 
@@ -567,108 +767,68 @@ const MatchesPage = ({
     setResumeMatchData(null);
   };
 
-  const userMatches = matches.filter(m => 
-    m.player1 === currentUser.name || m.player2 === currentUser.name
+  const userMatches = useMemo(() => 
+    matches.filter(m => m.player1 === currentUser.name || m.player2 === currentUser.name),
+    [matches, currentUser.name]
   );
-  const upcomingMatches = userMatches.filter(m => m.status !== 'Completed');
-  
-  let completedMatches = matches.filter(m => m.status === 'Completed');
-  
-  if (matchFilter === 'date' && selectedFilterDate) {
-    completedMatches = completedMatches.filter(m => m.date === selectedFilterDate);
-  } else if (matchFilter === 'player' && selectedFilterPlayer) {
-    completedMatches = completedMatches.filter(m => 
-      m.player1 === selectedFilterPlayer || m.player2 === selectedFilterPlayer
-    );
-  }
-  
-  const uniqueDates = [...new Set(matches.filter(m => m.status === 'Completed').map(m => m.date))].sort();
-  const uniquePlayers = [...new Set(matches.filter(m => m.status === 'Completed').flatMap(m => [m.player1, m.player2]))].sort();
 
-  const handleStartMatch = (match) => {
+  const upcomingMatches = useMemo(() => 
+    userMatches.filter(m => m.status !== 'Completed'),
+    [userMatches]
+  );
+  
+  const completedMatches = useMemo(() => {
+    let filtered = matches.filter(m => m.status === 'Completed');
+    
+    if (matchFilter === 'date' && selectedFilterDate) {
+      filtered = filtered.filter(m => m.date === selectedFilterDate);
+    } else if (matchFilter === 'player' && selectedFilterPlayer) {
+      filtered = filtered.filter(m => 
+        m.player1 === selectedFilterPlayer || m.player2 === selectedFilterPlayer
+      );
+    }
+    
+    return filtered;
+  }, [matches, matchFilter, selectedFilterDate, selectedFilterPlayer]);
+  
+  const uniqueDates = useMemo(() => 
+    [...new Set(matches.filter(m => m.status === 'Completed').map(m => m.date))].sort(),
+    [matches]
+  );
+
+  const uniquePlayers = useMemo(() => 
+    [...new Set(matches.filter(m => m.status === 'Completed').flatMap(m => [m.player1, m.player2]))].sort(),
+    [matches]
+  );
+
+  const handleStartMatch = useCallback((match) => {
     triggerHaptic('light');
     setSelectedMatch(match);
     setShowStartHoleModal(true);
-  };
+  }, []);
 
-  const confirmStartHole = () => {
+  const confirmStartHole = useCallback(() => {
     triggerHaptic('medium');
     onStartMatch(selectedMatch, startingHole);
     setShowStartHoleModal(false);
-  };
+  }, [selectedMatch, startingHole, onStartMatch]);
 
   return (
     <div className="min-h-screen bg-gray-50 transition-colors">
-      <div className="text-white sticky top-0 z-10 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
-        <div className="max-w-md mx-auto px-4 py-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
-                <User size={20} />
-              </div>
-              <div>
-                <p className="text-sm opacity-90">Signed in as</p>
-                <p className="font-bold">{currentUser.name}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => {
-                  triggerHaptic('light');
-                  onRefresh();
-                }}
-                disabled={isLoading}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
-              </button>
-              <button onClick={() => {
-                triggerHaptic('light');
-                setDarkMode(!darkMode);
-              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-              <button onClick={() => {
-                triggerHaptic('light');
-                onChangePin();
-              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                <Edit size={20} />
-              </button>
-              <button onClick={() => {
-                triggerHaptic('medium');
-                onLogout();
-              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                <LogOut size={20} />
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex gap-2 mt-4">
-            <button className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/20 text-white">
-              Matches
-            </button>
-            <button onClick={() => {
-              triggerHaptic('light');
-              onViewStandings();
-            }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
-              Standings
-            </button>
-            <button onClick={() => {
-              triggerHaptic('light');
-              setShowLiveScores(true);
-            }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
-              Live
-            </button>
-          </div>
-          
-          {!isOnline && (
-            <div className="bg-white/10 px-3 py-2 rounded-lg text-sm flex items-center mt-4">
-              <div className="w-2 h-2 bg-orange-300 rounded-full mr-2"></div>
-              Offline • {pendingUpdates.length} pending updates
-            </div>
-          )}
-        </div>
-      </div>
+      <Header
+        currentUser={currentUser}
+        onLogout={onLogout}
+        onChangePin={onChangePin}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        onRefresh={onRefresh}
+        isLoading={isLoading}
+        isOnline={isOnline}
+        pendingUpdates={pendingUpdates}
+        showTabs
+        activeTab="matches"
+        onTabChange={(tab) => tab === 'standings' && onViewStandings()}
+      />
       
       <div className="max-w-md mx-auto px-4 py-6">
         <div className="mb-6">
@@ -683,30 +843,11 @@ const MatchesPage = ({
           ) : (
             <div className="space-y-3">
               {upcomingMatches.map(match => (
-                <div 
+                <MatchCard 
                   key={match.id}
+                  match={match}
                   onClick={() => handleStartMatch(match)}
-                  className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Calendar size={14} className="mr-1" />
-                      <span>{new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                      <Clock size={14} className="ml-3 mr-1" />
-                      <span>{match.startTime}</span>
-                    </div>
-                    <ChevronRight className="text-blue-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-lg mb-1">
-                      {formatPlayerName(match.player1)} <span className="text-gray-400 font-normal">vs</span> {formatPlayerName(match.player2)}
-                    </p>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin size={14} className="mr-1" />
-                      {match.venue}
-                    </div>
-                  </div>
-                </div>
+                />
               ))}
             </div>
           )}
@@ -769,31 +910,15 @@ const MatchesPage = ({
           ) : (
             <div className="space-y-3">
               {completedMatches.map(match => (
-                <div 
+                <MatchCard 
                   key={match.id}
+                  match={match}
                   onClick={() => {
                     triggerHaptic('light');
                     onReviewMatch(match);
                   }}
-                  className="bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-bold text-gray-900">
-                      {match.player1} <span className="text-gray-400 font-normal">vs</span> {match.player2}
-                    </p>
-                    <span className="text-xs text-gray-500">{new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin size={14} className="mr-1" />
-                      {match.venue}
-                    </div>
-                    <div className="flex items-center">
-                      <Check size={16} className="text-green-600 mr-1" />
-                      <span className="text-sm font-semibold text-green-600">{match.winner} won</span>
-                    </div>
-                  </div>
-                </div>
+                  showResult
+                />
               ))}
             </div>
           )}
@@ -877,42 +1002,12 @@ const MatchesPage = ({
   );
 };
 
-// Standings Page with Collapsible Sections
-const StandingsPage = ({ 
-  currentUser, 
-  matches, 
-  pools,
-  players,
-  onLogout, 
-  onChangePin, 
-  onViewMatches,
-  darkMode,
-  setDarkMode,
-  isOnline,
-  pendingUpdates,
-  onRefresh,
-  isLoading
-}) => {
-  console.log('StandingsPage rendering:', { currentUser, matches, pools, players });
-  
-  // State for collapsible sections
-  const [expandedSections, setExpandedSections] = useState({
-    pools: true,
-    crossover1: false,
-    crossover2: false,
-    cup: false,
-    shield: false
-  });
-  
-  const toggleSection = (section) => {
-    triggerHaptic('light');
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-  
-  const calculateStandings = (poolName) => {
+// ============================================
+// STANDINGS PAGE - Optimized with hooks
+// ============================================
+
+const useStandingsCalculations = (pools, players, matches) => {
+  const calculateStandings = useCallback((poolName) => {
     const poolPlayers = pools.filter(p => p.pool === poolName);
     
     const standings = poolPlayers.map(player => {
@@ -932,11 +1027,10 @@ const StandingsPage = ({
 
       poolMatches.forEach(match => {
         const isPlayer1 = match.player1 === player.player;
-        
         let p1Holes = 0;
         let p2Holes = 0;
         
-        if (match.scoresJson && match.scoresJson.length > 0) {
+        if (match.scoresJson?.length > 0) {
           match.scoresJson.forEach(score => {
             if (score.scored) {
               const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
@@ -963,12 +1057,10 @@ const StandingsPage = ({
         }
       });
       
-      const calculatedPoints = (matchWins * 3) + (matchTies * 1);
-      
       return {
         name: player.player,
-        status: status,
-        points: calculatedPoints,
+        status,
+        points: (matchWins * 3) + (matchTies * 1),
         holesWon,
         holesLost,
         holeDiff: holesWon - holesLost,
@@ -981,353 +1073,29 @@ const StandingsPage = ({
     const activePlayers = standings.filter(s => s.status === 'Active');
     const inactivePlayers = standings.filter(s => s.status === 'Inactive');
 
-    activePlayers.sort((a, b) => {
+    const sortFn = (a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       return b.holeDiff - a.holeDiff;
-    });
+    };
 
-    inactivePlayers.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.holeDiff - a.holeDiff;
-    });
+    activePlayers.sort(sortFn);
+    inactivePlayers.sort(sortFn);
 
     return [...activePlayers, ...inactivePlayers];
-  };
+  }, [pools, players, matches]);
 
-  const getPoolNames = () => {
-    return [...new Set(pools.map(p => p.pool))].sort();
-  };
+  const getPoolNames = useCallback(() => 
+    [...new Set(pools.map(p => p.pool))].sort(),
+    [pools]
+  );
 
-  const generatePlayoffBrackets = (playoffType) => {
-    const allPools = getPoolNames().filter(p => 
-      !p.toLowerCase().includes('cup') && 
-      !p.toLowerCase().includes('shield') && 
-      !p.toLowerCase().includes('plate')
-    );
-    
-    const poolStandings = allPools.map(poolName => ({
-      pool: poolName,
-      standings: calculateStandings(poolName)
-    }));
-    
-    if (playoffType === 'Cup') {
-      let participants = [];
-      
-      poolStandings.forEach(({ pool, standings }) => {
-        const activeStandings = standings.filter(s => s.status === 'Active');
-        activeStandings.slice(0, 3).forEach((player, idx) => {
-          participants.push({ ...player, pool, seed: idx + 1 });
-        });
-      });
-      
-      if (participants.length === 0) {
-        return { bracket: null, hasMatches: false };
-      }
-      
-      const poolA = participants.filter(p => p.pool === allPools[0]) || [];
-      const poolB = participants.filter(p => p.pool === allPools[1]) || [];
-      const poolC = participants.filter(p => p.pool === allPools[2]) || [];
-      const poolD = participants.filter(p => p.pool === allPools[3]) || [];
-      
-      const playoffMatches = matches.filter(m => {
-        const id = m.id?.toLowerCase() || '';
-        const venue = m.venue?.toLowerCase() || '';
-        return (id.includes('cup') || venue.includes('cup')) && m.status === 'Completed';
-      });
-      
-      const findWinner = (p1Name, p2Name) => {
-        const match = playoffMatches.find(m => 
-          (m.player1 === p1Name && m.player2 === p2Name) ||
-          (m.player1 === p2Name && m.player2 === p1Name)
-        );
-        return match?.winner;
-      };
-      
-      const bracket = { r16: [], qf: [], sf: [], final: null };
-      
-      if (poolA.length >= 3) {
-        const winner = findWinner(poolA[1].name, poolA[2].name);
-        bracket.r16.push({
-          id: 'Pool A: 2v3',
-          player1: poolA[1].name,
-          player2: poolA[2].name,
-          winner: winner,
-          poolLabel: allPools[0]
-        });
-      }
-      if (poolB.length >= 3) {
-        const winner = findWinner(poolB[1].name, poolB[2].name);
-        bracket.r16.push({
-          id: 'Pool B: 2v3',
-          player1: poolB[1].name,
-          player2: poolB[2].name,
-          winner: winner,
-          poolLabel: allPools[1]
-        });
-      }
-      if (poolC.length >= 3) {
-        const winner = findWinner(poolC[1].name, poolC[2].name);
-        bracket.r16.push({
-          id: 'Pool C: 2v3',
-          player1: poolC[1].name,
-          player2: poolC[2].name,
-          winner: winner,
-          poolLabel: allPools[2]
-        });
-      }
-      if (poolD.length >= 3) {
-        const winner = findWinner(poolD[1].name, poolD[2].name);
-        bracket.r16.push({
-          id: 'Pool D: 2v3',
-          player1: poolD[1].name,
-          player2: poolD[2].name,
-          winner: winner,
-          poolLabel: allPools[3]
-        });
-      }
-      
-      if (poolA.length >= 1) {
-        const r16Winner = bracket.r16[0]?.winner || 'Winner 2v3';
-        const winner = findWinner(poolA[0].name, r16Winner);
-        bracket.qf.push({
-          id: 'QF1',
-          player1: poolA[0].name,
-          player2: r16Winner,
-          winner: winner,
-          poolLabel: allPools[0]
-        });
-      }
-      if (poolB.length >= 1) {
-        const r16Winner = bracket.r16[1]?.winner || 'Winner 2v3';
-        const winner = findWinner(poolB[0].name, r16Winner);
-        bracket.qf.push({
-          id: 'QF2',
-          player1: poolB[0].name,
-          player2: r16Winner,
-          winner: winner,
-          poolLabel: allPools[1]
-        });
-      }
-      if (poolC.length >= 1) {
-        const r16Winner = bracket.r16[2]?.winner || 'Winner 2v3';
-        const winner = findWinner(poolC[0].name, r16Winner);
-        bracket.qf.push({
-          id: 'QF3',
-          player1: poolC[0].name,
-          player2: r16Winner,
-          winner: winner,
-          poolLabel: allPools[2]
-        });
-      }
-      if (poolD.length >= 1) {
-        const r16Winner = bracket.r16[3]?.winner || 'Winner 2v3';
-        const winner = findWinner(poolD[0].name, r16Winner);
-        bracket.qf.push({
-          id: 'QF4',
-          player1: poolD[0].name,
-          player2: r16Winner,
-          winner: winner,
-          poolLabel: allPools[3]
-        });
-      }
-      
-      if (bracket.qf.length >= 2) {
-        const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
-        const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
-        const winner = findWinner(qf1Winner, qf4Winner);
-        bracket.sf.push({
-          id: 'SF1',
-          player1: qf1Winner,
-          player2: qf4Winner,
-          winner: winner
-        });
-      }
-      if (bracket.qf.length >= 3) {
-        const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
-        const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
-        const winner = findWinner(qf2Winner, qf3Winner);
-        bracket.sf.push({
-          id: 'SF2',
-          player1: qf2Winner,
-          player2: qf3Winner,
-          winner: winner
-        });
-      }
-      
-      if (bracket.sf.length >= 2) {
-        const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
-        const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
-        const winner = findWinner(sf1Winner, sf2Winner);
-        bracket.final = {
-          id: 'Final',
-          player1: sf1Winner,
-          player2: sf2Winner,
-          winner: winner
-        };
-      }
-      
-      return { bracket, hasMatches: true };
-    }
-    
-    if (playoffType === 'Shield') {
-      let allNonCupPlayers = [];
-      
-      poolStandings.forEach(({ pool, standings }) => {
-        const activeStandings = standings.filter(s => s.status === 'Active');
-        activeStandings.slice(3).forEach((player) => {
-          allNonCupPlayers.push({ ...player, pool });
-        });
-      });
-      
-      if (allNonCupPlayers.length === 0) {
-        return { bracket: null, hasMatches: false };
-      }
-      
-      allNonCupPlayers.sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.holeDiff !== a.holeDiff) return b.holeDiff - a.holeDiff;
-        return b.win - a.win;
-      });
-      
-      let bracketSize;
-      if (allNonCupPlayers.length >= 16) bracketSize = 16;
-      else if (allNonCupPlayers.length >= 12) bracketSize = 12;
-      else if (allNonCupPlayers.length >= 8) bracketSize = 8;
-      else return { bracket: null, hasMatches: false };
-      
-      const shieldPlayers = allNonCupPlayers.slice(0, bracketSize);
-      
-      const playoffMatches = matches.filter(m => {
-        const id = m.id?.toLowerCase() || '';
-        const venue = m.venue?.toLowerCase() || '';
-        return (id.includes('shield') || venue.includes('shield')) && m.status === 'Completed';
-      });
-      
-      const findWinner = (p1Name, p2Name) => {
-        const match = playoffMatches.find(m => 
-          (m.player1 === p1Name && m.player2 === p2Name) ||
-          (m.player1 === p2Name && m.player2 === p1Name)
-        );
-        return match?.winner;
-      };
-      
-      const bracket = { r16: [], qf: [], sf: [], final: null };
-      
-      if (bracketSize === 16) {
-        for (let i = 0; i < 8; i++) {
-          const seed1 = i;
-          const seed2 = 15 - i;
-          const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
-          bracket.r16.push({
-            id: `R16-${i + 1}`,
-            player1: shieldPlayers[seed1].name,
-            player2: shieldPlayers[seed2].name,
-            winner: winner,
-            seed1: seed1 + 1,
-            seed2: seed2 + 1
-          });
-        }
-      }
-      
-      if (bracketSize === 16) {
-        for (let i = 0; i < 4; i++) {
-          const r16Match1 = bracket.r16[i * 2];
-          const r16Match2 = bracket.r16[i * 2 + 1];
-          const p1 = r16Match1?.winner || `Winner R16-${i * 2 + 1}`;
-          const p2 = r16Match2?.winner || `Winner R16-${i * 2 + 2}`;
-          const winner = findWinner(p1, p2);
-          bracket.qf.push({
-            id: `QF${i + 1}`,
-            player1: p1,
-            player2: p2,
-            winner: winner
-          });
-        }
-      } else if (bracketSize === 12) {
-        for (let i = 0; i < 4; i++) {
-          const seed1 = 4 + i;
-          const seed2 = 11 - i;
-          const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
-          bracket.r16.push({
-            id: `R16-${i + 1}`,
-            player1: shieldPlayers[seed1].name,
-            player2: shieldPlayers[seed2].name,
-            winner: winner,
-            seed1: seed1 + 1,
-            seed2: seed2 + 1
-          });
-        }
-        
-        for (let i = 0; i < 4; i++) {
-          const topSeed = shieldPlayers[i].name;
-          const r16Winner = bracket.r16[3 - i]?.winner || `Winner R16-${4 - i}`;
-          const winner = findWinner(topSeed, r16Winner);
-          bracket.qf.push({
-            id: `QF${i + 1}`,
-            player1: topSeed,
-            player2: r16Winner,
-            winner: winner,
-            seed1: i + 1
-          });
-        }
-      } else if (bracketSize === 8) {
-        for (let i = 0; i < 4; i++) {
-          const seed1 = i;
-          const seed2 = 7 - i;
-          const winner = findWinner(shieldPlayers[seed1].name, shieldPlayers[seed2].name);
-          bracket.qf.push({
-            id: `QF${i + 1}`,
-            player1: shieldPlayers[seed1].name,
-            player2: shieldPlayers[seed2].name,
-            winner: winner,
-            seed1: seed1 + 1,
-            seed2: seed2 + 1
-          });
-        }
-      }
-      
-      if (bracket.qf.length >= 2) {
-        const qf1Winner = bracket.qf[0]?.winner || 'QF1 Winner';
-        const qf4Winner = bracket.qf[3]?.winner || 'QF4 Winner';
-        const winner = findWinner(qf1Winner, qf4Winner);
-        bracket.sf.push({
-          id: 'SF1',
-          player1: qf1Winner,
-          player2: qf4Winner,
-          winner: winner
-        });
-      }
-      if (bracket.qf.length >= 3) {
-        const qf2Winner = bracket.qf[1]?.winner || 'QF2 Winner';
-        const qf3Winner = bracket.qf[2]?.winner || 'QF3 Winner';
-        const winner = findWinner(qf2Winner, qf3Winner);
-        bracket.sf.push({
-          id: 'SF2',
-          player1: qf2Winner,
-          player2: qf3Winner,
-          winner: winner
-        });
-      }
-      
-      if (bracket.sf.length >= 2) {
-        const sf1Winner = bracket.sf[0]?.winner || 'SF1 Winner';
-        const sf2Winner = bracket.sf[1]?.winner || 'SF2 Winner';
-        const winner = findWinner(sf1Winner, sf2Winner);
-        bracket.final = {
-          id: 'Final',
-          player1: sf1Winner,
-          player2: sf2Winner,
-          winner: winner
-        };
-      }
-      
-      return { bracket, hasMatches: true, bracketSize };
-    }
-    
-    return { bracket: null, hasMatches: false };
-  };
+  return { calculateStandings, getPoolNames };
+};
 
-  const generateCrossoverMatches = () => {
+const useCrossoverMatches = (pools, players, matches) => {
+  return useMemo(() => {
+    const getPoolNames = () => [...new Set(pools.map(p => p.pool))].sort();
+    
     const allPools = getPoolNames().filter(p => 
       !p.toLowerCase().includes('cup') && 
       !p.toLowerCase().includes('shield') && 
@@ -1337,147 +1105,203 @@ const StandingsPage = ({
     
     if (allPools.length < 4) return { week1: [], week2: [] };
     
-    const poolStandings = allPools.map(poolName => ({
-      pool: poolName,
-      standings: calculateStandings(poolName).filter(s => s.status === 'Active')
-    }));
-    
-    const poolA = poolStandings[0]?.standings || [];
-    const poolB = poolStandings[1]?.standings || [];
-    const poolC = poolStandings[2]?.standings || [];
-    const poolD = poolStandings[3]?.standings || [];
+    const calculateStandings = (poolName) => {
+      const poolPlayers = pools.filter(p => p.pool === poolName);
       
-      const crossoverMatches = matches.filter(m => {
-        const id = m.id?.toLowerCase() || '';
-        const venue = m.venue?.toLowerCase() || '';
-        return id.includes('crossover') || venue.includes('crossover');
-      });
-      
-      const findMatchResult = (p1, p2) => {
-        const match = crossoverMatches.find(m => 
-          (m.player1 === p1 && m.player2 === p2) ||
-          (m.player1 === p2 && m.player2 === p1)
-        );
-        return match;
-      };
-      
-      const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
-        const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
-        const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
-        const match = findMatchResult(player1, player2);
-        
-        return {
-          player1,
-          player2,
-          winner: match?.winner,
-          status: match?.status,
-          label: `${poolName1}${pos1} v ${poolName2}${pos2}`
-        };
-      };
-      
-      const week1 = [
-        createMatch(poolA, 1, poolB, 3, 'A', 'B'),
-        createMatch(poolA, 2, poolB, 2, 'A', 'B'),
-        createMatch(poolA, 3, poolB, 1, 'A', 'B'),
-        createMatch(poolC, 1, poolD, 3, 'C', 'D'),
-        createMatch(poolC, 2, poolD, 2, 'C', 'D'),
-        createMatch(poolC, 3, poolD, 1, 'C', 'D'),
-        createMatch(poolA, 4, poolB, 6, 'A', 'B'),
-        createMatch(poolA, 5, poolB, 5, 'A', 'B'),
-        createMatch(poolA, 6, poolB, 4, 'A', 'B'),
-        createMatch(poolC, 4, poolD, 6, 'C', 'D'),
-        createMatch(poolC, 5, poolD, 5, 'C', 'D'),
-        createMatch(poolC, 6, poolD, 4, 'C', 'D'),
-        createMatch(poolA, 7, poolB, 7, 'A', 'B'),
-        createMatch(poolC, 7, poolD, 7, 'C', 'D')
-      ];
-      
-      const week2 = [
-        createMatch(poolA, 1, poolC, 3, 'A', 'C'),
-        createMatch(poolA, 2, poolC, 2, 'A', 'C'),
-        createMatch(poolA, 3, poolC, 1, 'A', 'C'),
-        createMatch(poolB, 1, poolD, 3, 'B', 'D'),
-        createMatch(poolB, 2, poolD, 2, 'B', 'D'),
-        createMatch(poolB, 3, poolD, 1, 'B', 'D'),
-        createMatch(poolA, 4, poolC, 6, 'A', 'C'),
-        createMatch(poolA, 5, poolC, 5, 'A', 'C'),
-        createMatch(poolA, 6, poolC, 4, 'A', 'C'),
-        createMatch(poolB, 4, poolD, 6, 'B', 'D'),
-        createMatch(poolB, 5, poolD, 5, 'B', 'D'),
-        createMatch(poolB, 6, poolD, 4, 'B', 'D'),
-        createMatch(poolA, 7, poolC, 7, 'A', 'C'),
-        createMatch(poolB, 7, poolD, 7, 'B', 'D')
-      ];
-      
-      return { week1, week2 };
+      return poolPlayers.map(player => {
+        const playerData = players.find(p => p.name === player.player);
+        return { name: player.player, status: playerData?.status || 'Active' };
+      }).filter(s => s.status === 'Active');
     };
+    
+    const poolA = calculateStandings(allPools[0]) || [];
+    const poolB = calculateStandings(allPools[1]) || [];
+    const poolC = calculateStandings(allPools[2]) || [];
+    const poolD = calculateStandings(allPools[3]) || [];
+      
+    const crossoverMatches = matches.filter(m => {
+      const id = m.id?.toLowerCase() || '';
+      const venue = m.venue?.toLowerCase() || '';
+      return id.includes('crossover') || venue.includes('crossover');
+    });
+    
+    const findMatchResult = (p1, p2) => {
+      return crossoverMatches.find(m => 
+        (m.player1 === p1 && m.player2 === p2) ||
+        (m.player1 === p2 && m.player2 === p1)
+      );
+    };
+    
+    const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
+      const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
+      const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
+      const match = findMatchResult(player1, player2);
+      
+      return {
+        player1,
+        player2,
+        winner: match?.winner,
+        status: match?.status,
+        label: `${poolName1}${pos1} v ${poolName2}${pos2}`
+      };
+    };
+    
+    const week1 = [
+      createMatch(poolA, 1, poolB, 3, 'A', 'B'),
+      createMatch(poolA, 2, poolB, 2, 'A', 'B'),
+      createMatch(poolA, 3, poolB, 1, 'A', 'B'),
+      createMatch(poolC, 1, poolD, 3, 'C', 'D'),
+      createMatch(poolC, 2, poolD, 2, 'C', 'D'),
+      createMatch(poolC, 3, poolD, 1, 'C', 'D'),
+      createMatch(poolA, 4, poolB, 6, 'A', 'B'),
+      createMatch(poolA, 5, poolB, 5, 'A', 'B'),
+      createMatch(poolA, 6, poolB, 4, 'A', 'B'),
+      createMatch(poolC, 4, poolD, 6, 'C', 'D'),
+      createMatch(poolC, 5, poolD, 5, 'C', 'D'),
+      createMatch(poolC, 6, poolD, 4, 'C', 'D'),
+      createMatch(poolA, 7, poolB, 7, 'A', 'B'),
+      createMatch(poolC, 7, poolD, 7, 'C', 'D')
+    ];
+    
+    const week2 = [
+      createMatch(poolA, 1, poolC, 3, 'A', 'C'),
+      createMatch(poolA, 2, poolC, 2, 'A', 'C'),
+      createMatch(poolA, 3, poolC, 1, 'A', 'C'),
+      createMatch(poolB, 1, poolD, 3, 'B', 'D'),
+      createMatch(poolB, 2, poolD, 2, 'B', 'D'),
+      createMatch(poolB, 3, poolD, 1, 'B', 'D'),
+      createMatch(poolA, 4, poolC, 6, 'A', 'C'),
+      createMatch(poolA, 5, poolC, 5, 'A', 'C'),
+      createMatch(poolA, 6, poolC, 4, 'A', 'C'),
+      createMatch(poolB, 4, poolD, 6, 'B', 'D'),
+      createMatch(poolB, 5, poolD, 5, 'B', 'D'),
+      createMatch(poolB, 6, poolD, 4, 'B', 'D'),
+      createMatch(poolA, 7, poolC, 7, 'A', 'C'),
+      createMatch(poolB, 7, poolD, 7, 'B', 'D')
+    ];
+    
+    return { week1, week2 };
+  }, [pools, players, matches]);
+};
+
+const CrossoverMatchCard = ({ match }) => (
+  <div className="bg-white rounded-lg p-2 text-xs border border-gray-200">
+    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
+    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+      {formatPlayerName(match.player1)}
+    </div>
+    <div className="text-gray-400 text-center my-0.5">vs</div>
+    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+      {formatPlayerName(match.player2)}
+    </div>
+    {match.status === 'Completed' && (
+      <div className="text-center mt-1">
+        <span className="text-xs text-green-600">✓</span>
+      </div>
+    )}
+  </div>
+);
+
+const StandingsTable = ({ standings, currentUser }) => (
+  <table className="w-full">
+    <thead>
+      <tr className="border-b-2 border-gray-200">
+        <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-8">#</th>
+        <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs">Player</th>
+        <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">P</th>
+        <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">W</th>
+        <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">L</th>
+        <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">+/-</th>
+        <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-xs">Pts</th>
+      </tr>
+    </thead>
+    <tbody>
+      {standings.map((standing, idx) => (
+        <tr 
+          key={standing.name} 
+          className={`border-b border-gray-100 ${
+            standing.name === currentUser.name ? 'bg-green-50' : ''
+          } ${
+            standing.status === 'Inactive' ? 'opacity-50 text-gray-400' : ''
+          }`}
+        >
+          <td className="py-3 pr-2 text-gray-600 font-semibold text-xs">{idx + 1}</td>
+          <td className="py-3 pr-2 font-semibold text-gray-900 text-xs">
+            {formatPlayerName(standing.name)}
+            {standing.status === 'Inactive' && <span className="ml-1 text-orange-500">⚠️</span>}
+          </td>
+          <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.played}</td>
+          <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.win}</td>
+          <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.loss}</td>
+          <td className={`py-3 px-1 text-center font-bold text-xs ${
+            standing.holeDiff > 0 ? 'text-green-600' : 
+            standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
+          }`}>
+            {standing.holeDiff > 0 ? '+' : ''}{standing.holeDiff}
+          </td>
+          <td className="py-3 pl-2 text-center text-gray-900 font-bold text-sm">{standing.points}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
+
+const StandingsPage = ({ 
+  currentUser, 
+  matches, 
+  pools,
+  players,
+  onLogout, 
+  onChangePin, 
+  onViewMatches,
+  darkMode,
+  setDarkMode,
+  isOnline,
+  pendingUpdates,
+  onRefresh,
+  isLoading
+}) => {
+  const [expandedSections, setExpandedSections] = useState({
+    pools: true,
+    crossover1: false,
+    crossover2: false,
+    cup: false,
+    shield: false
+  });
+  
+  const toggleSection = useCallback((section) => {
+    triggerHaptic('light');
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  }, []);
+  
+  const { calculateStandings, getPoolNames } = useStandingsCalculations(pools, players, matches);
+  const { week1, week2 } = useCrossoverMatches(pools, players, matches);
+
+  const poolNames = useMemo(() => 
+    getPoolNames().filter(p => 
+      !p.toLowerCase().includes('cup') && 
+      !p.toLowerCase().includes('shield') && 
+      !p.toLowerCase().includes('plate')
+    ),
+    [getPoolNames]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="text-white sticky top-0 z-10 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
-        <div className="max-w-md mx-auto px-4 py-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
-                <User size={20} />
-              </div>
-              <div>
-                <p className="text-sm opacity-90">Signed in as</p>
-                <p className="font-bold">{currentUser.name}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => {
-                  triggerHaptic('light');
-                  onRefresh();
-                }}
-                disabled={isLoading}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
-              </button>
-              <button onClick={() => {
-                triggerHaptic('light');
-                setDarkMode(!darkMode);
-              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-              <button onClick={() => {
-                triggerHaptic('light');
-                onChangePin();
-              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                <Edit size={20} />
-              </button>
-              <button onClick={() => {
-                triggerHaptic('medium');
-                onLogout();
-              }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                <LogOut size={20} />
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex gap-2 mt-4">
-            <button onClick={() => {
-              triggerHaptic('light');
-              onViewMatches();
-            }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
-              Matches
-            </button>
-            <button className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/20 text-white">
-              Standings
-            </button>
-          </div>
-          
-          {!isOnline && (
-            <div className="bg-white/10 px-3 py-2 rounded-lg text-sm flex items-center mt-4">
-              <div className="w-2 h-2 bg-orange-300 rounded-full mr-2"></div>
-              Offline • {pendingUpdates.length} pending updates
-            </div>
-          )}
-        </div>
-      </div>
+      <Header
+        currentUser={currentUser}
+        onLogout={onLogout}
+        onChangePin={onChangePin}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        onRefresh={onRefresh}
+        isLoading={isLoading}
+        isOnline={isOnline}
+        pendingUpdates={pendingUpdates}
+        showTabs
+        activeTab="standings"
+        onTabChange={(tab) => tab === 'matches' && onViewMatches()}
+      />
       
       <div className="max-w-md mx-auto px-4 py-6">
         {pools.length === 0 ? (
@@ -1490,320 +1314,83 @@ const StandingsPage = ({
         ) : (
           <div className="space-y-4">
             {/* Pool Standings Section */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <button
-                onClick={() => toggleSection('pools')}
-                className="w-full px-4 py-3 flex items-center justify-between"
-                style={{background: `linear-gradient(to right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}
-              >
-                <h2 className="text-lg font-bold text-white">Pool Standings</h2>
-                <ChevronRight 
-                  size={20} 
-                  className={`text-white transition-transform ${expandedSections.pools ? 'rotate-90' : ''}`}
-                />
-              </button>
-              
-              {expandedSections.pools && (
-                <div className="p-4 space-y-4">
-                  {getPoolNames().filter(p => !p.toLowerCase().includes('cup') && !p.toLowerCase().includes('shield') && !p.toLowerCase().includes('plate')).map(poolName => {
-                    const standings = calculateStandings(poolName);
-                    
-                    return (
-                      <div key={poolName} className="bg-gray-50 rounded-xl overflow-hidden">
-                        <div className="px-3 py-2 bg-gray-200">
-                          <h3 className="font-bold text-gray-900 text-sm">{poolName}</h3>
-                        </div>
-                        <div className="p-3">
-                          <table className="w-full">
-                            <thead>
-                              <tr className="border-b-2 border-gray-200">
-                                <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-8">#</th>
-                                <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs">Player</th>
-                                <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">P</th>
-                                <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">W</th>
-                                <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">L</th>
-                                <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">+/-</th>
-                                <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-xs">Pts</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {standings.map((standing, idx) => (
-                                <tr 
-                                  key={standing.name} 
-                                  className={`border-b border-gray-100 ${
-                                    standing.name === currentUser.name ? 'bg-green-50' : ''
-                                  } ${
-                                    standing.status === 'Inactive' ? 'opacity-50 text-gray-400' : ''
-                                  }`}
-                                >
-                                  <td className="py-3 pr-2 text-gray-600 font-semibold text-xs">{idx + 1}</td>
-                                  <td className="py-3 pr-2 font-semibold text-gray-900 text-xs">
-                                    {formatPlayerName(standing.name)}
-                                    {standing.status === 'Inactive' && <span className="ml-1 text-orange-500">⚠️</span>}
-                                  </td>
-                                  <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.played}</td>
-                                  <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.win}</td>
-                                  <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.loss}</td>
-                                  <td className={`py-3 px-1 text-center font-bold text-xs ${
-                                    standing.holeDiff > 0 ? 'text-green-600' : 
-                                    standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
-                                  }`}>
-                                    {standing.holeDiff > 0 ? '+' : ''}{standing.holeDiff}
-                                  </td>
-                                  <td className="py-3 pl-2 text-center text-gray-900 font-bold text-sm">{standing.points}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
- {/* Crossover Matches - Week 1 */}
-<div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-  <button
-    onClick={() => toggleSection('crossover1')}
-    className="w-full px-4 py-3 flex items-center justify-between bg-gray-100"
-  >
-    <div>
-      <h2 className="text-lg font-bold text-gray-900">Crossover Week 1</h2>
-      <p className="text-xs text-gray-500 text-left">15 February 7:00pm • A vs B, C vs D</p>
-    </div>
-    <ChevronRight 
-      size={20} 
-      className={`text-gray-700 transition-transform ${expandedSections.crossover1 ? 'rotate-90' : ''}`}
-    />
-  </button>
-  
-  {expandedSections.crossover1 && (
-    <div className="p-4">
-      {(() => {
-        const { week1 } = generateCrossoverMatches();
-        
-        if (week1.length === 0) {
-          return (
-            <div className="p-6 text-center text-gray-500 text-sm">
-              <p>Crossover matches will appear after pool play.</p>
-            </div>
-          );
-        }
-        
-        return (
-          <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
-            <div className="p-3">
-              <div className="grid grid-cols-2 gap-2">
-                {week1.map((match, idx) => (
-                  <div key={idx} className="bg-white rounded-lg p-2 text-xs border border-gray-200">
-                    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
-                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                      {formatPlayerName(match.player1)}
-                    </div>
-                    <div className="text-gray-400 text-center my-0.5">vs</div>
-                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                      {formatPlayerName(match.player2)}
-                    </div>
-                    {match.status === 'Completed' && (
-                      <div className="text-center mt-1">
-                        <span className="text-xs text-green-600">✓</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-    </div>
-  )}
-</div>
-
-{/* Crossover Matches - Week 2 */}
-<div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-  <button
-    onClick={() => toggleSection('crossover2')}
-    className="w-full px-4 py-3 flex items-center justify-between bg-gray-100"
-  >
-    <div>
-      <h2 className="text-lg font-bold text-gray-900">Crossover Week 2</h2>
-      <p className="text-xs text-gray-500 text-left">22 February 7:00pm • A vs C, B vs D</p>
-    </div>
-    <ChevronRight 
-      size={20} 
-      className={`text-gray-700 transition-transform ${expandedSections.crossover2 ? 'rotate-90' : ''}`}
-    />
-  </button>
-  
-  {expandedSections.crossover2 && (
-    <div className="p-4">
-      {(() => {
-        const { week2 } = generateCrossoverMatches();
-        
-        if (week2.length === 0) {
-          return (
-            <div className="p-6 text-center text-gray-500 text-sm">
-              <p>Crossover matches will appear after pool play.</p>
-            </div>
-          );
-        }
-        
-        return (
-          <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
-            <div className="p-3">
-              <div className="grid grid-cols-2 gap-2">
-                {week2.map((match, idx) => (
-                  <div key={idx} className="bg-white rounded-lg p-2 text-xs border border-gray-200">
-                    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
-                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                      {formatPlayerName(match.player1)}
-                    </div>
-                    <div className="text-gray-400 text-center my-0.5">vs</div>
-                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                      {formatPlayerName(match.player2)}
-                    </div>
-                    {match.status === 'Completed' && (
-                      <div className="text-center mt-1">
-                        <span className="text-xs text-green-600">✓</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-    </div>
-  )}
-</div>              
-            {/* Playoff Brackets */}
-            {['Cup', 'Shield'].map(playoffType => {
-              const { bracket, hasMatches } = generatePlayoffBrackets(playoffType);
-              const icon = playoffType === 'Cup' ? '🏆' : '🛡️';
-              const sectionKey = playoffType.toLowerCase();
-              
-              return (
-                <div key={playoffType} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <button
-                    onClick={() => toggleSection(sectionKey)}
-                    className="w-full px-4 py-3 flex items-center justify-between"
-                    style={{background: `linear-gradient(to right, ${BRAND_SECONDARY}, ${BRAND_PRIMARY})`}}
-                  >
-                    <h2 className="text-lg font-bold text-gray-900 flex items-center">
-                      <span className="mr-2">{icon}</span>
-                      {playoffType} Final
-                    </h2>
-                    <ChevronRight 
-                      size={20} 
-                      className={`text-gray-900 transition-transform ${expandedSections[sectionKey] ? 'rotate-90' : ''}`}
-                    />
-                  </button>
+            <CollapsibleSection
+              title="Pool Standings"
+              isExpanded={expandedSections.pools}
+              onToggle={() => toggleSection('pools')}
+              headerStyle="primary"
+            >
+              <div className="p-4 space-y-4">
+                {poolNames.map(poolName => {
+                  const standings = calculateStandings(poolName);
                   
-                  {expandedSections[sectionKey] && (
-                    <div className="p-4">
-                      <p className="text-xs text-gray-600 mb-3">
-                        {playoffType === 'Cup' && "Top 3 from each pool"}
-                        {playoffType === 'Shield' && "Ranked by overall performance"}
-                      </p>
-                      
-                      {!hasMatches ? (
-                        <div className="text-center text-gray-500 text-sm py-6">
-                          <p>Pool play not complete yet.</p>
-                          <p className="text-xs mt-2">Brackets will populate automatically based on pool standings.</p>
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <div className="flex gap-4 min-w-max pb-2">
-                            {bracket.r16.length > 0 && (
-                              <div className="flex-shrink-0 w-48">
-                                <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
-                                <div className="space-y-2">
-                                  {bracket.r16.map((match) => (
-                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                      <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
-                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                        #{match.player1.includes('Winner') ? match.player1 : '2 ' + formatPlayerName(match.player1)}
-                                      </div>
-                                      <div className="text-gray-400 text-center my-0.5">vs</div>
-                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                        #{match.player2.includes('Winner') ? match.player2 : '3 ' + formatPlayerName(match.player2)}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {bracket.qf.length > 0 && (
-                              <div className="flex-shrink-0 w-48">
-                                <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
-                                <div className="space-y-2">
-                                  {bracket.qf.map((match) => (
-                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                      <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
-                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                        {match.player1.includes('Winner') ? match.player1 : '#1 ' + formatPlayerName(match.player1)}
-                                      </div>
-                                      <div className="text-gray-400 text-center my-0.5">vs</div>
-                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                        {match.player2.includes('Winner') ? 'Winner R16' : formatPlayerName(match.player2)}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {bracket.sf.length > 0 && (
-                              <div className="flex-shrink-0 w-48">
-                                <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
-                                <div className="space-y-2">
-                                  {bracket.sf.map((match) => (
-                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                        {match.player1.includes('Winner') ? match.player1 : formatPlayerName(match.player1)}
-                                      </div>
-                                      <div className="text-gray-400 text-center my-0.5">vs</div>
-                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                        {match.player2.includes('Winner') ? match.player2 : formatPlayerName(match.player2)}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {bracket.final && (
-                              <div className="flex-shrink-0 w-48">
-                                <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
-                                <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
-                                  <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}
-                                  </div>
-                                  <div className="text-gray-400 text-center my-1 font-semibold">vs</div>
-                                  <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}
-                                  </div>
-                                  {bracket.final.winner && bracket.final.winner !== 'Winner' && !bracket.final.winner.includes('Winner') && (
-                                    <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
-                                      🏆 {formatPlayerName(bracket.final.winner)}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                  return (
+                    <div key={poolName} className="bg-gray-50 rounded-xl overflow-hidden">
+                      <div className="px-3 py-2 bg-gray-200">
+                        <h3 className="font-bold text-gray-900 text-sm">{poolName}</h3>
+                      </div>
+                      <div className="p-3">
+                        <StandingsTable standings={standings} currentUser={currentUser} />
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            </CollapsibleSection>
+
+            {/* Crossover Week 1 */}
+            <CollapsibleSection
+              title="Crossover Week 1"
+              subtitle="15 February 7:00pm • A vs B, C vs D"
+              isExpanded={expandedSections.crossover1}
+              onToggle={() => toggleSection('crossover1')}
+              headerStyle="gray"
+            >
+              <div className="p-4">
+                {week1.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500 text-sm">
+                    <p>Crossover matches will appear after pool play.</p>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
+                    <div className="p-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        {week1.map((match, idx) => (
+                          <CrossoverMatchCard key={idx} match={match} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CollapsibleSection>
+
+            {/* Crossover Week 2 */}
+            <CollapsibleSection
+              title="Crossover Week 2"
+              subtitle="22 February 7:00pm • A vs C, B vs D"
+              isExpanded={expandedSections.crossover2}
+              onToggle={() => toggleSection('crossover2')}
+              headerStyle="gray"
+            >
+              <div className="p-4">
+                {week2.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500 text-sm">
+                    <p>Crossover matches will appear after pool play.</p>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
+                    <div className="p-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        {week2.map((match, idx) => (
+                          <CrossoverMatchCard key={idx} match={match} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CollapsibleSection>
           </div>
         )}
       </div>
@@ -1811,21 +1398,22 @@ const StandingsPage = ({
   );
 };
 
-// Live Scores Page
+// ============================================
+// LIVE SCORES PAGE
+// ============================================
+
 const LiveScoresPage = ({ onBack }) => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const fetchLiveScores = async () => {
+  const fetchLiveScores = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`${APPS_SCRIPT_URL}?action=getLiveScores`);
-      
       if (!response.ok) throw new Error('Failed to load data');
       
       const data = await response.json();
-      
       const matchesData = data.matches.slice(1).map(row => ({
         id: row[0], 
         date: row[1], 
@@ -1846,50 +1434,21 @@ const LiveScoresPage = ({ onBack }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLiveScores();
-  }, []);
+  }, [fetchLiveScores]);
 
-  const calculateMatchStats = (match) => {
-    let p1Holes = 0;
-    let p2Holes = 0;
-    let lastHole = 0;
+  const inProgressMatches = useMemo(() => 
+    matches.filter(m => m.status === 'In-progress'),
+    [matches]
+  );
 
-    if (match.scoresJson && match.scoresJson.length > 0) {
-      match.scoresJson.forEach((score, idx) => {
-        if (score.scored) {
-          lastHole = idx + 1;
-          
-          const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
-          const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
-          
-          if (p1Adjusted < p2Adjusted) p1Holes++;
-          else if (p2Adjusted < p1Adjusted) p2Holes++;
-        }
-      });
-    }
-
-    return { p1Holes, p2Holes, lastHole };
-  };
-
-  const formatTimeAgo = (date) => {
-    if (!date) return 'Never';
-    const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return 'Just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} min ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  };
-
-  const inProgressMatches = matches.filter(m => m.status === 'In-progress');
-  const completedToday = matches.filter(m => {
-    if (m.status !== 'Completed') return false;
+  const completedToday = useMemo(() => {
     const today = new Date().toLocaleDateString('en-NZ', { day: '2-digit', month: 'long' });
-    return m.date === today;
-  });
+    return matches.filter(m => m.status === 'Completed' && m.date === today);
+  }, [matches]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1909,9 +1468,7 @@ const LiveScoresPage = ({ onBack }) => {
             disabled={loading}
             className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
-            <div className={loading ? 'animate-spin' : ''}>
-              🔄
-            </div>
+            <div className={loading ? 'animate-spin' : ''}>🔄</div>
           </button>
         </div>
       </div>
@@ -2014,12 +1571,19 @@ const LiveScoresPage = ({ onBack }) => {
   );
 };
 
-// Scoring Page
+// ============================================
+// SCORING PAGE
+// ============================================
+
 const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => {
   const [scores, setScores] = useState([]);
   const [currentHole, setCurrentHole] = useState(0);
   const [showLiveScores, setShowLiveScores] = useState(false);
-  const course = courses.find(c => c.name === match.venue || c.code === match.venue);
+  
+  const course = useMemo(() => 
+    courses.find(c => c.name === match.venue || c.code === match.venue),
+    [courses, match.venue]
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem(`match-progress-${match.id}`);
@@ -2031,7 +1595,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       const startHoleNum = Number(startingHole);
       const initScores = Array(18).fill(null).map((_, idx) => {
         const actualHoleNumber = ((startHoleNum - 1 + idx) % 18) + 1;
-        const par = course && course.pars[actualHoleNumber] ? course.pars[actualHoleNumber] : 3;
+        const par = course?.pars[actualHoleNumber] || 3;
         return { p1: par, p2: par, scored: false };
       });
       
@@ -2061,7 +1625,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
     if (match.status !== 'In-progress') {
       updateMatchStatus();
     }
-  }, [match.id]);
+  }, [match.id, match.status]);
 
   useEffect(() => {
     if (scores.length > 0) {
@@ -2075,7 +1639,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
     }
   }, [scores, currentHole, match.id, startingHole]);
 
-  const calculateMatchStatus = () => {
+  const calculateMatchStatus = useCallback(() => {
     let p1Holes = 0;
     let p2Holes = 0;
     let holesPlayed = 0;
@@ -2083,7 +1647,6 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
     scores.forEach((score) => {
       if (score.scored) {
         holesPlayed++;
-        
         const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
         const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
         
@@ -2092,19 +1655,18 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       }
     });
       
-      const lead = Math.abs(p1Holes - p2Holes);
-      const leader = p1Holes > p2Holes ? match.player1 : 
-                     p2Holes > p1Holes ? match.player2 : null;
-      
-      const holesRemaining = Math.max(0, scores.length - holesPlayed);
-      const isComplete = (holesPlayed >= 18 && leader !== null) || (lead > holesRemaining && holesPlayed > 0);
-      
-      const needsPlayoff = holesPlayed >= 18 && p1Holes === p2Holes;
-      
-      return { p1Holes, p2Holes, holesPlayed, lead, leader, isComplete, needsPlayoff };
-    };
+    const lead = Math.abs(p1Holes - p2Holes);
+    const leader = p1Holes > p2Holes ? match.player1 : 
+                   p2Holes > p1Holes ? match.player2 : null;
+    
+    const holesRemaining = Math.max(0, scores.length - holesPlayed);
+    const isComplete = (holesPlayed >= 18 && leader !== null) || (lead > holesRemaining && holesPlayed > 0);
+    const needsPlayoff = holesPlayed >= 18 && p1Holes === p2Holes;
+    
+    return { p1Holes, p2Holes, holesPlayed, lead, leader, isComplete, needsPlayoff };
+  }, [scores, match.player1, match.player2]);
 
-  const recordScore = async () => {
+  const recordScore = useCallback(async () => {
     if (scores[currentHole]?.p1 > 0 && scores[currentHole]?.p2 > 0) {
       triggerHaptic('medium');
       const newScores = [...scores];
@@ -2130,9 +1692,9 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
         setCurrentHole(currentHole + 1);
       }
     }
-  };
+  }, [scores, currentHole, match.id]);
 
-  const updateScore = (player, delta) => {
+  const updateScore = useCallback((player, delta) => {
     triggerHaptic('light');
     const newScores = [...scores];
     const current = newScores[currentHole]?.[player] || 0;
@@ -2141,26 +1703,26 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       [player]: Math.max(1, current + delta)
     };
     setScores(newScores);
-  };
+  }, [scores, currentHole]);
 
-  const addPlayoffHole = () => {
+  const addPlayoffHole = useCallback(() => {
     triggerHaptic('medium');
-    const playoffPar = course && course.pars[1] ? course.pars[1] : 3;
+    const playoffPar = course?.pars[1] || 3;
     const newScores = [...scores, { p1: playoffPar, p2: playoffPar, scored: false }];
     setScores(newScores);
     setCurrentHole(scores.length);
-  };
+  }, [scores, course]);
 
-  const handleComplete = () => {
+  const handleComplete = useCallback(() => {
     const status = calculateMatchStatus();
     if (!status.leader) return;
     
     triggerHaptic('success');
     localStorage.removeItem(`match-progress-${match.id}`);
     onComplete(scores, status.leader);
-  };
+  }, [calculateMatchStatus, match.id, scores, onComplete]);
 
-  const calculateVsPar = (playerScores) => {
+  const calculateVsPar = useCallback((playerScores) => {
     let totalScore = 0;
     let totalPar = 0;
     
@@ -2168,7 +1730,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       if (score.scored) {
         totalScore += playerScores === 'p1' ? score.p1 : score.p2;
         const actualHoleNumber = idx < 18 ? ((Number(startingHole) - 1 + idx) % 18) + 1 : 1;
-        const par = course && course.pars[actualHoleNumber] ? course.pars[actualHoleNumber] : 3;
+        const par = course?.pars[actualHoleNumber] || 3;
         totalPar += par;
       }
     });
@@ -2177,9 +1739,9 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
     if (diff === 0) return 'E';
     if (diff < 0) return String(diff);
     return `+${diff}`;
-  };
+  }, [scores, startingHole, course]);
 
-  const status = calculateMatchStatus();
+  const status = useMemo(() => calculateMatchStatus(), [calculateMatchStatus]);
   const actualHoleNumber = currentHole < 18 ? ((Number(startingHole) - 1 + currentHole) % 18) + 1 : currentHole - 17;
   const par = currentHole < 18 && course ? course.pars[actualHoleNumber] : 3;
   
@@ -2443,16 +2005,19 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
   );
 };
 
-// Review Page
+// ============================================
+// REVIEW PAGE
+// ============================================
+
 const ReviewPage = ({ match, onCancel }) => {
-  const [scores] = useState(match.scoresJson || []);
-  const [startingHole] = useState(1);
+  const scores = match.scoresJson || [];
+  const startingHole = 1;
   const course = match.course;
 
   const player1Name = formatPlayerName(match.player1);
   const player2Name = formatPlayerName(match.player2);
 
-  const calculateVsPar = (playerScores) => {
+  const calculateVsPar = useCallback((playerScores) => {
     let totalScore = 0;
     let totalPar = 0;
     scores.forEach((score, idx) => {
@@ -2467,7 +2032,21 @@ const ReviewPage = ({ match, onCancel }) => {
     if (diff === 0) return 'E';
     if (diff < 0) return String(diff);
     return `+${diff}`;
-  };
+  }, [scores, course]);
+
+  const holesWonStats = useMemo(() => {
+    let p1Holes = 0;
+    let p2Holes = 0;
+    scores.forEach(score => {
+      if (score.scored) {
+        const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
+        const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
+        if (p1Adjusted < p2Adjusted) p1Holes++;
+        else if (p2Adjusted < p1Adjusted) p2Holes++;
+      }
+    });
+    return { p1Holes, p2Holes };
+  }, [scores, match]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
@@ -2497,17 +2076,7 @@ const ReviewPage = ({ match, onCancel }) => {
             <div className="text-center flex-1">
               <div className="text-sm text-gray-500 mb-1">{player1Name}</div>
               <div className="text-3xl font-bold text-blue-600">
-                {(() => {
-                  let p1Holes = 0;
-                  scores.forEach(score => {
-                    if (score.scored) {
-                      const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
-                      const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
-                      if (p1Adjusted < p2Adjusted) p1Holes++;
-                    }
-                  });
-                  return p1Holes;
-                })()}
+                {holesWonStats.p1Holes}
               </div>
               <div className="text-xs text-gray-500 mt-1">Holes Won</div>
             </div>
@@ -2515,17 +2084,7 @@ const ReviewPage = ({ match, onCancel }) => {
             <div className="text-center flex-1">
               <div className="text-sm text-gray-500 mb-1">{player2Name}</div>
               <div className="text-3xl font-bold text-blue-600">
-                {(() => {
-                  let p2Holes = 0;
-                  scores.forEach(score => {
-                    if (score.scored) {
-                      const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
-                      const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
-                      if (p2Adjusted < p1Adjusted) p2Holes++;
-                    }
-                  });
-                  return p2Holes;
-                })()}
+                {holesWonStats.p2Holes}
               </div>
               <div className="text-xs text-gray-500 mt-1">Holes Won</div>
             </div>
@@ -2613,16 +2172,13 @@ const DiscGolfApp = () => {
   const appData = useAppData();
   const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success') => {
     triggerHaptic(type);
     setToast({ message, type });
-  };
+  }, []);
 
-  const handleLogin = (playerName, pin) => {
-    console.log('Attempting login:', playerName, pin);
-    console.log('Available players:', appData.players);
+  const handleLogin = useCallback((playerName, pin) => {
     const player = appData.players.find(p => p.name === playerName && p.pin === pin);
-    console.log('Found player:', player);
     if (player) {
       localStorage.setItem('lastLoggedInUser', playerName);
       setCurrentUser(player);
@@ -2633,15 +2189,15 @@ const DiscGolfApp = () => {
       setError('Invalid player name or PIN');
       triggerHaptic('error');
     }
-  };
+  }, [appData.players, showToast]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setCurrentUser(null);
     setView('login');
     setSelectedMatch(null);
-  };
+  }, []);
 
-  const handleChangePin = (newPin) => {
+  const handleChangePin = useCallback((newPin) => {
     const updatedPlayers = appData.players.map(p => 
       p.id === currentUser.id ? { ...p, pin: newPin } : p
     );
@@ -2658,7 +2214,46 @@ const DiscGolfApp = () => {
     setView('matches');
     setError('');
     showToast('PIN updated successfully!', 'success');
-  };
+  }, [appData, currentUser, showToast]);
+
+  const handleCancelMatch = useCallback(async () => {
+    if (selectedMatch?.match && window.confirm('Cancel this match? All progress will be lost.')) {
+      try {
+        localStorage.removeItem(`match-progress-${selectedMatch.match.id}`);
+        
+        const updatedMatches = appData.matches.map(m => 
+          m.id === selectedMatch.match.id 
+            ? { ...m, scoresJson: [], winner: '', status: 'scheduled' }
+            : m
+        );
+        appData.setMatches(updatedMatches);
+        
+        localStorage.setItem('sheet-data', JSON.stringify({
+          players: appData.players,
+          courses: appData.courses,
+          matches: updatedMatches,
+          pools: appData.pools
+        }));
+        
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: 'cancelMatch',
+            matchId: selectedMatch.match.id
+          }),
+          mode: 'no-cors'
+        });
+        
+        setSelectedMatch(null);
+        setView('matches');
+        showToast('Match cancelled', 'info');
+      } catch (err) {
+        console.error('Error cancelling match:', err);
+        showToast('Error cancelling match', 'error');
+      }
+    }
+  }, [selectedMatch, appData, showToast]);
 
   if (view === 'login') {
     return (
@@ -2728,47 +2323,7 @@ const DiscGolfApp = () => {
           match={selectedMatch.match}
           startingHole={selectedMatch.startingHole}
           courses={appData.courses}
-          onCancel={async () => {
-            if (selectedMatch && selectedMatch.match) {
-              if (window.confirm('Cancel this match? All progress will be lost.')) {
-                try {
-                  localStorage.removeItem(`match-progress-${selectedMatch.match.id}`);
-                  
-                  const updatedMatches = appData.matches.map(m => 
-                    m.id === selectedMatch.match.id 
-                      ? { ...m, scoresJson: [], winner: '', status: 'scheduled' }
-                      : m
-                  );
-                  appData.setMatches(updatedMatches);
-                  
-                  localStorage.setItem('sheet-data', JSON.stringify({
-                    players: appData.players,
-                    courses: appData.courses,
-                    matches: updatedMatches,
-                    pools: appData.pools
-                  }));
-                  
-                  await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                      action: 'cancelMatch',
-                      matchId: selectedMatch.match.id
-                    }),
-                    mode: 'no-cors'
-                  });
-                  
-                  setSelectedMatch(null);
-                  setView('matches');
-                  showToast('Match cancelled', 'info');
-                  
-                } catch (err) {
-                  console.error('Error cancelling match:', err);
-                  showToast('Error cancelling match', 'error');
-                }
-              }
-            }
-          }}
+          onCancel={handleCancelMatch}
           onComplete={(scores, winner) => {
             appData.submitMatchToSheet(selectedMatch.match.id, scores, winner);
             showToast('Match completed successfully!', 'success');
