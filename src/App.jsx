@@ -92,6 +92,7 @@ const useAppData = () => {
   const [pools, setPools] = useState([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingUpdates, setPendingUpdates] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -112,6 +113,7 @@ const useAppData = () => {
   }, [isOnline]);
 
  const loadSheetData = async () => {
+   setIsLoading(true); 
   try {
      console.log('Fetching from:', `${APPS_SCRIPT_URL}?action=getData`);
     const response = await fetch(`${APPS_SCRIPT_URL}?action=getData`);
@@ -238,7 +240,8 @@ const useAppData = () => {
 
   return {
     players, setPlayers, courses, matches, setMatches, pools,
-    isOnline, pendingUpdates, submitMatchToSheet, loadSheetData
+    isOnline, pendingUpdates, submitMatchToSheet, loadSheetData,
+    isLoading
   };
 };
 
@@ -454,7 +457,8 @@ const MatchesPage = ({
   setDarkMode,
   isOnline,
   pendingUpdates,
-  onRefresh
+  onRefresh,
+  isLoading
 }) => {
   const [matchFilter, setMatchFilter] = useState('player');
   const [selectedFilterDate, setSelectedFilterDate] = useState('');
@@ -492,7 +496,7 @@ const MatchesPage = ({
     setShowStartHoleModal(false);
   };
 
-  return (
+return (
     <div className="min-h-screen bg-gray-50 transition-colors">
       <div className="text-white sticky top-0 z-10 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
         <div className="max-w-md mx-auto px-4 py-6">
@@ -507,12 +511,13 @@ const MatchesPage = ({
               </div>
             </div>
             <div className="flex gap-2">
-            <button 
-  onClick={onRefresh} 
-  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
->
-  🔄
-</button>
+              <button 
+                onClick={onRefresh} 
+                disabled={isLoading}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
+              </button>
               <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
@@ -1265,11 +1270,12 @@ const generateCrossoverMatches = () => {
             </div>
              <div className="flex gap-2">
     <button 
-      onClick={() => appData.loadSheetData()} 
-      className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-    >
-      🔄
-    </button>
+                onClick={() => appData.loadSheetData()} 
+                disabled={isLoading}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
+              </button>
               <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
@@ -1590,7 +1596,7 @@ const fetchLiveScores = async () => {
   } catch (err) {
     console.error('Error loading live scores:', err);
   } finally {
-    setLoading(false);
+    setIsLoading(false);
   }
 };
 
@@ -2473,6 +2479,7 @@ const DiscGolfApp = () => {
       isOnline={appData.isOnline}
       pendingUpdates={appData.pendingUpdates}
       onRefresh={appData.loadSheetData}
+      isLoading={appData.isLoading} 
     />;
   }
 
@@ -2549,6 +2556,7 @@ if (view === 'scoring') {
     setDarkMode={setDarkMode}
     isOnline={appData.isOnline}
     pendingUpdates={appData.pendingUpdates}
+    isLoading={appData.isLoading}      
   />;
 }         
 if (view === 'review') {
