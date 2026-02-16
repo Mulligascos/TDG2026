@@ -734,7 +734,8 @@ const StandingsPage = ({
   setDarkMode,
   isOnline,
   pendingUpdates,
-  onRefresh
+  onRefresh,
+  isLoading
 }) => {
   console.log('StandingsPage rendering:', { currentUser, matches, pools, players });
 const calculateStandings = (poolName) => {
