@@ -515,7 +515,7 @@ const MatchesPage = ({
   onChangePin, 
   onStartMatch, 
   onReviewMatch,
-  onView,
+  onViewStandings,
   darkMode,
   setDarkMode,
   isOnline,
