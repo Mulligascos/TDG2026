@@ -515,7 +515,7 @@ const MatchesPage = ({
   onChangePin, 
   onStartMatch, 
   onReviewMatch,
-  onViewStandings,
+  onView,
   darkMode,
   setDarkMode,
   isOnline,
@@ -649,9 +649,9 @@ const MatchesPage = ({
             </button>
             <button onClick={() => {
               triggerHaptic('light');
-              onViewStandings();
+              onView();
             }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
-              Standings
+              
             </button>
             <button onClick={() => {
               triggerHaptic('light');
@@ -877,7 +877,7 @@ const MatchesPage = ({
   );
 };
 
-// Standings Page - keeping original code, just adding haptic to buttons
+// Standings Page with Collapsible Sections
 const StandingsPage = ({ 
   currentUser, 
   matches, 
@@ -894,6 +894,25 @@ const StandingsPage = ({
   isLoading
 }) => {
   console.log('StandingsPage rendering:', { currentUser, matches, pools, players });
+  
+  // State for collapsible sections
+  const [expandedSections, setExpandedSections] = useState({
+    pools: true,
+    crossovers: false,
+    cup: false,
+    shield: false
+  });
+  
+  // State for crossover filters
+  const [hideCompletedCrossovers, setHideCompletedCrossovers] = useState(false);
+  
+  const toggleSection = (section) => {
+    triggerHaptic('light');
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   
   const calculateStandings = (poolName) => {
     const poolPlayers = pools.filter(p => p.pool === poolName);
@@ -1471,236 +1490,323 @@ const StandingsPage = ({
             <p className="text-gray-500">No pools configured</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Pool Standings</h2>
-              <div className="space-y-4">
-                {getPoolNames().filter(p => !p.toLowerCase().includes('cup') && !p.toLowerCase().includes('shield') && !p.toLowerCase().includes('plate')).map(poolName => {
-                  const standings = calculateStandings(poolName);
-                  
-                  return (
-                    <div key={poolName} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                      <div className="px-4 py-3" style={{background: `linear-gradient(to right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
-                        <h2 className="text-lg font-bold text-white">{poolName}</h2>
-                      </div>
-                      <div className="p-4">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b-2 border-gray-200">
-                              <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-8">#</th>
-                              <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs">Player</th>
-                              <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">P</th>
-                              <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">W</th>
-                              <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">L</th>
-                              <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">+/-</th>
-                              <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-xs">Pts</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {standings.map((standing, idx) => (
-                              <tr 
-                                key={standing.name} 
-                                className={`border-b border-gray-100 ${
-                                  standing.name === currentUser.name ? 'bg-green-50' : ''
-                                } ${
-                                  standing.status === 'Inactive' ? 'opacity-50 text-gray-400' : ''
-                                }`}
-                              >
-                                <td className="py-3 pr-2 text-gray-600 font-semibold text-xs">{idx + 1}</td>
-                                <td className="py-3 pr-2 font-semibold text-gray-900 text-xs">
-                                  {formatPlayerName(standing.name)}
-                                  {standing.status === 'Inactive' && <span className="ml-1 text-orange-500">⚠️</span>}
-                                </td>
-                                <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.played}</td>
-                                <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.win}</td>
-                                <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.loss}</td>
-                                <td className={`py-3 px-1 text-center font-bold text-xs ${
-                                  standing.holeDiff > 0 ? 'text-green-600' : 
-                                  standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
-                                }`}>
-                                  {standing.holeDiff > 0 ? '+' : ''}{standing.holeDiff}
-                                </td>
-                                <td className="py-3 pl-2 text-center text-gray-900 font-bold text-sm">{standing.points}</td>
+          <div className="space-y-4">
+            {/* Pool Standings Section */}
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <button
+                onClick={() => toggleSection('pools')}
+                className="w-full px-4 py-3 flex items-center justify-between"
+                style={{background: `linear-gradient(to right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}
+              >
+                <h2 className="text-lg font-bold text-white">Pool Standings</h2>
+                <ChevronRight 
+                  size={20} 
+                  className={`text-white transition-transform ${expandedSections.pools ? 'rotate-90' : ''}`}
+                />
+              </button>
+              
+              {expandedSections.pools && (
+                <div className="p-4 space-y-4">
+                  {getPoolNames().filter(p => !p.toLowerCase().includes('cup') && !p.toLowerCase().includes('shield') && !p.toLowerCase().includes('plate')).map(poolName => {
+                    const standings = calculateStandings(poolName);
+                    
+                    return (
+                      <div key={poolName} className="bg-gray-50 rounded-xl overflow-hidden">
+                        <div className="px-3 py-2 bg-gray-200">
+                          <h3 className="font-bold text-gray-900 text-sm">{poolName}</h3>
+                        </div>
+                        <div className="p-3">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b-2 border-gray-200">
+                                <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs w-8">#</th>
+                                <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs">Player</th>
+                                <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">P</th>
+                                <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">W</th>
+                                <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">L</th>
+                                <th className="text-center py-2 px-1 font-semibold text-gray-700 text-xs">+/-</th>
+                                <th className="text-center py-2 pl-2 font-semibold text-gray-700 text-xs">Pts</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {standings.map((standing, idx) => (
+                                <tr 
+                                  key={standing.name} 
+                                  className={`border-b border-gray-100 ${
+                                    standing.name === currentUser.name ? 'bg-green-50' : ''
+                                  } ${
+                                    standing.status === 'Inactive' ? 'opacity-50 text-gray-400' : ''
+                                  }`}
+                                >
+                                  <td className="py-3 pr-2 text-gray-600 font-semibold text-xs">{idx + 1}</td>
+                                  <td className="py-3 pr-2 font-semibold text-gray-900 text-xs">
+                                    {formatPlayerName(standing.name)}
+                                    {standing.status === 'Inactive' && <span className="ml-1 text-orange-500">⚠️</span>}
+                                  </td>
+                                  <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.played}</td>
+                                  <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.win}</td>
+                                  <td className="py-3 px-1 text-center text-gray-700 text-xs">{standing.loss}</td>
+                                  <td className={`py-3 px-1 text-center font-bold text-xs ${
+                                    standing.holeDiff > 0 ? 'text-green-600' : 
+                                    standing.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
+                                  }`}>
+                                    {standing.holeDiff > 0 ? '+' : ''}{standing.holeDiff}
+                                  </td>
+                                  <td className="py-3 pl-2 text-center text-gray-900 font-bold text-sm">{standing.points}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Crossover Matches</h2>
-              {(() => {
-                const { week1, week2 } = generateCrossoverMatches();
-                
-                if (week1.length === 0) {
-                  return (
-                    <div className="bg-white rounded-2xl shadow-sm p-6 text-center text-gray-500 text-sm">
-                      <p>Crossover matches will appear after pool play.</p>
-                    </div>
-                  );
-                }
-                
-                return (
-                  <div className="space-y-4">
-                    <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: '4px solid ' + BRAND_ACCENT}}>
-                      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                        <h3 className="text-lg font-bold text-gray-900">Week 1   - 15 February 7:00pm</h3>
-                        <p className="text-xs text-gray-500 mt-1">A vs B, C vs D</p>
-                      </div>
-                      <div className="p-4">
-                        <div className="grid grid-cols-2 gap-2">
-                          {week1.map((match, idx) => (
-                            <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                              <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
-                              <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {formatPlayerName(match.player1)}
-                              </div>
-                              <div className="text-gray-400 text-center my-0.5">vs</div>
-                              <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {formatPlayerName(match.player2)}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+            {/* Crossover Matches Section */}
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <button
+                onClick={() => toggleSection('crossovers')}
+                className="w-full px-4 py-3 flex items-center justify-between bg-gray-100"
+              >
+                <h2 className="text-lg font-bold text-gray-900">Crossover Matches</h2>
+                <ChevronRight 
+                  size={20} 
+                  className={`text-gray-700 transition-transform ${expandedSections.crossovers ? 'rotate-90' : ''}`}
+                />
+              </button>
+              
+              {expandedSections.crossovers && (
+                <div className="p-4">
+                  {(() => {
+                    const { week1, week2 } = generateCrossoverMatches();
                     
-                    <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{borderTop: '4px solid ' + BRAND_ACCENT}}>
-                      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                        <h3 className="text-lg font-bold text-gray-900">Week 2   -  22 February 7:00pm</h3>
-                        <p className="text-xs text-gray-500 mt-1">A vs C, B vs D</p>
-                      </div>
-                      <div className="p-4">
-                        <div className="grid grid-cols-2 gap-2">
-                          {week2.map((match, idx) => (
-                            <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                              <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
-                              <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {formatPlayerName(match.player1)}
-                              </div>
-                              <div className="text-gray-400 text-center my-0.5">vs</div>
-                              <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {formatPlayerName(match.player2)}
+                    if (week1.length === 0) {
+                      return (
+                        <div className="p-6 text-center text-gray-500 text-sm">
+                          <p>Crossover matches will appear after pool play.</p>
+                        </div>
+                      );
+                    }
+                    
+                    // Filter function for completed matches
+                    const filterMatches = (matches) => {
+                      if (hideCompletedCrossovers) {
+                        return matches.filter(m => m.status !== 'Completed');
+                      }
+                      return matches;
+                    };
+                    
+                    const filteredWeek1 = filterMatches(week1);
+                    const filteredWeek2 = filterMatches(week2);
+                    
+                    return (
+                      <div className="space-y-4">
+                        {/* Toggle for hiding completed matches */}
+                        <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                          <span className="text-sm font-medium text-gray-700">Hide completed matches</span>
+                          <button
+                            onClick={() => {
+                              triggerHaptic('light');
+                              setHideCompletedCrossovers(!hideCompletedCrossovers);
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              hideCompletedCrossovers ? 'bg-green-600' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                hideCompletedCrossovers ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                        
+                        <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
+                          <div className="px-3 py-2 bg-gray-100 border-b border-gray-200">
+                            <h3 className="font-bold text-gray-900 text-sm">Week 1 - 15 February 7:00pm</h3>
+                            <p className="text-xs text-gray-500 mt-0.5">A vs B, C vs D</p>
+                          </div>
+                          {filteredWeek1.length === 0 ? (
+                            <div className="p-4 text-center text-sm text-gray-500">
+                              All matches completed
+                            </div>
+                          ) : (
+                            <div className="p-3">
+                              <div className="grid grid-cols-2 gap-2">
+                                {filteredWeek1.map((match, idx) => (
+                                  <div key={idx} className="bg-white rounded-lg p-2 text-xs border border-gray-200">
+                                    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
+                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {formatPlayerName(match.player1)}
+                                    </div>
+                                    <div className="text-gray-400 text-center my-0.5">vs</div>
+                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {formatPlayerName(match.player2)}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          ))}
+                          )}
+                        </div>
+                        
+                        <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
+                          <div className="px-3 py-2 bg-gray-100 border-b border-gray-200">
+                            <h3 className="font-bold text-gray-900 text-sm">Week 2 - 22 February 7:00pm</h3>
+                            <p className="text-xs text-gray-500 mt-0.5">A vs C, B vs D</p>
+                          </div>
+                          {filteredWeek2.length === 0 ? (
+                            <div className="p-4 text-center text-sm text-gray-500">
+                              All matches completed
+                            </div>
+                          ) : (
+                            <div className="p-3">
+                              <div className="grid grid-cols-2 gap-2">
+                                {filteredWeek2.map((match, idx) => (
+                                  <div key={idx} className="bg-white rounded-lg p-2 text-xs border border-gray-200">
+                                    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
+                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {formatPlayerName(match.player1)}
+                                    </div>
+                                    <div className="text-gray-400 text-center my-0.5">vs</div>
+                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                      {formatPlayerName(match.player2)}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })()}
+                    );
+                  })()}
+                </div>
+              )}
             </div>
               
+            {/* Playoff Brackets */}
             {['Cup', 'Shield'].map(playoffType => {
               const { bracket, hasMatches } = generatePlayoffBrackets(playoffType);
-              const icon = playoffType === 'Cup' ? '🏆' : playoffType === 'Shield' ? '🛡️' : '🥉';
+              const icon = playoffType === 'Cup' ? '🏆' : '🛡️';
+              const sectionKey = playoffType.toLowerCase();
               
               return (
-                <div key={playoffType} className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6" style={{borderTop: `4px solid ${BRAND_SECONDARY}`}}>
-                  <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                <div key={playoffType} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                  <button
+                    onClick={() => toggleSection(sectionKey)}
+                    className="w-full px-4 py-3 flex items-center justify-between"
+                    style={{background: `linear-gradient(to right, ${BRAND_SECONDARY}, ${BRAND_PRIMARY})`}}
+                  >
+                    <h2 className="text-lg font-bold text-gray-900 flex items-center">
                       <span className="mr-2">{icon}</span>
                       {playoffType} Final
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {playoffType === 'Cup' && "Top 3 from each pool"}
-                      {playoffType === 'Shield' && "Ranked by overall performance"}
-                    </p>
-                  </div>
+                    </h2>
+                    <ChevronRight 
+                      size={20} 
+                      className={`text-gray-900 transition-transform ${expandedSections[sectionKey] ? 'rotate-90' : ''}`}
+                    />
+                  </button>
                   
-                  {!hasMatches ? (
-                    <div className="p-6 text-center text-gray-500 text-sm">
-                      <p>Pool play not complete yet.</p>
-                      <p className="text-xs mt-2">Brackets will populate automatically based on pool standings.</p>
-                    </div>
-                  ) : (
-                    <div className="p-4 overflow-x-auto">
-                      <div className="flex gap-4 min-w-max">
-                        {bracket.r16.length > 0 && (
-                          <div className="flex-shrink-0 w-48">
-                            <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
-                            <div className="space-y-2">
-                              {bracket.r16.map((match, idx) => (
-                                <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                  <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
-                                  <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    #{match.player1.includes('Winner') ? match.player1 : '2 ' + formatPlayerName(match.player1)}
-                                  </div>
-                                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    #{match.player2.includes('Winner') ? match.player2 : '3 ' + formatPlayerName(match.player2)}
-                                  </div>
+                  {expandedSections[sectionKey] && (
+                    <div className="p-4">
+                      <p className="text-xs text-gray-600 mb-3">
+                        {playoffType === 'Cup' && "Top 3 from each pool"}
+                        {playoffType === 'Shield' && "Ranked by overall performance"}
+                      </p>
+                      
+                      {!hasMatches ? (
+                        <div className="text-center text-gray-500 text-sm py-6">
+                          <p>Pool play not complete yet.</p>
+                          <p className="text-xs mt-2">Brackets will populate automatically based on pool standings.</p>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <div className="flex gap-4 min-w-max pb-2">
+                            {bracket.r16.length > 0 && (
+                              <div className="flex-shrink-0 w-48">
+                                <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
+                                <div className="space-y-2">
+                                  {bracket.r16.map((match) => (
+                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                      <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
+                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        #{match.player1.includes('Winner') ? match.player1 : '2 ' + formatPlayerName(match.player1)}
+                                      </div>
+                                      <div className="text-gray-400 text-center my-0.5">vs</div>
+                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        #{match.player2.includes('Winner') ? match.player2 : '3 ' + formatPlayerName(match.player2)}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {bracket.qf.length > 0 && (
-                          <div className="flex-shrink-0 w-48">
-                            <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
-                            <div className="space-y-2">
-                              {bracket.qf.map((match, idx) => (
-                                <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                  <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
-                                  <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player1.includes('Winner') ? match.player1 : '#1 ' + formatPlayerName(match.player1)}
-                                  </div>
-                                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player2.includes('Winner') ? 'Winner R16' : formatPlayerName(match.player2)}
-                                  </div>
+                              </div>
+                            )}
+                            
+                            {bracket.qf.length > 0 && (
+                              <div className="flex-shrink-0 w-48">
+                                <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
+                                <div className="space-y-2">
+                                  {bracket.qf.map((match) => (
+                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                      <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.poolLabel}</div>
+                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        {match.player1.includes('Winner') ? match.player1 : '#1 ' + formatPlayerName(match.player1)}
+                                      </div>
+                                      <div className="text-gray-400 text-center my-0.5">vs</div>
+                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        {match.player2.includes('Winner') ? 'Winner R16' : formatPlayerName(match.player2)}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {bracket.sf.length > 0 && (
-                          <div className="flex-shrink-0 w-48">
-                            <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
-                            <div className="space-y-2">
-                              {bracket.sf.map((match, idx) => (
-                                <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                                  <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player1.includes('Winner') ? match.player1 : formatPlayerName(match.player1)}
-                                  </div>
-                                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                                  <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                    {match.player2.includes('Winner') ? match.player2 : formatPlayerName(match.player2)}
-                                  </div>
+                              </div>
+                            )}
+                            
+                            {bracket.sf.length > 0 && (
+                              <div className="flex-shrink-0 w-48">
+                                <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
+                                <div className="space-y-2">
+                                  {bracket.sf.map((match) => (
+                                    <div key={match.id} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        {match.player1.includes('Winner') ? match.player1 : formatPlayerName(match.player1)}
+                                      </div>
+                                      <div className="text-gray-400 text-center my-0.5">vs</div>
+                                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                        {match.player2.includes('Winner') ? match.player2 : formatPlayerName(match.player2)}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                              </div>
+                            )}
 
-                        {bracket.final && (
-                          <div className="flex-shrink-0 w-48">
-                            <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
-                            <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
-                              <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}
-                              </div>
-                              <div className="text-gray-400 text-center my-1 font-semibold">vs</div>
-                              <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                {bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}
-                              </div>
-                              {bracket.final.winner && bracket.final.winner !== 'Winner' && !bracket.final.winner.includes('Winner') && (
-                                <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
-                                  🏆 {formatPlayerName(bracket.final.winner)}
+                            {bracket.final && (
+                              <div className="flex-shrink-0 w-48">
+                                <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
+                                <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
+                                  <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                                    {bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}
+                                  </div>
+                                  <div className="text-gray-400 text-center my-1 font-semibold">vs</div>
+                                  <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                                    {bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}
+                                  </div>
+                                  {bracket.final.winner && bracket.final.winner !== 'Winner' && !bracket.final.winner.includes('Winner') && (
+                                    <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
+                                      🏆 {formatPlayerName(bracket.final.winner)}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
