@@ -172,6 +172,8 @@ const useAppData = () => {
     } catch (e) {
       console.error('Unable to load data');
     }
+  } finally {
+    setIsLoading(false);
   }
 };
   const processPendingUpdates = async () => {
@@ -512,12 +514,12 @@ return (
             </div>
             <div className="flex gap-2">
               <button 
-                onClick={onRefresh} 
-                disabled={isLoading}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
-              </button>
+  onClick={onRefresh}
+  disabled={isLoading}
+  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
+</button>
               <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
@@ -731,7 +733,8 @@ const StandingsPage = ({
   darkMode,
   setDarkMode,
   isOnline,
-  pendingUpdates
+  pendingUpdates,
+  onRefresh
 }) => {
 const calculateStandings = (poolName) => {
   const poolPlayers = pools.filter(p => p.pool === poolName);
@@ -2556,7 +2559,8 @@ if (view === 'scoring') {
     setDarkMode={setDarkMode}
     isOnline={appData.isOnline}
     pendingUpdates={appData.pendingUpdates}
-    isLoading={appData.isLoading}      
+    isLoading={appData.isLoading}
+    onRefresh={appData.loadSheetData}       
   />;
 }         
 if (view === 'review') {
