@@ -651,7 +651,7 @@ const MatchesPage = ({
               triggerHaptic('light');
               onViewStandings();
             }} className="flex-1 py-2 px-4 rounded-lg font-semibold bg-white/5 text-white/70 hover:bg-white/10">
-              
+              Standings
             </button>
             <button onClick={() => {
               triggerHaptic('light');
@@ -1578,114 +1578,126 @@ const StandingsPage = ({
                 />
               </button>
               
-              {expandedSections.crossovers && (
-                <div className="p-4">
-                  {(() => {
-                    const { week1, week2 } = generateCrossoverMatches();
-                    
-                    if (week1.length === 0) {
-                      return (
-                        <div className="p-6 text-center text-gray-500 text-sm">
-                          <p>Crossover matches will appear after pool play.</p>
-                        </div>
-                      );
-                    }
-                    
-                    // Filter function for completed matches
-                    const filterMatches = (matches) => {
-                      if (hideCompletedCrossovers) {
-                        return matches.filter(m => m.status !== 'Completed');
-                      }
-                      return matches;
-                    };
-                    
-                    const filteredWeek1 = filterMatches(week1);
-                    const filteredWeek2 = filterMatches(week2);
-                    
-                    return (
-                      <div className="space-y-4">
-                        {/* Toggle for hiding completed matches */}
-                        <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-                          <span className="text-sm font-medium text-gray-700">Hide completed matches</span>
-                          <button
-                            onClick={() => {
-                              triggerHaptic('light');
-                              setHideCompletedCrossovers(!hideCompletedCrossovers);
-                            }}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              hideCompletedCrossovers ? 'bg-green-600' : 'bg-gray-300'
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                hideCompletedCrossovers ? 'translate-x-6' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                        
-                        <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
-                          <div className="px-3 py-2 bg-gray-100 border-b border-gray-200">
-                            <h3 className="font-bold text-gray-900 text-sm">Week 1 - 15 February 7:00pm</h3>
-                            <p className="text-xs text-gray-500 mt-0.5">A vs B, C vs D</p>
-                          </div>
-                          {filteredWeek1.length === 0 ? (
-                            <div className="p-4 text-center text-sm text-gray-500">
-                              All matches completed
-                            </div>
-                          ) : (
-                            <div className="p-3">
-                              <div className="grid grid-cols-2 gap-2">
-                                {filteredWeek1.map((match, idx) => (
-                                  <div key={idx} className="bg-white rounded-lg p-2 text-xs border border-gray-200">
-                                    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
-                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {formatPlayerName(match.player1)}
-                                    </div>
-                                    <div className="text-gray-400 text-center my-0.5">vs</div>
-                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {formatPlayerName(match.player2)}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
-                          <div className="px-3 py-2 bg-gray-100 border-b border-gray-200">
-                            <h3 className="font-bold text-gray-900 text-sm">Week 2 - 22 February 7:00pm</h3>
-                            <p className="text-xs text-gray-500 mt-0.5">A vs C, B vs D</p>
-                          </div>
-                          {filteredWeek2.length === 0 ? (
-                            <div className="p-4 text-center text-sm text-gray-500">
-                              All matches completed
-                            </div>
-                          ) : (
-                            <div className="p-3">
-                              <div className="grid grid-cols-2 gap-2">
-                                {filteredWeek2.map((match, idx) => (
-                                  <div key={idx} className="bg-white rounded-lg p-2 text-xs border border-gray-200">
-                                    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
-                                    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {formatPlayerName(match.player1)}
-                                    </div>
-                                    <div className="text-gray-400 text-center my-0.5">vs</div>
-                                    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-                                      {formatPlayerName(match.player2)}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+             {expandedSections.crossovers && (
+  <div className="p-4">
+    {(() => {
+      const { week1, week2 } = generateCrossoverMatches();
+      
+      if (week1.length === 0) {
+        return (
+          <div className="p-6 text-center text-gray-500 text-sm">
+            <p>Crossover matches will appear after pool play.</p>
+          </div>
+        );
+      }
+      
+      // Filter function for completed matches
+      const filterMatches = (matches) => {
+        if (hideCompletedCrossovers) {
+          return matches.filter(m => m.status !== 'Completed');
+        }
+        return matches;
+      };
+      
+      const filteredWeek1 = filterMatches(week1);
+      const filteredWeek2 = filterMatches(week2);
+      
+      return (
+        <div className="space-y-4">
+          {/* Toggle for hiding completed matches */}
+          <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+            <span className="text-sm font-medium text-gray-700">Hide completed matches</span>
+            <button
+              onClick={() => {
+                triggerHaptic('light');
+                setHideCompletedCrossovers(!hideCompletedCrossovers);
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                hideCompletedCrossovers ? 'bg-green-600' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  hideCompletedCrossovers ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          
+          {/* Week 1 */}
+          <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
+            <div className="px-3 py-2 bg-gray-100 border-b border-gray-200">
+              <h3 className="font-bold text-gray-900 text-sm">Week 1 - 15 February 7:00pm</h3>
+              <p className="text-xs text-gray-500 mt-0.5">A vs B, C vs D</p>
+            </div>
+            {filteredWeek1.length === 0 ? (
+              <div className="p-4 text-center text-sm text-gray-500">
+                All matches completed
+              </div>
+            ) : (
+              <div className="p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {filteredWeek1.map((match, idx) => (
+                    <div key={idx} className="bg-white rounded-lg p-2 text-xs border border-gray-200">
+                      <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
+                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                        {formatPlayerName(match.player1)}
                       </div>
-                    );
-                  })()}
+                      <div className="text-gray-400 text-center my-0.5">vs</div>
+                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                        {formatPlayerName(match.player2)}
+                      </div>
+                      {match.status === 'Completed' && (
+                        <div className="text-center mt-1">
+                          <span className="text-xs text-green-600">✓ Complete</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
+          </div>
+          
+          {/* Week 2 */}
+          <div className="bg-gray-50 rounded-xl overflow-hidden" style={{borderTop: '3px solid ' + BRAND_ACCENT}}>
+            <div className="px-3 py-2 bg-gray-100 border-b border-gray-200">
+              <h3 className="font-bold text-gray-900 text-sm">Week 2 - 22 February 7:00pm</h3>
+              <p className="text-xs text-gray-500 mt-0.5">A vs C, B vs D</p>
+            </div>
+            {filteredWeek2.length === 0 ? (
+              <div className="p-4 text-center text-sm text-gray-500">
+                All matches completed
+              </div>
+            ) : (
+              <div className="p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {filteredWeek2.map((match, idx) => (
+                    <div key={idx} className="bg-white rounded-lg p-2 text-xs border border-gray-200">
+                      <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
+                      <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                        {formatPlayerName(match.player1)}
+                      </div>
+                      <div className="text-gray-400 text-center my-0.5">vs</div>
+                      <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                        {formatPlayerName(match.player2)}
+                      </div>
+                      {match.status === 'Completed' && (
+                        <div className="text-center mt-1">
+                          <span className="text-xs text-green-600">✓ Complete</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    })()}
+  </div>
+)}
             </div>
               
             {/* Playoff Brackets */}
