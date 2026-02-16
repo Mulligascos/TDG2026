@@ -736,6 +736,7 @@ const StandingsPage = ({
   pendingUpdates,
   onRefresh
 }) => {
+  console.log('StandingsPage rendering:', { currentUser, matches, pools, players });
 const calculateStandings = (poolName) => {
   const poolPlayers = pools.filter(p => p.pool === poolName);
   
