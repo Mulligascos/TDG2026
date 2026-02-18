@@ -495,7 +495,7 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline })
   const [selectedPlayer, setSelectedPlayer] = useState(() => 
     localStorage.getItem('lastLoggedInUser') || ''
   );
-
+ const [showTrustModal, setShowTrustModal] = useState(false);
   return (
     <div className="min-h-screen bg-white transition-colors">
       <div className="max-w-md mx-auto px-4 py-8">
@@ -587,10 +587,143 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline })
           </button>
         </form>
       </div>
+      <button
+            type="submit"
+            className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
+            style={{
+              backgroundColor: BRAND_PRIMARY,
+              boxShadow: `0 10px 15px -3px ${BRAND_PRIMARY}30`,
+            }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = BRAND_ACCENT)}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = BRAND_PRIMARY)}
+          >
+            Sign In
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowTrustModal(true)}
+            className="w-full text-gray-600 text-sm py-2 mt-2 hover:text-gray-900 transition-colors"
+          >
+            About & Privacy Policy
+          </button>
+        </form>
+
+        {showTrustModal && <TrustModal onClose={() => setShowTrustModal(false)} />}
+      </div>
+    </div>
     </div>
   );
 };
+// Trust & Safety Modal
+const TrustModal = ({ onClose }) => {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-3xl">
+          <h3 className="text-xl font-bold text-gray-900">About This App</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <X size={20} className="text-gray-600" />
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          {/* About Section */}
+          <div>
+            <h4 className="font-bold text-gray-900 mb-2 flex items-center">
+              <span className="mr-2">ℹ️</span>
+              About
+            </h4>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              This is the official score tracking application for the Timaru Disc Golf Summer League 2026. 
+              This app helps players track matches, view standings, and manage their league participation.
+            </p>
+          </div>
 
+          {/* Privacy Section */}
+          <div>
+            <h4 className="font-bold text-gray-900 mb-2 flex items-center">
+              <span className="mr-2">🔒</span>
+              Privacy & Data
+            </h4>
+            <p className="text-sm text-gray-600 leading-relaxed mb-2">
+              We collect only essential information:
+            </p>
+            <ul className="text-sm text-gray-600 space-y-1 ml-4">
+              <li>• Player names and PINs for authentication</li>
+              <li>• Match scores and results</li>
+              <li>• League standings data</li>
+            </ul>
+            <p className="text-sm text-gray-600 leading-relaxed mt-2">
+              All data is stored securely in Google Sheets and is only accessible to league participants. 
+              We never share your information with third parties.
+            </p>
+          </div>
+
+          {/* Security Section */}
+          <div>
+            <h4 className="font-bold text-gray-900 mb-2 flex items-center">
+              <span className="mr-2">🛡️</span>
+              Security
+            </h4>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              This application uses secure connections (HTTPS) and authenticated API access to protect your data. 
+              Your PIN is used only for login verification and is never displayed or shared.
+            </p>
+          </div>
+
+          {/* Contact Section */}
+          <div>
+            <h4 className="font-bold text-gray-900 mb-2 flex items-center">
+              <span className="mr-2">📧</span>
+              Contact
+            </h4>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              For questions, issues, or concerns about this app, please contact:
+            </p>
+            <p className="text-sm text-blue-600 mt-1">
+              timarudiscgolf@example.com
+            </p>
+          </div>
+
+          {/* Terms Section */}
+          <div>
+            <h4 className="font-bold text-gray-900 mb-2 flex items-center">
+              <span className="mr-2">📋</span>
+              Terms of Use
+            </h4>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              By using this app, you agree to:
+            </p>
+            <ul className="text-sm text-gray-600 space-y-1 ml-4 mt-2">
+              <li>• Provide accurate match scores</li>
+              <li>• Use your own login credentials only</li>
+              <li>• Respect other players' privacy</li>
+              <li>• Follow league rules and sportsmanship guidelines</li>
+            </ul>
+          </div>
+
+          {/* Version Info */}
+          <div className="pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 text-center">
+              Timaru Disc Golf League App v1.0<br />
+              Summer League 2026
+            </p>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-3xl">
+          <button 
+            onClick={onClose}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 const ChangePinPage = ({ currentUser, onBack, onPinChange, darkMode, setDarkMode }) => {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
