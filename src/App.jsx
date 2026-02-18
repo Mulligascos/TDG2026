@@ -572,23 +572,9 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline })
             </div>
           )}
 
-          <button
+<button
             type="submit"
             onClick={() => triggerHaptic('medium')}
-            className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
-            style={{
-              backgroundColor: BRAND_PRIMARY,
-              boxShadow: `0 10px 15px -3px ${BRAND_PRIMARY}30`,
-            }}
-            onMouseEnter={(e) => (e.target.style.backgroundColor = BRAND_ACCENT)}
-            onMouseLeave={(e) => (e.target.style.backgroundColor = BRAND_PRIMARY)}
-          >
-            Sign In
-          </button>
-        </form>
-      </div>
-      <button
-            type="submit"
             className="w-full text-white py-3.5 rounded-xl font-semibold transition-colors shadow-lg"
             style={{
               backgroundColor: BRAND_PRIMARY,
@@ -611,7 +597,6 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline })
 
         {showTrustModal && <TrustModal onClose={() => setShowTrustModal(false)} />}
       </div>
-    </div>
     </div>
   );
 };
