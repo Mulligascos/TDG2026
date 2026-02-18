@@ -667,7 +667,7 @@ const TrustModal = ({ onClose }) => {
               For questions, issues, or concerns about this app, please contact:
             </p>
             <p className="text-sm text-blue-600 mt-1">
-              timarudiscgolf@example.com
+              timarudiscgolf@gmail.com
             </p>
           </div>
 
