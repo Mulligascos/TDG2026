@@ -95,7 +95,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
   );
 };
 
-const Header = ({ currentUser, onLogout, onChangePin, darkMode, setDarkMode, onRefresh, isLoading, isOnline, pendingUpdates, showTabs, activeTab, onTabChange }) => (
+const Header = ({ currentUser, onLogout, onChange, darkMode, setDarkMode, onRefresh, isLoading, isOnline, pendingUpdates, showTabs, activeTab, onTabChange }) => (
   <div className="text-white sticky top-0 z-10 shadow-lg" style={{background: `linear-gradient(to bottom right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})`}}>
     <div className="max-w-md mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-4">
@@ -118,7 +118,7 @@ const Header = ({ currentUser, onLogout, onChangePin, darkMode, setDarkMode, onR
               disabled={isLoading}
               className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className={isLoading ? 'inline-block animate-spin' : ''}>🔄</span>
+              <span className={isLoading ? 'inline-block animate-s' : ''}>🔄</span>
             </button>
           )}
           <button onClick={() => {
@@ -129,7 +129,7 @@ const Header = ({ currentUser, onLogout, onChangePin, darkMode, setDarkMode, onR
           </button>
           <button onClick={() => {
             triggerHaptic('light');
-            onChangePin();
+            onChange();
           }} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
             <Edit size={20} />
           </button>
@@ -556,7 +556,8 @@ const LoginPage = ({ players, onLogin, error, darkMode, setDarkMode, isOnline })
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">PIN</label>
             <input
-              type="password"
+              type="tel"
+              inputMode="numeric"
               name="pin"
               maxLength="4"
               pattern="[0-9]{4}"
