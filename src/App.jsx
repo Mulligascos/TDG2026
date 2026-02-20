@@ -333,7 +333,7 @@ const useAppData = () => {
   const loadSheetData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = fetch(`${APPS_SCRIPT_URL}?action=getData`);
+      const response = await fetch(`${APPS_SCRIPT_URL}?action=getData`);
       if (!response.ok) throw new Error('Failed to load data');
       
       const data = await response.json();
