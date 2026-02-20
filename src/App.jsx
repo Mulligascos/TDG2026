@@ -2040,7 +2040,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
               </thead>
               <tbody>
                 <tr className="border-b border-gray-100">
-                  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">
+                  <td className="py-1.5 pr-2 text-gray-900 font-bold text-sm sticky left-0 bg-white">
                     {player1FirstName}
                     {isJuniorPlayer(match.player1) && <span className="ml-1 text-xs text-blue-600">(J)</span>}
                   </td>
@@ -2049,7 +2049,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
                     const adjustedP2 = applyJuniorHandicap(score.p2, match.player2);
                     
                     return (
-                      <td key={idx} className={`px-1 py-1.5 text-center font-bold ${
+                      <td key={idx} className={`px-1 py-1.5 text-center font-extrabold text-sm ${
                         !score.scored ? 'text-gray-400' :
                         adjustedP1 < adjustedP2 ? 'text-blue-600 bg-blue-50' : 
                         adjustedP1 === adjustedP2 ? 'text-gray-600' : 
@@ -2076,7 +2076,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
                 </tr>
                 
                 <tr>
-                  <td className="py-1.5 pr-2 text-gray-900 font-medium sticky left-0 bg-white">
+                  <td className="py-1.5 pr-2 text-gray-900 font-bold text-sm sticky left-0 bg-white">
                     {player2FirstName}
                     {isJuniorPlayer(match.player2) && <span className="ml-1 text-xs text-blue-600">(J)</span>}
                   </td>
@@ -2246,9 +2246,9 @@ const ReviewPage = ({ match, onCancel }) => {
               </thead>
               <tbody>
                 <tr className="border-b border-gray-100">
-                  <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player1Name}</td>
+                  <td className="py-2 pr-2 text-gray-900 font-bold text-sm sticky left-0 bg-white">{player1Name}</td>
                   {scores.map((score, idx) => (
-                    <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
+                    <td key={idx} className={`px-1 py-2 text-center font-extrabold text-sm ${
                       score.scored ? (score.p1 < score.p2 ? 'text-blue-600 bg-blue-50' : score.p1 === score.p2 ? 'text-gray-600' : 'text-gray-900') : 'text-gray-400'
                     }`}>
                       {score.scored ? score.p1 : '-'}
@@ -2261,9 +2261,9 @@ const ReviewPage = ({ match, onCancel }) => {
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-2 text-gray-900 font-medium text-xs sticky left-0 bg-white">{player2Name}</td>
+                  <td className="py-2 pr-2 text-gray-900 font-bold text-sm sticky left-0 bg-white">{player2Name}</td>
                   {scores.map((score, idx) => (
-                    <td key={idx} className={`px-1 py-2 text-center font-bold text-xs ${
+                    <td key={idx} className={`px-1 py-2 text-center font-extrabold text-sm ${
                       score.scored ? (score.p2 < score.p1 ? 'text-blue-600 bg-blue-50' : score.p2 === score.p1 ? 'text-gray-600' : 'text-gray-900') : 'text-gray-400'
                     }`}>
                       {score.scored ? score.p2 : '-'}
