@@ -333,7 +333,7 @@ const useAppData = () => {
   const loadSheetData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${APPS_SCRIPT_URL}?action=getData`);
+      const response = fetch(`${APPS_SCRIPT_URL}?action=getData`);
       if (!response.ok) throw new Error('Failed to load data');
       
       const data = await response.json();
@@ -462,11 +462,17 @@ const useAppData = () => {
       }));
         
       await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId, scores: finalScores, winner }),
-        mode: 'no-cors'
-      });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    action: 'submitMatch',  // add this
+    matchId, 
+    scores: finalScores, 
+    winner,
+    status: 'Completed'     // add this
+  }),
+  mode: 'no-cors'
+});
     } catch (err) {
       console.error('Error submitting match:', err);
     }
@@ -1726,7 +1732,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
   useEffect(() => {
     const updateMatchStatus = async () => {
       try {
-        await fetch(APPS_SCRIPT_URL, {
+         fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -1793,7 +1799,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       setScores(newScores);
       
       try {
-        await fetch(APPS_SCRIPT_URL, {
+         fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
