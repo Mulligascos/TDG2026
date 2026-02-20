@@ -2004,11 +2004,11 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
                             triggerHaptic('light');
                             setCurrentHole(idx);
                           }}
-                          className={`font-semibold transition-colors ${
-                            currentHole === idx 
-                              ? 'text-blue-600 underline' 
-                              : 'text-gray-700 hover:text-blue-500'
-                          }`}
+                          className={`font-bold text-sm transition-colors rounded-md px-1 ${
+  currentHole === idx 
+    ? 'bg-green-700 text-white' 
+    : 'text-gray-700 hover:text-blue-500'
+}`}
                         >
                           {holeNum}
                         </button>
