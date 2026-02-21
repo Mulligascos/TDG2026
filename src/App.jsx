@@ -1382,7 +1382,116 @@ const CrossoverMatchCard = ({ match }) => (
     )}
   </div>
 );
-    
+ const generatePlayoffBrackets = (playoffType, pools, players, matches, calculateStandings) => {
+  const poolNames = [...new Set(pools.map(p => p.pool))]
+    .filter(p => !p.toLowerCase().includes('cup') && 
+                 !p.toLowerCase().includes('shield') && 
+                 !p.toLowerCase().includes('plate'))
+    .sort();
+
+  // Get standings for each pool
+  const poolStandings = {};
+  poolNames.forEach(poolName => {
+    poolStandings[poolName] = calculateStandings(poolName).filter(s => s.status === 'Active');
+  });
+
+  const findMatch = (p1, p2) => matches.find(m =>
+    (m.player1 === p1 && m.player2 === p2) ||
+    (m.player1 === p2 && m.player2 === p1)
+  );
+
+  const matchCard = (p1, p2, label) => {
+    const m = findMatch(p1, p2);
+    return { player1: p1, player2: p2, winner: m?.winner || null, status: m?.status, label };
+  };
+
+  if (playoffType === 'Cup') {
+    // R12: 2nd vs 3rd in each pool
+    const r12 = poolNames.map(pool => {
+      const s = poolStandings[pool];
+      const p1 = s[1]?.name || `${pool}2`;
+      const p2 = s[2]?.name || `${pool}3`;
+      return matchCard(p1, p2, `${pool}2 v ${pool}3`);
+    });
+
+    // QF: 1st vs winner of R12
+    const qf = poolNames.map((pool, idx) => {
+      const s = poolStandings[pool];
+      const p1 = s[0]?.name || `${pool}1`;
+      const r12Winner = r12[idx].winner || `Winner ${pool}R12`;
+      return matchCard(p1, r12Winner, `${pool}1 v Winner ${pool}R12`);
+    });
+
+    // SF: A winner v D winner, B winner v C winner
+    const sfMatches = [
+      [0, 3], // A vs D
+      [1, 2], // B vs C
+    ].map(([i, j]) => {
+      const p1 = qf[i].winner || `Winner ${poolNames[i]}QF`;
+      const p2 = qf[j].winner || `Winner ${poolNames[j]}QF`;
+      return matchCard(p1, p2, `${poolNames[i]} v ${poolNames[j]}`);
+    });
+
+    // Final
+    const p1 = sfMatches[0].winner || 'Winner SF1';
+    const p2 = sfMatches[1].winner || 'Winner SF2';
+    const final = matchCard(p1, p2, 'Cup Final');
+
+    return { r12, qf, sf: sfMatches, final, hasMatches: r12.length > 0 };
+  }
+
+  if (playoffType === 'Shield') {
+    // Combine all players ranked 4th+ from each pool, sort by points then holeDiff
+    const allRemaining = poolNames.flatMap(pool => {
+      const s = poolStandings[pool];
+      return s.slice(3); // positions 4th and beyond
+    }).sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return b.holeDiff - a.holeDiff;
+    });
+
+    if (allRemaining.length < 2) return { r16: [], qf: [], sf: [], final: null, hasMatches: false };
+
+    // Seed 1-16 (or however many there are)
+    const seeded = allRemaining.slice(0, 16);
+    const n = seeded.length;
+
+    // R16: 1v16, 2v15, 3v14... (seed n+1-i vs seed i for top half)
+    const r16 = [];
+    for (let i = 0; i < n / 2; i++) {
+      const p1 = seeded[i]?.name || `Seed ${i + 1}`;
+      const p2 = seeded[n - 1 - i]?.name || `Seed ${n - i}`;
+      r16.push(matchCard(p1, p2, `S${i + 1} v S${n - i}`));
+    }
+
+    // QF: winners from r16[0] v r16[7], r16[1] v r16[6], r16[2] v r16[5], r16[3] v r16[4]
+    const qf = [
+      [0, 7], [1, 6], [2, 5], [3, 4]
+    ].map(([i, j]) => {
+      const p1 = r16[i]?.winner || `Winner R16 M${i + 1}`;
+      const p2 = r16[j]?.winner || `Winner R16 M${j + 1}`;
+      return matchCard(p1, p2, `QF`);
+    });
+
+    // SF
+    const sf = [
+      [0, 3], [1, 2]
+    ].map(([i, j]) => {
+      const p1 = qf[i]?.winner || `Winner QF${i + 1}`;
+      const p2 = qf[j]?.winner || `Winner QF${j + 1}`;
+      return matchCard(p1, p2, 'SF');
+    });
+
+    // Final
+    const fp1 = sf[0]?.winner || 'Winner SF1';
+    const fp2 = sf[1]?.winner || 'Winner SF2';
+    const final = matchCard(fp1, fp2, 'Shield Final');
+
+    return { r16, qf, sf, final, hasMatches: r16.length > 0 };
+  }
+
+  return { hasMatches: false };
+};   
 const StandingsPage = ({ 
   currentUser, 
   matches, 
@@ -1528,6 +1637,158 @@ const StandingsPage = ({
                 )}
               </div>
             </CollapsibleSection>
+
+            {/* Cup Final */}
+<CollapsibleSection
+  title="🏆 Cup Final"
+  subtitle="Top 3 from each pool"
+  isExpanded={expandedSections.cup}
+  onToggle={() => toggleSection('cup')}
+  headerStyle="secondary"
+>
+  {(() => {
+    const bracket = generatePlayoffBrackets('Cup', pools, players, matches, calculateStandings);
+    if (!bracket.hasMatches) return (
+      <div className="p-6 text-center text-gray-500 text-sm">
+        <p>Pool play not complete yet.</p>
+        <p className="text-xs mt-2">Brackets will populate based on pool standings.</p>
+      </div>
+    );
+    return (
+      <div className="p-4 overflow-x-auto">
+        <div className="flex gap-4 min-w-max">
+          {/* R12 */}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">R12</div>
+            <div className="space-y-2">
+              {bracket.r12.map((m, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                  <div className="text-center text-xs font-semibold text-gray-400 mb-1">{m.label}</div>
+                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{formatPlayerName(m.player1)}</div>
+                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{formatPlayerName(m.player2)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* QF */}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
+            <div className="space-y-2">
+              {bracket.qf.map((m, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}</div>
+                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* SF */}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
+            <div className="space-y-2">
+              {bracket.sf.map((m, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}</div>
+                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Final */}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
+            <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
+              <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>{bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}</div>
+              <div className="text-gray-400 text-center my-1">vs</div>
+              <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>{bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}</div>
+              {bracket.final.winner && !bracket.final.winner.includes('Winner') && (
+                <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>🏆 {formatPlayerName(bracket.final.winner)}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })()}
+</CollapsibleSection>
+
+{/* Shield Final */}
+<CollapsibleSection
+  title="🛡️ Shield Final"
+  subtitle="Remaining players seeded by points"
+  isExpanded={expandedSections.shield}
+  onToggle={() => toggleSection('shield')}
+  headerStyle="gray"
+>
+  {(() => {
+    const bracket = generatePlayoffBrackets('Shield', pools, players, matches, calculateStandings);
+    if (!bracket.hasMatches) return (
+      <div className="p-6 text-center text-gray-500 text-sm">
+        <p>Shield brackets will populate after pool play.</p>
+      </div>
+    );
+    return (
+      <div className="p-4 overflow-x-auto">
+        <div className="flex gap-4 min-w-max">
+          {/* R16 */}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
+            <div className="space-y-2">
+              {bracket.r16.map((m, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{formatPlayerName(m.player1)}</div>
+                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{formatPlayerName(m.player2)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* QF */}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
+            <div className="space-y-2">
+              {bracket.qf.map((m, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}</div>
+                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* SF */}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
+            <div className="space-y-2">
+              {bracket.sf.map((m, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}</div>
+                  <div className="text-gray-400 text-center my-0.5">vs</div>
+                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Final */}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
+            <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_ACCENT, backgroundColor: `${BRAND_ACCENT}10`}}>
+              <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>{bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}</div>
+              <div className="text-gray-400 text-center my-1">vs</div>
+              <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>{bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}</div>
+              {bracket.final.winner && !bracket.final.winner.includes('Winner') && (
+                <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>🛡️ {formatPlayerName(bracket.final.winner)}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })()}
+</CollapsibleSection>
           </div>
         )}
       </div>
