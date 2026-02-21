@@ -158,14 +158,25 @@ const Header = ({ currentUser, onLogout, onChange, darkMode, setDarkMode, onRefr
           <button 
             onClick={() => {
               triggerHaptic('light');
-              onTabChange('standings');
+              onTabChange('');
             }}
             className={`flex-1 py-2 px-4 rounded-lg font-semibold ${
-              activeTab === 'standings' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
+              activeTab === '' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
             }`}
           >
             Standings
           </button>
+          <button 
+  onClick={() => {
+    triggerHaptic('light');
+    onTabChange('live');
+  }}
+  className={`flex-1 py-2 px-4 rounded-lg font-semibold ${
+    activeTab === 'live' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
+  }`}
+>
+  Live
+</button>
         </div>
       )}
       
@@ -952,7 +963,10 @@ const MatchesPage = ({
         pendingUpdates={pendingUpdates}
         showTabs
         activeTab="matches"
-        onTabChange={(tab) => tab === 'standings' && onViewStandings()}
+        onTabChange={(tab) => {
+  if (tab === 'standings') onViewStandings();
+  if (tab === 'live') setShowLiveScores(true);
+}}
       />
       
       <div className="max-w-md mx-auto px-4 py-6">
@@ -1128,14 +1142,14 @@ const MatchesPage = ({
 };
 
 // ============================================
-// STANDINGS PAGE - Optimized with hooks
+//  STANDINGS PAGE - Optimized with hooks
 // ============================================
 
-const useStandingsCalculations = (pools, players, matches) => {
-  const calculateStandings = useCallback((poolName) => {
+const useCalculations = (pools, players, matches) => {
+  const calculate = useCallback((poolName) => {
     const poolPlayers = pools.filter(p => p.pool === poolName);
-    
-    const standings = poolPlayers.map(player => {
+    const [showLiveScores, setShowLiveScores] = useState(false);
+    const  = poolPlayers.map(player => {
       const playerData = players.find(p => p.name === player.player);
       const status = playerData?.status || 'Active';
       
@@ -1195,8 +1209,8 @@ const useStandingsCalculations = (pools, players, matches) => {
       };
     });
 
-    const activePlayers = standings.filter(s => s.status === 'Active');
-    const inactivePlayers = standings.filter(s => s.status === 'Inactive');
+    const activePlayers = .filter(s => s.status === 'Active');
+    const inactivePlayers = .filter(s => s.status === 'Inactive');
 
     const sortFn = (a, b) => {
       if (b.points !== a.points) return b.points - a.points;
@@ -1214,7 +1228,7 @@ const useStandingsCalculations = (pools, players, matches) => {
     [pools]
   );
 
-  return { calculateStandings, getPoolNames };
+  return { calculate, getPoolNames };
 };
 
 const useCrossoverMatches = (pools, players, matches) => {
@@ -1230,7 +1244,7 @@ const useCrossoverMatches = (pools, players, matches) => {
     
     if (allPools.length < 4) return { week1: [], week2: [] };
     
-    const calculateStandings = (poolName) => {
+    const calculate = (poolName) => {
       const poolPlayers = pools.filter(p => p.pool === poolName);
       
       return poolPlayers.map(player => {
@@ -1239,10 +1253,10 @@ const useCrossoverMatches = (pools, players, matches) => {
       }).filter(s => s.status === 'Active');
     };
     
-    const poolA = calculateStandings(allPools[0]) || [];
-    const poolB = calculateStandings(allPools[1]) || [];
-    const poolC = calculateStandings(allPools[2]) || [];
-    const poolD = calculateStandings(allPools[3]) || [];
+    const poolA = calculate(allPools[0]) || [];
+    const poolB = calculate(allPools[1]) || [];
+    const poolC = calculate(allPools[2]) || [];
+    const poolD = calculate(allPools[3]) || [];
       
     const crossoverMatches = matches.filter(m => {
       const id = m.id?.toLowerCase() || '';
@@ -1327,7 +1341,7 @@ const CrossoverMatchCard = ({ match }) => (
   </div>
 );
 
-const StandingsTable = ({ standings, currentUser }) => (
+const Table = ({ , currentUser }) => (
   <table className="w-full">
     <thead>
       <tr className="border-b-2 border-gray-200">
@@ -1341,7 +1355,7 @@ const StandingsTable = ({ standings, currentUser }) => (
       </tr>
     </thead>
     <tbody>
-      {standings.map((standing, idx) => (
+      {.map((standing, idx) => (
         <tr 
           key={standing.name} 
           className={`border-b border-gray-100 ${
@@ -1371,7 +1385,7 @@ const StandingsTable = ({ standings, currentUser }) => (
   </table>
 );
 
-const StandingsPage = ({ 
+const Page = ({ 
   currentUser, 
   matches, 
   pools,
@@ -1399,7 +1413,7 @@ const StandingsPage = ({
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   }, []);
   
-  const { calculateStandings, getPoolNames } = useStandingsCalculations(pools, players, matches);
+  const { calculate, getPoolNames } = useCalculations(pools, players, matches);
   const { week1, week2 } = useCrossoverMatches(pools, players, matches);
 
   const poolNames = useMemo(() => 
@@ -1424,8 +1438,11 @@ const StandingsPage = ({
         isOnline={isOnline}
         pendingUpdates={pendingUpdates}
         showTabs
-        activeTab="standings"
-        onTabChange={(tab) => tab === 'matches' && onViewMatches()}
+        activeTab=""
+        onTabChange={(tab) => {
+  if (tab === 'matches') onViewMatches();
+  if (tab === 'live') setShowLiveScores(true);
+}}
       />
       
       <div className="max-w-md mx-auto px-4 py-6">
@@ -1438,16 +1455,16 @@ const StandingsPage = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Pool Standings Section */}
+            {/* Pool  Section */}
             <CollapsibleSection
-              title="Pool Standings"
+              title="Pool "
               isExpanded={expandedSections.pools}
               onToggle={() => toggleSection('pools')}
               headerStyle="primary"
             >
               <div className="p-4 space-y-4">
                 {poolNames.map(poolName => {
-                  const standings = calculateStandings(poolName);
+                  const  = calculate(poolName);
                   
                   return (
                     <div key={poolName} className="bg-gray-50 rounded-xl overflow-hidden">
@@ -1455,7 +1472,7 @@ const StandingsPage = ({
                         <h3 className="font-bold text-gray-900 text-sm">{poolName}</h3>
                       </div>
                       <div className="p-3">
-                        <StandingsTable standings={standings} currentUser={currentUser} />
+                        <Table ={} currentUser={currentUser} />
                       </div>
                     </div>
                   );
@@ -1519,6 +1536,16 @@ const StandingsPage = ({
           </div>
         )}
       </div>
+      {showLiveScores && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <LiveScoresPage onBack={() => {
+        triggerHaptic('light');
+        setShowLiveScores(false);
+      }} />
+    </div>
+  </div>
+)}
     </div>
   );
 };
@@ -2428,7 +2455,7 @@ const DiscGolfApp = () => {
             setSelectedMatch(match);
             setView('review');
           }}
-          onViewStandings={() => setView('standings')}
+          onView={() => setView('')}
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           isOnline={appData.isOnline}
@@ -2460,11 +2487,11 @@ const DiscGolfApp = () => {
     );
   }
 
-  if (view === 'standings') {
+  if (view === '') {
     return (
       <>
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-        <StandingsPage
+        <Page
           currentUser={currentUser}
           matches={appData.matches}
           pools={appData.pools}
