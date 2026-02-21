@@ -1145,11 +1145,11 @@ const MatchesPage = ({
 //  STANDINGS PAGE - Optimized with hooks
 // ============================================
 
-const useCalculations = (pools, players, matches) => {
-  const calculate = useCallback((poolName) => {
+const useStandingsCalculations = (pools, players, matches) => {
+  const calculateStandings = useCallback((poolName) => {
     const poolPlayers = pools.filter(p => p.pool === poolName);
-    const [showLiveScores, setShowLiveScores] = useState(false);
-    const  standings = poolPlayers.map(player => {
+    
+    const standings = poolPlayers.map(player => {
       const playerData = players.find(p => p.name === player.player);
       const status = playerData?.status || 'Active';
       
@@ -1174,7 +1174,6 @@ const useCalculations = (pools, players, matches) => {
             if (score.scored) {
               const p1Adjusted = applyJuniorHandicap(score.p1, match.player1);
               const p2Adjusted = applyJuniorHandicap(score.p2, match.player2);
-              
               if (p1Adjusted < p2Adjusted) p1Holes++;
               else if (p2Adjusted < p1Adjusted) p2Holes++;
             }
@@ -1209,8 +1208,8 @@ const useCalculations = (pools, players, matches) => {
       };
     });
 
-    const activePlayers = .filter(s => s.status === 'Active');
-    const inactivePlayers = .filter(s => s.status === 'Inactive');
+    const activePlayers = standings.filter(s => s.status === 'Active');
+    const inactivePlayers = standings.filter(s => s.status === 'Inactive');
 
     const sortFn = (a, b) => {
       if (b.points !== a.points) return b.points - a.points;
@@ -1228,120 +1227,10 @@ const useCalculations = (pools, players, matches) => {
     [pools]
   );
 
-  return { calculate, getPoolNames };
+  return { calculateStandings, getPoolNames };
 };
 
-const useCrossoverMatches = (pools, players, matches) => {
-  return useMemo(() => {
-    const getPoolNames = () => [...new Set(pools.map(p => p.pool))].sort();
-    
-    const allPools = getPoolNames().filter(p => 
-      !p.toLowerCase().includes('cup') && 
-      !p.toLowerCase().includes('shield') && 
-      !p.toLowerCase().includes('plate') &&
-      !p.toLowerCase().includes('crossover')
-    );
-    
-    if (allPools.length < 4) return { week1: [], week2: [] };
-    
-    const calculate = (poolName) => {
-      const poolPlayers = pools.filter(p => p.pool === poolName);
-      
-      return poolPlayers.map(player => {
-        const playerData = players.find(p => p.name === player.player);
-        return { name: player.player, status: playerData?.status || 'Active' };
-      }).filter(s => s.status === 'Active');
-    };
-    
-    const poolA = calculate(allPools[0]) || [];
-    const poolB = calculate(allPools[1]) || [];
-    const poolC = calculate(allPools[2]) || [];
-    const poolD = calculate(allPools[3]) || [];
-      
-    const crossoverMatches = matches.filter(m => {
-      const id = m.id?.toLowerCase() || '';
-      const venue = m.venue?.toLowerCase() || '';
-      return id.includes('crossover') || venue.includes('crossover');
-    });
-    
-    const findMatchResult = (p1, p2) => {
-      return crossoverMatches.find(m => 
-        (m.player1 === p1 && m.player2 === p2) ||
-        (m.player1 === p2 && m.player2 === p1)
-      );
-    };
-    
-    const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
-      const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
-      const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
-      const match = findMatchResult(player1, player2);
-      
-      return {
-        player1,
-        player2,
-        winner: match?.winner,
-        status: match?.status,
-        label: `${poolName1}${pos1} v ${poolName2}${pos2}`
-      };
-    };
-    
-    const week1 = [
-      createMatch(poolA, 1, poolB, 3, 'A', 'B'),
-      createMatch(poolA, 2, poolB, 2, 'A', 'B'),
-      createMatch(poolA, 3, poolB, 1, 'A', 'B'),
-      createMatch(poolC, 1, poolD, 3, 'C', 'D'),
-      createMatch(poolC, 2, poolD, 2, 'C', 'D'),
-      createMatch(poolC, 3, poolD, 1, 'C', 'D'),
-      createMatch(poolA, 4, poolB, 6, 'A', 'B'),
-      createMatch(poolA, 5, poolB, 5, 'A', 'B'),
-      createMatch(poolA, 6, poolB, 4, 'A', 'B'),
-      createMatch(poolC, 4, poolD, 6, 'C', 'D'),
-      createMatch(poolC, 5, poolD, 5, 'C', 'D'),
-      createMatch(poolC, 6, poolD, 4, 'C', 'D'),
-      createMatch(poolA, 7, poolB, 7, 'A', 'B'),
-      createMatch(poolC, 7, poolD, 7, 'C', 'D')
-    ];
-    
-    const week2 = [
-      createMatch(poolA, 1, poolC, 3, 'A', 'C'),
-      createMatch(poolA, 2, poolC, 2, 'A', 'C'),
-      createMatch(poolA, 3, poolC, 1, 'A', 'C'),
-      createMatch(poolB, 1, poolD, 3, 'B', 'D'),
-      createMatch(poolB, 2, poolD, 2, 'B', 'D'),
-      createMatch(poolB, 3, poolD, 1, 'B', 'D'),
-      createMatch(poolA, 4, poolC, 6, 'A', 'C'),
-      createMatch(poolA, 5, poolC, 5, 'A', 'C'),
-      createMatch(poolA, 6, poolC, 4, 'A', 'C'),
-      createMatch(poolB, 4, poolD, 6, 'B', 'D'),
-      createMatch(poolB, 5, poolD, 5, 'B', 'D'),
-      createMatch(poolB, 6, poolD, 4, 'B', 'D'),
-      createMatch(poolA, 7, poolC, 7, 'A', 'C'),
-      createMatch(poolB, 7, poolD, 7, 'B', 'D')
-    ];
-    
-    return { week1, week2 };
-  }, [pools, players, matches]);
-};
-
-const CrossoverMatchCard = ({ match }) => (
-  <div className="bg-white rounded-lg p-2 text-xs border border-gray-200">
-    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
-    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-      {formatPlayerName(match.player1)}
-    </div>
-    <div className="text-gray-400 text-center my-0.5">vs</div>
-    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-      {formatPlayerName(match.player2)}
-    </div>
-    {match.status === 'Completed' && (
-      <div className="text-center mt-1">
-        <span className="text-xs text-green-600">✓</span>
-      </div>
-    )}
-  </div>
-);
-
-const Table = ({ , currentUser }) => (
+const StandingsTable = ({ standings, currentUser }) => (
   <table className="w-full">
     <thead>
       <tr className="border-b-2 border-gray-200">
@@ -1355,7 +1244,7 @@ const Table = ({ , currentUser }) => (
       </tr>
     </thead>
     <tbody>
-      {.map((standing, idx) => (
+      {standings.map((standing, idx) => (
         <tr 
           key={standing.name} 
           className={`border-b border-gray-100 ${
@@ -1385,7 +1274,7 @@ const Table = ({ , currentUser }) => (
   </table>
 );
 
-const Page = ({ 
+const StandingsPage = ({ 
   currentUser, 
   matches, 
   pools,
@@ -1407,13 +1296,14 @@ const Page = ({
     cup: false,
     shield: false
   });
+  const [showLiveScores, setShowLiveScores] = useState(false);
   
   const toggleSection = useCallback((section) => {
     triggerHaptic('light');
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   }, []);
   
-  const { calculate, getPoolNames } = useCalculations(pools, players, matches);
+  const { calculateStandings, getPoolNames } = useStandingsCalculations(pools, players, matches);
   const { week1, week2 } = useCrossoverMatches(pools, players, matches);
 
   const poolNames = useMemo(() => 
@@ -1430,7 +1320,7 @@ const Page = ({
       <Header
         currentUser={currentUser}
         onLogout={onLogout}
-        onChangePin={onChangePin}
+        onChange={onChangePin}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         onRefresh={onRefresh}
@@ -1438,11 +1328,11 @@ const Page = ({
         isOnline={isOnline}
         pendingUpdates={pendingUpdates}
         showTabs
-        activeTab=""
+        activeTab="standings"
         onTabChange={(tab) => {
-  if (tab === 'matches') onViewMatches();
-  if (tab === 'live') setShowLiveScores(true);
-}}
+          if (tab === 'matches') onViewMatches();
+          if (tab === 'live') setShowLiveScores(true);
+        }}
       />
       
       <div className="max-w-md mx-auto px-4 py-6">
@@ -1455,24 +1345,22 @@ const Page = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Pool  Section */}
             <CollapsibleSection
-              title="Pool "
+              title="Pool Standings"
               isExpanded={expandedSections.pools}
               onToggle={() => toggleSection('pools')}
               headerStyle="primary"
             >
               <div className="p-4 space-y-4">
                 {poolNames.map(poolName => {
-                  const  = calculate(poolName);
-                  
+                  const standings = calculateStandings(poolName);
                   return (
                     <div key={poolName} className="bg-gray-50 rounded-xl overflow-hidden">
                       <div className="px-3 py-2 bg-gray-200">
                         <h3 className="font-bold text-gray-900 text-sm">{poolName}</h3>
                       </div>
                       <div className="p-3">
-                        <Table ={} currentUser={currentUser} />
+                        <StandingsTable standings={standings} currentUser={currentUser} />
                       </div>
                     </div>
                   );
@@ -1480,7 +1368,6 @@ const Page = ({
               </div>
             </CollapsibleSection>
 
-            {/* Crossover Week 1 */}
             <CollapsibleSection
               title="Crossover Week 1"
               subtitle="15 February 7:00pm • A vs B, C vs D"
@@ -1507,7 +1394,6 @@ const Page = ({
               </div>
             </CollapsibleSection>
 
-            {/* Crossover Week 2 */}
             <CollapsibleSection
               title="Crossover Week 2"
               subtitle="22 February 7:00pm • A vs C, B vs D"
@@ -1536,16 +1422,17 @@ const Page = ({
           </div>
         )}
       </div>
+
       {showLiveScores && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
-      <LiveScoresPage onBack={() => {
-        triggerHaptic('light');
-        setShowLiveScores(false);
-      }} />
-    </div>
-  </div>
-)}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <LiveScoresPage onBack={() => {
+              triggerHaptic('light');
+              setShowLiveScores(false);
+            }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
