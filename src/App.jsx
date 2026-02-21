@@ -1305,15 +1305,11 @@ const useCrossoverMatches = (pools, players, matches) => {
       const venue = m.venue?.toLowerCase() || '';
       return id.includes('crossover') || venue.includes('crossover');
     });
-    
-    const idSuffix = playoffType === 'Cup' ? 'C' : 'S';
-const findMatch = (p1, p2) => matches.find(m =>
-  m.id?.endsWith(idSuffix) &&
-  m.status !== 'Completed' &&
-  ((m.player1 === p1 && m.player2 === p2) ||
-   (m.player1 === p2 && m.player2 === p1))
+    const findMatch = (p1, p2) => matches.find(m =>
+  (m.player1 === p1 && m.player2 === p2) ||
+  (m.player1 === p2 && m.player2 === p1)
 );
-    
+ 
     const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
       const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
       const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
@@ -1396,10 +1392,14 @@ const CrossoverMatchCard = ({ match }) => (
     poolStandings[poolName] = calculateStandings(poolName).filter(s => s.status === 'Active');
   });
 
-  const findMatch = (p1, p2) => matches.find(m =>
-    (m.player1 === p1 && m.player2 === p2) ||
-    (m.player1 === p2 && m.player2 === p1)
-  );
+     const idSuffix = playoffType === 'Cup' ? 'C' : 'S';
+const findMatch = (p1, p2) => matches.find(m =>
+  m.id?.endsWith(idSuffix) &&
+  m.status !== 'Completed' &&
+  ((m.player1 === p1 && m.player2 === p2) ||
+   (m.player1 === p2 && m.player2 === p1))
+);
+    
 
   const matchCard = (p1, p2, label) => {
     const m = findMatch(p1, p2);
