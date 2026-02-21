@@ -1273,7 +1273,116 @@ const StandingsTable = ({ standings, currentUser }) => (
     </tbody>
   </table>
 );
+const useCrossoverMatches = (pools, players, matches) => {
+  return useMemo(() => {
+    const getPoolNames = () => [...new Set(pools.map(p => p.pool))].sort();
+    
+    const allPools = getPoolNames().filter(p => 
+      !p.toLowerCase().includes('cup') && 
+      !p.toLowerCase().includes('shield') && 
+      !p.toLowerCase().includes('plate') &&
+      !p.toLowerCase().includes('crossover')
+    );
+    
+    if (allPools.length < 4) return { week1: [], week2: [] };
+    
+    const calculateStandings = (poolName) => {
+      const poolPlayers = pools.filter(p => p.pool === poolName);
+      
+      return poolPlayers.map(player => {
+        const playerData = players.find(p => p.name === player.player);
+        return { name: player.player, status: playerData?.status || 'Active' };
+      }).filter(s => s.status === 'Active');
+    };
+    
+    const poolA = calculateStandings(allPools[0]) || [];
+    const poolB = calculateStandings(allPools[1]) || [];
+    const poolC = calculateStandings(allPools[2]) || [];
+    const poolD = calculateStandings(allPools[3]) || [];
+      
+    const crossoverMatches = matches.filter(m => {
+      const id = m.id?.toLowerCase() || '';
+      const venue = m.venue?.toLowerCase() || '';
+      return id.includes('crossover') || venue.includes('crossover');
+    });
+    
+    const findMatchResult = (p1, p2) => {
+      return crossoverMatches.find(m => 
+        (m.player1 === p1 && m.player2 === p2) ||
+        (m.player1 === p2 && m.player2 === p1)
+      );
+    };
+    
+    const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
+      const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
+      const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
+      const match = findMatchResult(player1, player2);
+      
+      return {
+        player1,
+        player2,
+        winner: match?.winner,
+        status: match?.status,
+        label: `${poolName1}${pos1} v ${poolName2}${pos2}`
+      };
+    };
+    
+    const week1 = [
+      createMatch(poolA, 1, poolB, 3, 'A', 'B'),
+      createMatch(poolA, 2, poolB, 2, 'A', 'B'),
+      createMatch(poolA, 3, poolB, 1, 'A', 'B'),
+      createMatch(poolC, 1, poolD, 3, 'C', 'D'),
+      createMatch(poolC, 2, poolD, 2, 'C', 'D'),
+      createMatch(poolC, 3, poolD, 1, 'C', 'D'),
+      createMatch(poolA, 4, poolB, 6, 'A', 'B'),
+      createMatch(poolA, 5, poolB, 5, 'A', 'B'),
+      createMatch(poolA, 6, poolB, 4, 'A', 'B'),
+      createMatch(poolC, 4, poolD, 6, 'C', 'D'),
+      createMatch(poolC, 5, poolD, 5, 'C', 'D'),
+      createMatch(poolC, 6, poolD, 4, 'C', 'D'),
+      createMatch(poolA, 7, poolB, 7, 'A', 'B'),
+      createMatch(poolC, 7, poolD, 7, 'C', 'D')
+    ];
+    
+    const week2 = [
+      createMatch(poolA, 1, poolC, 3, 'A', 'C'),
+      createMatch(poolA, 2, poolC, 2, 'A', 'C'),
+      createMatch(poolA, 3, poolC, 1, 'A', 'C'),
+      createMatch(poolB, 1, poolD, 3, 'B', 'D'),
+      createMatch(poolB, 2, poolD, 2, 'B', 'D'),
+      createMatch(poolB, 3, poolD, 1, 'B', 'D'),
+      createMatch(poolA, 4, poolC, 6, 'A', 'C'),
+      createMatch(poolA, 5, poolC, 5, 'A', 'C'),
+      createMatch(poolA, 6, poolC, 4, 'A', 'C'),
+      createMatch(poolB, 4, poolD, 6, 'B', 'D'),
+      createMatch(poolB, 5, poolD, 5, 'B', 'D'),
+      createMatch(poolB, 6, poolD, 4, 'B', 'D'),
+      createMatch(poolA, 7, poolC, 7, 'A', 'C'),
+      createMatch(poolB, 7, poolD, 7, 'B', 'D')
+    ];
+    
+    return { week1, week2 };
+  }, [pools, players, matches]);
+};
 
+const CrossoverMatchCard = ({ match }) => (
+  <div className="bg-white rounded-lg p-2 text-xs border border-gray-200">
+    <div className="text-center text-xs font-semibold text-gray-500 mb-1">{match.label}</div>
+    <div className={`font-semibold ${match.winner === match.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+      {formatPlayerName(match.player1)}
+    </div>
+    <div className="text-gray-400 text-center my-0.5">vs</div>
+    <div className={`font-semibold ${match.winner === match.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+      {formatPlayerName(match.player2)}
+    </div>
+    {match.status === 'Completed' && (
+      <div className="text-center mt-1">
+        <span className="text-xs text-green-600">✓</span>
+      </div>
+    )}
+  </div>
+);
+    
 const StandingsPage = ({ 
   currentUser, 
   matches, 
