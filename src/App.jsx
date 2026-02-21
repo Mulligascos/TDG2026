@@ -158,10 +158,10 @@ const Header = ({ currentUser, onLogout, onChange, darkMode, setDarkMode, onRefr
           <button 
             onClick={() => {
               triggerHaptic('light');
-              onTabChange('');
+              onTabChange('standings');
             }}
             className={`flex-1 py-2 px-4 rounded-lg font-semibold ${
-              activeTab === '' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
+              activeTab === 'standings' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
             }`}
           >
             Standings
@@ -2342,7 +2342,7 @@ const DiscGolfApp = () => {
             setSelectedMatch(match);
             setView('review');
           }}
-          onView={() => setView('')}
+          onViewStandings={() => setView('standings')}
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           isOnline={appData.isOnline}
@@ -2374,11 +2374,11 @@ const DiscGolfApp = () => {
     );
   }
 
-  if (view === '') {
+  if (view === 'standings') {
     return (
       <>
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-        <Page
+        <StandingsPage
           currentUser={currentUser}
           matches={appData.matches}
           pools={appData.pools}
