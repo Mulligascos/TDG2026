@@ -1149,7 +1149,7 @@ const useCalculations = (pools, players, matches) => {
   const calculate = useCallback((poolName) => {
     const poolPlayers = pools.filter(p => p.pool === poolName);
     const [showLiveScores, setShowLiveScores] = useState(false);
-    const  = poolPlayers.map(player => {
+    const  standings = poolPlayers.map(player => {
       const playerData = players.find(p => p.name === player.player);
       const status = playerData?.status || 'Active';
       
