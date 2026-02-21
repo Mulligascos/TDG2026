@@ -1313,7 +1313,10 @@ const useCrossoverMatches = (pools, players, matches) => {
     const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
       const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
       const player2 = pool2[pos2 - 1]?.name || `${poolName2}${pos2}`;
-      const match = findMatchResult(player1, player2);
+      const match = crossoverMatches.find(m =>
+  (m.player1 === player1 && m.player2 === player2) ||
+  (m.player1 === player2 && m.player2 === player1)
+);
       
       return {
         player1,
