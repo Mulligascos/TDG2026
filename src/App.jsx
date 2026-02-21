@@ -1306,12 +1306,13 @@ const useCrossoverMatches = (pools, players, matches) => {
       return id.includes('crossover') || venue.includes('crossover');
     });
     
-    const findMatchResult = (p1, p2) => {
-      return crossoverMatches.find(m => 
-        (m.player1 === p1 && m.player2 === p2) ||
-        (m.player1 === p2 && m.player2 === p1)
-      );
-    };
+    const idSuffix = playoffType === 'Cup' ? 'C' : 'S';
+const findMatch = (p1, p2) => matches.find(m =>
+  m.id?.endsWith(idSuffix) &&
+  m.status !== 'Completed' &&
+  ((m.player1 === p1 && m.player2 === p2) ||
+   (m.player1 === p2 && m.player2 === p1))
+);
     
     const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
       const player1 = pool1[pos1 - 1]?.name || `${poolName1}${pos1}`;
