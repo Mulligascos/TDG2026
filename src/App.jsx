@@ -1478,9 +1478,10 @@ const useCrossoverMatches = (pools, players, matches) => {
       const venue = m.venue?.toLowerCase() || '';
       return id.includes('crossover') || venue.includes('crossover');
     });
-    const findMatch = (p1, p2) => matches.find(m =>
-  (m.player1 === p1 && m.player2 === p2) ||
-  (m.player1 === p2 && m.player2 === p1)
+  const findMatch = (p1, p2) => matches.find(m =>
+  m.id?.endsWith(idSuffix) &&
+  ((m.player1 === p1 && m.player2 === p2) ||
+   (m.player1 === p2 && m.player2 === p1))
 );
  
     const createMatch = (pool1, pos1, pool2, pos2, poolName1, poolName2) => {
