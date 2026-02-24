@@ -1571,6 +1571,7 @@ return allPlayers
   .filter(p => !cupPlayers.has(p.name))
   .sort((a, b) => b.points !== a.points ? b.points - a.points : b.holeDiff - a.holeDiff)
   .slice(0, 8);
+  }, [pools, players, matches]); 
 
   const roundRobinMatches = useMemo(() => {
     if (seededPlayers.length < 8) return [];
