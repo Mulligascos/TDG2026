@@ -1550,12 +1550,27 @@ const useShieldTournament = (pools, players, matches) => {
       }).filter(Boolean);
     });
 
-    const seen = new Set();
-    return allPlayers
-      .filter(p => { if (seen.has(p.name)) return false; seen.add(p.name); return true; })
-      .sort((a, b) => b.points !== a.points ? b.points - a.points : b.holeDiff - a.holeDiff)
-      .slice(0, 8);
-  }, [pools, players, matches]);
+// Get top 3 names from each pool to exclude
+const cupPlayers = new Set();
+poolNames.forEach(poolName => {
+  const poolPlayers = pools.filter(p => p.pool === poolName);
+  const sorted = poolPlayers.map(player => {
+    const playerData = players.find(p => p.name === player.player);
+    const status = playerData?.status || 'Active';
+    return { name: player.player, status, points: player.points || 0 };
+  })
+  .filter(p => p.status === 'Active')
+  .sort((a, b) => b.points - a.points)
+  .slice(0, 3);
+  sorted.forEach(p => cupPlayers.add(p.name));
+});
+
+const seen = new Set();
+return allPlayers
+  .filter(p => { if (seen.has(p.name)) return false; seen.add(p.name); return true; })
+  .filter(p => !cupPlayers.has(p.name))
+  .sort((a, b) => b.points !== a.points ? b.points - a.points : b.holeDiff - a.holeDiff)
+  .slice(0, 8);
 
   const roundRobinMatches = useMemo(() => {
     if (seededPlayers.length < 8) return [];
