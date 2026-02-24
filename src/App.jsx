@@ -1496,6 +1496,205 @@ const findMatch = (p1, p2) => matches.find(m =>
 
   return { hasMatches: false };
 };   
+
+
+const ShieldTournament = ({ pools, players, matches, currentUser }) => {
+  const [expandedRound, setExpandedRound] = useState(1);
+
+  const {
+    seededPlayers,
+    roundRobinMatches,
+    tournamentStandings,
+    allRoundsComplete,
+    shieldFinal,
+    thirdPlaceFinal,
+  } = useShieldTournament(pools, players, matches);
+
+  if (seededPlayers.length < 8) {
+    return (
+      <div className="p-6 text-center text-gray-500 text-sm">
+        <p>Shield tournament requires 8 players.</p>
+        <p className="text-xs mt-1">Currently {seededPlayers.length} eligible players.</p>
+      </div>
+    );
+  }
+
+  const rounds = [1, 2, 3];
+
+  return (
+    <div className="space-y-4 p-4">
+
+      {/* Seedings */}
+      <div className="bg-gray-50 rounded-xl p-3">
+        <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase tracking-wide">Seeds</h4>
+        <div className="grid grid-cols-2 gap-1">
+          {seededPlayers.map((p, idx) => (
+            <div key={p.name} className="flex items-center gap-2 text-xs">
+              <span className="w-5 h-5 rounded-full flex items-center justify-center font-bold text-white text-xs"
+                style={{ backgroundColor: BRAND_PRIMARY }}>
+                {idx + 1}
+              </span>
+              <span className={`font-semibold ${p.name === currentUser?.name ? 'text-green-600' : 'text-gray-700'}`}>
+                {formatPlayerName(p.name)}
+              </span>
+              <span className="text-gray-400">{p.points}pts</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Round Robin Matches */}
+      {rounds.map(round => {
+        const roundMatches = roundRobinMatches.filter(m => m.round === round);
+        const roundComplete = roundMatches.every(m => m.winner);
+        const isExpanded = expandedRound === round;
+
+        return (
+          <div key={round} className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <button
+              onClick={() => setExpandedRound(isExpanded ? null : round)}
+              className="w-full px-4 py-3 flex items-center justify-between"
+              style={{ background: `linear-gradient(to right, ${BRAND_PRIMARY}, ${BRAND_ACCENT})` }}
+            >
+              <div className="text-left">
+                <span className="font-bold text-white text-sm">Round {round}</span>
+                {roundComplete && <span className="ml-2 text-white/70 text-xs">✓ Complete</span>}
+              </div>
+              <span className={`text-white transition-transform ${isExpanded ? 'rotate-90' : ''}`}>›</span>
+            </button>
+
+            {isExpanded && (
+              <div className="p-3 space-y-2">
+                {roundMatches.map((m, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className={`text-sm font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                          <span className="text-gray-400 text-xs mr-1">S{m.seed1}</span>
+                          {formatPlayerName(m.player1)}
+                          {m.winner === m.player1 && <span className="ml-1 text-xs">✓</span>}
+                        </div>
+                        <div className="text-center text-xs text-gray-400 my-0.5">vs</div>
+                        <div className={`text-sm font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                          <span className="text-gray-400 text-xs mr-1">S{m.seed2}</span>
+                          {formatPlayerName(m.player2)}
+                          {m.winner === m.player2 && <span className="ml-1 text-xs">✓</span>}
+                        </div>
+                      </div>
+                      {m.winner && (
+                        <div className="text-right ml-3">
+                          <div className="text-lg font-bold text-gray-700">
+                            {m.p1Holes} – {m.p2Holes}
+                          </div>
+                          <div className="text-xs text-gray-400">holes</div>
+                        </div>
+                      )}
+                      {!m.winner && (
+                        <div className="text-xs text-gray-400 ml-3">Pending</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Mini Tournament Standings */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="px-4 py-3" style={{ background: `linear-gradient(to right, ${BRAND_SECONDARY}, ${BRAND_PRIMARY})` }}>
+          <h4 className="font-bold text-gray-900 text-sm">Shield Standings</h4>
+        </div>
+        <div className="p-3">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b-2 border-gray-200">
+                <th className="text-left py-2 pr-2 text-gray-600 font-semibold w-6">#</th>
+                <th className="text-left py-2 pr-2 text-gray-600 font-semibold">Player</th>
+                <th className="text-center py-2 px-1 text-gray-600 font-semibold">P</th>
+                <th className="text-center py-2 px-1 text-gray-600 font-semibold">W</th>
+                <th className="text-center py-2 px-1 text-gray-600 font-semibold">L</th>
+                <th className="text-center py-2 px-1 text-gray-600 font-semibold">+/-</th>
+                <th className="text-center py-2 pl-2 text-gray-600 font-semibold">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tournamentStandings.map((s, idx) => (
+                <tr key={s.name}
+                  className={`border-b border-gray-100 ${s.name === currentUser?.name ? 'bg-green-50' : ''}`}>
+                  <td className="py-2 pr-2 text-gray-500 font-semibold">
+                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                  </td>
+                  <td className="py-2 pr-2 font-semibold text-gray-900">{formatPlayerName(s.name)}</td>
+                  <td className="py-2 px-1 text-center text-gray-700">{s.played}</td>
+                  <td className="py-2 px-1 text-center text-gray-700">{s.wins}</td>
+                  <td className="py-2 px-1 text-center text-gray-700">{s.losses}</td>
+                  <td className={`py-2 px-1 text-center font-bold ${
+                    s.holeDiff > 0 ? 'text-green-600' : s.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {s.holeDiff > 0 ? '+' : ''}{s.holeDiff}
+                  </td>
+                  <td className="py-2 pl-2 text-center font-bold text-gray-900 text-sm">{s.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Finals */}
+      <div className="space-y-3">
+        {/* 3rd Place */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
+            <h4 className="font-bold text-gray-700 text-sm">🥉 3rd Place Playoff</h4>
+            {!allRoundsComplete && <p className="text-xs text-gray-400">Available after all rounds complete</p>}
+          </div>
+          <div className="p-3">
+            <div className={`text-sm font-semibold ${thirdPlaceFinal.winner === thirdPlaceFinal.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+              {formatPlayerName(thirdPlaceFinal.player1)}
+              {thirdPlaceFinal.winner === thirdPlaceFinal.player1 && ' 🥉'}
+            </div>
+            <div className="text-xs text-gray-400 my-1 text-center">vs</div>
+            <div className={`text-sm font-semibold ${thirdPlaceFinal.winner === thirdPlaceFinal.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+              {formatPlayerName(thirdPlaceFinal.player2)}
+              {thirdPlaceFinal.winner === thirdPlaceFinal.player2 && ' 🥉'}
+            </div>
+          </div>
+        </div>
+
+        {/* Shield Final */}
+        <div className="rounded-xl shadow-sm overflow-hidden border-2" style={{ borderColor: BRAND_SECONDARY }}>
+          <div className="px-4 py-2 border-b" style={{ backgroundColor: `${BRAND_SECONDARY}20` }}>
+            <h4 className="font-bold text-gray-800 text-sm">🛡️ Shield Final</h4>
+            {!allRoundsComplete && <p className="text-xs text-gray-400">Available after all rounds complete</p>}
+          </div>
+          <div className="p-3">
+            <div className={`text-sm font-bold ${shieldFinal.winner === shieldFinal.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+              {formatPlayerName(shieldFinal.player1)}
+              {shieldFinal.winner === shieldFinal.player1 && ' 🛡️'}
+            </div>
+            <div className="text-xs text-gray-400 my-1 text-center">vs</div>
+            <div className={`text-sm font-bold ${shieldFinal.winner === shieldFinal.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+              {formatPlayerName(shieldFinal.player2)}
+              {shieldFinal.winner === shieldFinal.player2 && ' 🛡️'}
+            </div>
+            {shieldFinal.winner && (
+              <div className="mt-2 pt-2 border-t border-gray-200 text-center font-bold text-sm"
+                style={{ color: BRAND_PRIMARY }}>
+                🛡️ Champion: {formatPlayerName(shieldFinal.winner)}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+
 const StandingsPage = ({ 
   currentUser, 
   matches, 
@@ -1721,77 +1920,18 @@ const StandingsPage = ({
 
 {/* Shield Final */}
 <CollapsibleSection
-  title="🛡️ Shield Final"
-  subtitle="Remaining players seeded by points"
+  title="🛡️ Shield Tournament"
+  subtitle="Round robin • Top 2 play final"
   isExpanded={expandedSections.shield}
   onToggle={() => toggleSection('shield')}
   headerStyle="gray"
 >
-  {(() => {
-    const bracket = generatePlayoffBrackets('Shield', pools, players, matches, calculateStandings);
-    if (!bracket.hasMatches) return (
-      <div className="p-6 text-center text-gray-500 text-sm">
-        <p>Shield brackets will populate after pool play.</p>
-      </div>
-    );
-    return (
-      <div className="p-4 overflow-x-auto">
-        <div className="flex gap-4 min-w-max">
-          {/* R16 */}
-          <div className="flex-shrink-0 w-40">
-            <div className="text-center font-bold text-xs text-gray-600 mb-3">R16</div>
-            <div className="space-y-2">
-              {bracket.r16.map((m, idx) => (
-                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{formatPlayerName(m.player1)}</div>
-                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{formatPlayerName(m.player2)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* QF */}
-          <div className="flex-shrink-0 w-40">
-            <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
-            <div className="space-y-2">
-              {bracket.qf.map((m, idx) => (
-                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}</div>
-                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* SF */}
-          <div className="flex-shrink-0 w-40">
-            <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
-            <div className="space-y-2">
-              {bracket.sf.map((m, idx) => (
-                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}</div>
-                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Final */}
-          <div className="flex-shrink-0 w-40">
-            <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
-            <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_ACCENT, backgroundColor: `${BRAND_ACCENT}10`}}>
-              <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>{bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}</div>
-              <div className="text-gray-400 text-center my-1">vs</div>
-              <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>{bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}</div>
-              {bracket.final.winner && !bracket.final.winner.includes('Winner') && (
-                <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>🛡️ {formatPlayerName(bracket.final.winner)}</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  })()}
+  <ShieldTournament
+    pools={pools}
+    players={players}
+    matches={matches}
+    currentUser={currentUser}
+  />
 </CollapsibleSection>
           </div>
         )}
