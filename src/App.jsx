@@ -1503,7 +1503,7 @@ const ROUND_ROBIN_DRAW = [
   [0, 5], [1, 7], [2, 4], [3, 6], // Round 3
 ];
 
-const useShieldTournament = (pools, players, matches) => {
+const useShieldTournament = (pools, players, matches, calculateStandings) => {
   const seededPlayers = useMemo(() => {
     const poolNames = [...new Set(pools.map(p => p.pool))]
       .filter(p => !p.toLowerCase().includes('cup') && !p.toLowerCase().includes('shield') && !p.toLowerCase().includes('plate'))
@@ -1553,16 +1553,10 @@ const useShieldTournament = (pools, players, matches) => {
 // Get top 3 names from each pool to exclude
 const cupPlayers = new Set();
 poolNames.forEach(poolName => {
-  const poolPlayers = pools.filter(p => p.pool === poolName);
-  const sorted = poolPlayers.map(player => {
-    const playerData = players.find(p => p.name === player.player);
-    const status = playerData?.status || 'Active';
-    return { name: player.player, status, points: player.points || 0 };
-  })
-  .filter(p => p.status === 'Active')
-  .sort((a, b) => b.points - a.points)
-  .slice(0, 3);
-  sorted.forEach(p => cupPlayers.add(p.name));
+  const standings = calculateStandings(poolName)
+    .filter(s => s.status === 'Active')
+    .slice(0, 3);
+  standings.forEach(s => cupPlayers.add(s.name));
 });
 
 const seen = new Set();
@@ -1635,7 +1629,7 @@ return allPlayers
   return { seededPlayers, roundRobinMatches, tournamentStandings, allRoundsComplete, shieldFinal, thirdPlaceFinal };
 };
 
-const ShieldTournament = ({ pools, players, matches, currentUser }) => {
+const ShieldTournament = ({ pools, players, matches, currentUser, calculateStandings }) => {
   const [expandedRound, setExpandedRound] = useState(1);
 
   const {
@@ -1645,7 +1639,7 @@ const ShieldTournament = ({ pools, players, matches, currentUser }) => {
     allRoundsComplete,
     shieldFinal,
     thirdPlaceFinal,
-  } = useShieldTournament(pools, players, matches);
+} = useShieldTournament(pools, players, matches, calculateStandings);
 
   if (seededPlayers.length < 8) {
     return (
@@ -2063,12 +2057,13 @@ const StandingsPage = ({
   onToggle={() => toggleSection('shield')}
   headerStyle="gray"
 >
-  <ShieldTournament
-    pools={pools}
-    players={players}
-    matches={matches}
-    currentUser={currentUser}
-  />
+<ShieldTournament
+  pools={pools}
+  players={players}
+  matches={matches}
+  currentUser={currentUser}
+  calculateStandings={calculateStandings}
+/>
 </CollapsibleSection>
           </div>
         )}
