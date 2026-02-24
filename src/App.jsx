@@ -9,6 +9,9 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby1o9A_xc6Kd24K
 const BRAND_PRIMARY = '#006400';
 const BRAND_SECONDARY = '#FFD700';
 const BRAND_ACCENT = '#228B22';
+const ADMIN_USER = 'Mark Cain';
+const SHIELD_DATE = '2026-03-01';
+const SHIELD_VENUE = 'WEP';
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -1631,6 +1634,10 @@ return allPlayers
 
 const ShieldTournament = ({ pools, players, matches, currentUser, calculateStandings }) => {
   const [expandedRound, setExpandedRound] = useState(1);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showFinalsModal, setShowFinalsModal] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const isAdmin = currentUser?.name === ADMIN_USER;
 
   const {
     seededPlayers,
@@ -1639,7 +1646,87 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
     allRoundsComplete,
     shieldFinal,
     thirdPlaceFinal,
-} = useShieldTournament(pools, players, matches, calculateStandings);
+  } = useShieldTournament(pools, players, matches, calculateStandings);
+
+  const roundRobinAlreadyGenerated = matches.some(m => m.id?.startsWith('shield-r'));
+
+  const finalsAlreadyGenerated = matches.some(m =>
+    m.id === 'shield-final' || m.id === 'shield-3rd'
+  );
+
+  const round1Complete = roundRobinMatches.filter(m => m.round === 1).every(m => m.winner);
+  const round2Complete = roundRobinMatches.filter(m => m.round === 2).every(m => m.winner);
+  const round3Complete = roundRobinMatches.filter(m => m.round === 3).every(m => m.winner);
+  const anyRoundComplete = round1Complete || round2Complete || round3Complete;
+
+  const generateRoundRobinMatchList = () => {
+    return ROUND_ROBIN_DRAW.map(([i, j], idx) => {
+      const round = Math.floor(idx / 4) + 1;
+      const matchNum = (idx % 4) + 1;
+      return {
+        id: `shield-r${round}-m${matchNum}`,
+        date: SHIELD_DATE,
+        venue: SHIELD_VENUE,
+        player1: seededPlayers[i]?.name,
+        player2: seededPlayers[j]?.name,
+        round,
+        matchNum,
+      };
+    }).filter(m => m.player1 && m.player2);
+  };
+
+  const generateFinalsMatchList = () => {
+    const finalist1 = tournamentStandings[0]?.name;
+    const finalist2 = tournamentStandings[1]?.name;
+    const third1 = tournamentStandings[2]?.name;
+    const third2 = tournamentStandings[3]?.name;
+    const list = [];
+    if (finalist1 && finalist2) {
+      list.push({ id: 'shield-final', date: SHIELD_DATE, venue: SHIELD_VENUE, player1: finalist1, player2: finalist2, label: '🛡️ Shield Final' });
+    }
+    if (third1 && third2) {
+      list.push({ id: 'shield-3rd', date: SHIELD_DATE, venue: SHIELD_VENUE, player1: third1, player2: third2, label: '🥉 3rd Place Playoff' });
+    }
+    return list;
+  };
+
+  const handleGenerateRoundRobin = async () => {
+    setGenerating(true);
+    const matchList = generateRoundRobinMatchList();
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'createMatches', matches: matchList }),
+        mode: 'no-cors'
+      });
+      triggerHaptic('success');
+      setShowGenerateModal(false);
+    } catch (err) {
+      console.error('Error generating matches:', err);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleGenerateFinals = async () => {
+    setGenerating(true);
+    const matchList = generateFinalsMatchList();
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'createMatches', matches: matchList }),
+        mode: 'no-cors'
+      });
+      triggerHaptic('success');
+      setShowFinalsModal(false);
+    } catch (err) {
+      console.error('Error generating finals:', err);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   if (seededPlayers.length < 8) {
     return (
@@ -1672,6 +1759,20 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
             </div>
           ))}
         </div>
+
+        {/* Admin: Generate Round Robin Button */}
+        {isAdmin && !roundRobinAlreadyGenerated && (
+          <button
+            onClick={() => setShowGenerateModal(true)}
+            className="mt-3 w-full py-2 rounded-lg text-xs font-semibold text-white"
+            style={{ backgroundColor: BRAND_PRIMARY }}
+          >
+            ⚙ Generate All Round Robin Matches
+          </button>
+        )}
+        {isAdmin && roundRobinAlreadyGenerated && (
+          <div className="mt-3 text-center text-xs text-green-600 font-semibold">✓ Round robin matches generated</div>
+        )}
       </div>
 
       {/* Round Robin Matches */}
@@ -1714,15 +1815,11 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
                       </div>
                       {m.winner && (
                         <div className="text-right ml-3">
-                          <div className="text-lg font-bold text-gray-700">
-                            {m.p1Holes} – {m.p2Holes}
-                          </div>
+                          <div className="text-lg font-bold text-gray-700">{m.p1Holes} – {m.p2Holes}</div>
                           <div className="text-xs text-gray-400">holes</div>
                         </div>
                       )}
-                      {!m.winner && (
-                        <div className="text-xs text-gray-400 ml-3">Pending</div>
-                      )}
+                      {!m.winner && <div className="text-xs text-gray-400 ml-3">Pending</div>}
                     </div>
                   </div>
                 ))}
@@ -1732,7 +1829,7 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
         );
       })}
 
-      {/* Mini Tournament Standings */}
+      {/* Shield Standings */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="px-4 py-3" style={{ background: `linear-gradient(to right, ${BRAND_SECONDARY}, ${BRAND_PRIMARY})` }}>
           <h4 className="font-bold text-gray-900 text-sm">Shield Standings</h4>
@@ -1752,8 +1849,7 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
             </thead>
             <tbody>
               {tournamentStandings.map((s, idx) => (
-                <tr key={s.name}
-                  className={`border-b border-gray-100 ${s.name === currentUser?.name ? 'bg-green-50' : ''}`}>
+                <tr key={s.name} className={`border-b border-gray-100 ${s.name === currentUser?.name ? 'bg-green-50' : ''}`}>
                   <td className="py-2 pr-2 text-gray-500 font-semibold">
                     {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
                   </td>
@@ -1761,9 +1857,7 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
                   <td className="py-2 px-1 text-center text-gray-700">{s.played}</td>
                   <td className="py-2 px-1 text-center text-gray-700">{s.wins}</td>
                   <td className="py-2 px-1 text-center text-gray-700">{s.losses}</td>
-                  <td className={`py-2 px-1 text-center font-bold ${
-                    s.holeDiff > 0 ? 'text-green-600' : s.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'
-                  }`}>
+                  <td className={`py-2 px-1 text-center font-bold ${s.holeDiff > 0 ? 'text-green-600' : s.holeDiff < 0 ? 'text-red-600' : 'text-gray-600'}`}>
                     {s.holeDiff > 0 ? '+' : ''}{s.holeDiff}
                   </td>
                   <td className="py-2 pl-2 text-center font-bold text-gray-900 text-sm">{s.points}</td>
@@ -1771,49 +1865,56 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
               ))}
             </tbody>
           </table>
+
+          {/* Admin: Generate Finals Button */}
+          {isAdmin && anyRoundComplete && !finalsAlreadyGenerated && tournamentStandings.length >= 4 && (
+            <button
+              onClick={() => setShowFinalsModal(true)}
+              className="mt-3 w-full py-2 rounded-lg text-xs font-semibold text-white"
+              style={{ backgroundColor: BRAND_PRIMARY }}
+            >
+              ⚙ Generate Finals Matches
+            </button>
+          )}
+          {isAdmin && finalsAlreadyGenerated && (
+            <div className="mt-3 text-center text-xs text-green-600 font-semibold">✓ Finals matches generated</div>
+          )}
         </div>
       </div>
 
       {/* Finals */}
       <div className="space-y-3">
-        {/* 3rd Place */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
             <h4 className="font-bold text-gray-700 text-sm">🥉 3rd Place Playoff</h4>
-            {!allRoundsComplete && <p className="text-xs text-gray-400">Available after all rounds complete</p>}
+            {!anyRoundComplete && <p className="text-xs text-gray-400">Available after rounds complete</p>}
           </div>
           <div className="p-3">
             <div className={`text-sm font-semibold ${thirdPlaceFinal.winner === thirdPlaceFinal.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-              {formatPlayerName(thirdPlaceFinal.player1)}
-              {thirdPlaceFinal.winner === thirdPlaceFinal.player1 && ' 🥉'}
+              {formatPlayerName(thirdPlaceFinal.player1)}{thirdPlaceFinal.winner === thirdPlaceFinal.player1 && ' 🥉'}
             </div>
             <div className="text-xs text-gray-400 my-1 text-center">vs</div>
             <div className={`text-sm font-semibold ${thirdPlaceFinal.winner === thirdPlaceFinal.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-              {formatPlayerName(thirdPlaceFinal.player2)}
-              {thirdPlaceFinal.winner === thirdPlaceFinal.player2 && ' 🥉'}
+              {formatPlayerName(thirdPlaceFinal.player2)}{thirdPlaceFinal.winner === thirdPlaceFinal.player2 && ' 🥉'}
             </div>
           </div>
         </div>
 
-        {/* Shield Final */}
         <div className="rounded-xl shadow-sm overflow-hidden border-2" style={{ borderColor: BRAND_SECONDARY }}>
           <div className="px-4 py-2 border-b" style={{ backgroundColor: `${BRAND_SECONDARY}20` }}>
             <h4 className="font-bold text-gray-800 text-sm">🛡️ Shield Final</h4>
-            {!allRoundsComplete && <p className="text-xs text-gray-400">Available after all rounds complete</p>}
+            {!anyRoundComplete && <p className="text-xs text-gray-400">Available after rounds complete</p>}
           </div>
           <div className="p-3">
             <div className={`text-sm font-bold ${shieldFinal.winner === shieldFinal.player1 ? 'text-green-600' : 'text-gray-700'}`}>
-              {formatPlayerName(shieldFinal.player1)}
-              {shieldFinal.winner === shieldFinal.player1 && ' 🛡️'}
+              {formatPlayerName(shieldFinal.player1)}{shieldFinal.winner === shieldFinal.player1 && ' 🛡️'}
             </div>
             <div className="text-xs text-gray-400 my-1 text-center">vs</div>
             <div className={`text-sm font-bold ${shieldFinal.winner === shieldFinal.player2 ? 'text-green-600' : 'text-gray-700'}`}>
-              {formatPlayerName(shieldFinal.player2)}
-              {shieldFinal.winner === shieldFinal.player2 && ' 🛡️'}
+              {formatPlayerName(shieldFinal.player2)}{shieldFinal.winner === shieldFinal.player2 && ' 🛡️'}
             </div>
             {shieldFinal.winner && (
-              <div className="mt-2 pt-2 border-t border-gray-200 text-center font-bold text-sm"
-                style={{ color: BRAND_PRIMARY }}>
+              <div className="mt-2 pt-2 border-t border-gray-200 text-center font-bold text-sm" style={{ color: BRAND_PRIMARY }}>
                 🛡️ Champion: {formatPlayerName(shieldFinal.winner)}
               </div>
             )}
@@ -1821,10 +1922,67 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
         </div>
       </div>
 
+      {/* Generate Round Robin Modal */}
+      {showGenerateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Generate Round Robin Matches</h3>
+            <p className="text-xs text-gray-500 mb-4">Date: 1 March 2026 • Venue: WEP</p>
+            <div className="space-y-1 mb-6 max-h-64 overflow-y-auto">
+              {generateRoundRobinMatchList().map((m, idx) => (
+                <div key={idx} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
+                  <span className="text-gray-500 font-semibold w-20">R{m.round} M{m.matchNum}</span>
+                  <span className="text-gray-700 font-semibold">{formatPlayerName(m.player1)} vs {formatPlayerName(m.player2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowGenerateModal(false)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold">
+                Cancel
+              </button>
+              <button onClick={handleGenerateRoundRobin} disabled={generating}
+                className="flex-1 text-white py-3 rounded-xl font-semibold disabled:opacity-50"
+                style={{ backgroundColor: BRAND_PRIMARY }}>
+                {generating ? 'Generating...' : 'Confirm & Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Finals Modal */}
+      {showFinalsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Generate Finals Matches</h3>
+            <p className="text-xs text-gray-500 mb-4">Date: 1 March 2026 • Venue: WEP</p>
+            <div className="space-y-1 mb-6">
+              {generateFinalsMatchList().map((m, idx) => (
+                <div key={idx} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
+                  <span className="text-gray-500 font-semibold w-28">{m.label}</span>
+                  <span className="text-gray-700 font-semibold">{formatPlayerName(m.player1)} vs {formatPlayerName(m.player2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowFinalsModal(false)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold">
+                Cancel
+              </button>
+              <button onClick={handleGenerateFinals} disabled={generating}
+                className="flex-1 text-white py-3 rounded-xl font-semibold disabled:opacity-50"
+                style={{ backgroundColor: BRAND_PRIMARY }}>
+                {generating ? 'Generating...' : 'Confirm & Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
-
 
 const StandingsPage = ({ 
   currentUser, 
