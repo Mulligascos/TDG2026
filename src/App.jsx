@@ -1497,6 +1497,127 @@ const findMatch = (p1, p2) => matches.find(m =>
   return { hasMatches: false };
 };   
 
+const ROUND_ROBIN_DRAW = [
+  [0, 7], [1, 6], [2, 5], [3, 4], // Round 1
+  [0, 4], [1, 5], [2, 6], [3, 7], // Round 2
+  [0, 5], [1, 7], [2, 4], [3, 6], // Round 3
+];
+
+const useShieldTournament = (pools, players, matches) => {
+  const seededPlayers = useMemo(() => {
+    const poolNames = [...new Set(pools.map(p => p.pool))]
+      .filter(p => !p.toLowerCase().includes('cup') && !p.toLowerCase().includes('shield') && !p.toLowerCase().includes('plate'))
+      .sort();
+
+    const allPlayers = poolNames.flatMap(poolName => {
+      const poolPlayers = pools.filter(p => p.pool === poolName);
+      return poolPlayers.map(player => {
+        const playerData = players.find(p => p.name === player.player);
+        if (playerData?.status !== 'Active' && playerData?.status !== undefined) return null;
+        if (playerData?.status === undefined && player.player) {
+          // keep if no player record found, assume active
+        }
+        const status = playerData?.status || 'Active';
+        if (status !== 'Active') return null;
+
+        const poolMatches = matches.filter(m =>
+          m.status === 'Completed' &&
+          !m.id?.endsWith('S') && !m.id?.endsWith('C') &&
+          (m.player1 === player.player || m.player2 === player.player)
+        );
+
+        let holesWon = 0, holesLost = 0, matchWins = 0, matchTies = 0;
+        poolMatches.forEach(match => {
+          const isP1 = match.player1 === player.player;
+          let p1h = 0, p2h = 0;
+          match.scoresJson?.forEach(score => {
+            if (score.scored) {
+              if (score.p1 < score.p2) p1h++;
+              else if (score.p2 < score.p1) p2h++;
+            }
+          });
+          if (isP1) { holesWon += p1h; holesLost += p2h; }
+          else { holesWon += p2h; holesLost += p1h; }
+          if (match.winner === player.player) matchWins++;
+          else if (!match.winner || match.winner === 'Tie') matchTies++;
+        });
+
+        return {
+          name: player.player,
+          points: (matchWins * 3) + matchTies,
+          holeDiff: holesWon - holesLost,
+        };
+      }).filter(Boolean);
+    });
+
+    const seen = new Set();
+    return allPlayers
+      .filter(p => { if (seen.has(p.name)) return false; seen.add(p.name); return true; })
+      .sort((a, b) => b.points !== a.points ? b.points - a.points : b.holeDiff - a.holeDiff)
+      .slice(0, 8);
+  }, [pools, players, matches]);
+
+  const roundRobinMatches = useMemo(() => {
+    if (seededPlayers.length < 8) return [];
+    return ROUND_ROBIN_DRAW.map(([i, j], idx) => {
+      const p1 = seededPlayers[i].name;
+      const p2 = seededPlayers[j].name;
+      const round = Math.floor(idx / 4) + 1;
+      const matchNum = (idx % 4) + 1;
+      const result = matches.find(m =>
+        m.id?.endsWith('S') &&
+        ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
+      );
+      let p1Holes = 0, p2Holes = 0;
+      result?.scoresJson?.forEach(score => {
+        if (score.scored) {
+          if (score.p1 < score.p2) p1Holes++;
+          else if (score.p2 < score.p1) p2Holes++;
+        }
+      });
+      if (result && result.player1 === p2) [p1Holes, p2Holes] = [p2Holes, p1Holes];
+      return { id: result?.id || `shield-r${round}-m${matchNum}`, round, matchNum, player1: p1, player2: p2, seed1: i + 1, seed2: j + 1, winner: result?.winner || null, status: result?.status || 'scheduled', p1Holes, p2Holes };
+    });
+  }, [seededPlayers, matches]);
+
+  const tournamentStandings = useMemo(() => {
+    return seededPlayers.map(player => {
+      const playerMatches = roundRobinMatches.filter(m => m.player1 === player.name || m.player2 === player.name);
+      let points = 0, holeDiff = 0, played = 0, wins = 0, losses = 0;
+      playerMatches.forEach(m => {
+        if (!m.winner) return;
+        played++;
+        const isP1 = m.player1 === player.name;
+        const myHoles = isP1 ? m.p1Holes : m.p2Holes;
+        const oppHoles = isP1 ? m.p2Holes : m.p1Holes;
+        holeDiff += myHoles - oppHoles;
+        if (m.winner === player.name) { points += 3; wins++; }
+        else { losses++; }
+      });
+      return { name: player.name, points, holeDiff, played, wins, losses };
+    }).sort((a, b) => b.points !== a.points ? b.points - a.points : b.holeDiff - a.holeDiff);
+  }, [seededPlayers, roundRobinMatches]);
+
+  const allRoundsComplete = roundRobinMatches.length === 12 && roundRobinMatches.every(m => m.winner);
+
+  const findFinalMatch = (p1, p2) => matches.find(m =>
+    m.id?.endsWith('S') &&
+    ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1)) &&
+    (m.id?.includes('final') || m.id?.includes('3rd'))
+  );
+
+  const finalist1 = tournamentStandings[0]?.name || 'TBD';
+  const finalist2 = tournamentStandings[1]?.name || 'TBD';
+  const thirdPlace1 = tournamentStandings[2]?.name || 'TBD';
+  const thirdPlace2 = tournamentStandings[3]?.name || 'TBD';
+
+  const shieldFinal = findFinalMatch(finalist1, finalist2) ||
+    { player1: finalist1, player2: finalist2, winner: null, status: 'scheduled' };
+  const thirdPlaceFinal = findFinalMatch(thirdPlace1, thirdPlace2) ||
+    { player1: thirdPlace1, player2: thirdPlace2, winner: null, status: 'scheduled' };
+
+  return { seededPlayers, roundRobinMatches, tournamentStandings, allRoundsComplete, shieldFinal, thirdPlaceFinal };
+};
 
 const ShieldTournament = ({ pools, players, matches, currentUser }) => {
   const [expandedRound, setExpandedRound] = useState(1);
