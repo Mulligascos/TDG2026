@@ -1144,6 +1144,176 @@ const MatchesPage = ({
   );
 };
 
+const generateCupMatches = async (round, bracket, pools, players, matches, calculateStandings) => {
+  let matchList = [];
+  
+  if (round === 'qf') {
+    matchList = bracket.qf
+      .filter(m => !m.player1.includes('Winner') && !m.player2.includes('Winner'))
+      .map((m, idx) => ({
+        id: `cup-qf-${idx + 1}`,
+        date: SHIELD_DATE,
+        venue: SHIELD_VENUE,
+        player1: m.player1,
+        player2: m.player2,
+      }));
+  } else if (round === 'sf') {
+    matchList = bracket.sf
+      .filter(m => !m.player1.includes('Winner') && !m.player2.includes('Winner'))
+      .map((m, idx) => ({
+        id: `cup-sf-${idx + 1}`,
+        date: SHIELD_DATE,
+        venue: SHIELD_VENUE,
+        player1: m.player1,
+        player2: m.player2,
+      }));
+  } else if (round === 'final') {
+    if (!bracket.final.player1.includes('Winner') && !bracket.final.player2.includes('Winner')) {
+      matchList = [{
+        id: 'cup-final',
+        date: SHIELD_DATE,
+        venue: SHIELD_VENUE,
+        player1: bracket.final.player1,
+        player2: bracket.final.player2,
+      }];
+    }
+  }
+  
+  return matchList;
+};
+
+const CupBracket = ({
+  bracket, isAdmin,
+  r12Complete, qfComplete, sfComplete,
+  qfGenerated, sfGenerated, finalGenerated,
+  qfReady, sfReady, finalReady,
+  onGenerateQF, onGenerateSF, onGenerateFinal
+}) => {
+  const [generating, setGenerating] = useState(null);
+  const [confirmRound, setConfirmRound] = useState(null);
+
+  const handleGenerate = async (round, fn) => {
+    setGenerating(round);
+    await fn();
+    setGenerating(null);
+    setConfirmRound(null);
+  };
+
+  const AdminButton = ({ show, generated, ready, label, round, onClick }) => {
+    if (!isAdmin || !show) return null;
+    if (generated) return <div className="text-center text-xs text-green-600 font-semibold mt-2">✓ {label} generated</div>;
+    if (!ready) return <div className="text-center text-xs text-gray-400 mt-2">Waiting for previous round</div>;
+    return (
+      <button
+        onClick={() => setConfirmRound(round)}
+        className="mt-2 w-full py-1.5 rounded-lg text-xs font-semibold text-white"
+        style={{ backgroundColor: BRAND_PRIMARY }}
+      >
+        ⚙ Generate {label}
+      </button>
+    );
+  };
+
+  const roundMatches = (matches, label) => (
+    <div className="flex-shrink-0 w-40">
+      <div className="text-center font-bold text-xs text-gray-600 mb-3">{label}</div>
+      <div className="space-y-2">
+        {matches.map((m, idx) => (
+          <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
+            {m.label && <div className="text-center text-xs font-semibold text-gray-400 mb-1">{m.label}</div>}
+            <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+              {m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}
+            </div>
+            <div className="text-gray-400 text-center my-0.5">vs</div>
+            <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+              {m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const confirmLabels = {
+    qf: { label: 'Cup QF', matches: bracket.qf },
+    sf: { label: 'Cup SF', matches: bracket.sf },
+    final: { label: 'Cup Final', matches: [bracket.final] },
+  };
+
+  return (
+    <div className="p-4">
+      <div className="overflow-x-auto">
+        <div className="flex gap-4 min-w-max">
+          {roundMatches(bracket.r12, 'R12')}
+          {roundMatches(bracket.qf, 'QF')}
+          {roundMatches(bracket.sf, 'SF')}
+          <div className="flex-shrink-0 w-40">
+            <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
+            <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
+              <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>
+                {bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}
+              </div>
+              <div className="text-gray-400 text-center my-1">vs</div>
+              <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>
+                {bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}
+              </div>
+              {bracket.final.winner && !bracket.final.winner.includes('Winner') && (
+                <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>
+                  🏆 {formatPlayerName(bracket.final.winner)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Admin generate buttons */}
+      {isAdmin && (
+        <div className="mt-4 space-y-2">
+          <AdminButton show={r12Complete} generated={qfGenerated} ready={qfReady} label="Cup QF" round="qf" />
+          <AdminButton show={qfComplete} generated={sfGenerated} ready={sfReady} label="Cup SF" round="sf" />
+          <AdminButton show={sfComplete} generated={finalGenerated} ready={finalReady} label="Cup Final" round="final" />
+        </div>
+      )}
+
+      {/* Confirm modal */}
+      {confirmRound && confirmLabels[confirmRound] && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Generate {confirmLabels[confirmRound].label}</h3>
+            <p className="text-xs text-gray-500 mb-4">Date: 1 March 2026 • Venue: WEP</p>
+            <div className="space-y-1 mb-6">
+              {confirmLabels[confirmRound].matches.map((m, idx) => (
+                <div key={idx} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
+                  <span className="text-gray-700 font-semibold">
+                    {m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)} vs {m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmRound(null)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold">
+                Cancel
+              </button>
+              <button
+                onClick={() => handleGenerate(confirmRound, 
+                  confirmRound === 'qf' ? onGenerateQF : 
+                  confirmRound === 'sf' ? onGenerateSF : onGenerateFinal
+                )}
+                disabled={generating === confirmRound}
+                className="flex-1 text-white py-3 rounded-xl font-semibold disabled:opacity-50"
+                style={{ backgroundColor: BRAND_PRIMARY }}
+              >
+                {generating === confirmRound ? 'Generating...' : 'Confirm & Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 // ============================================
 //  STANDINGS PAGE - Optimized with hooks
 // ============================================
@@ -2131,6 +2301,7 @@ const StandingsPage = ({
             </CollapsibleSection>
 
             {/* Cup Final */}
+{/* Cup Final */}
 <CollapsibleSection
   title="🏆 Cup Final"
   subtitle="Top 3 from each pool"
@@ -2140,69 +2311,71 @@ const StandingsPage = ({
 >
   {(() => {
     const bracket = generatePlayoffBrackets('Cup', pools, players, matches, calculateStandings);
+    const isAdmin = currentUser?.name === ADMIN_USER;
+
     if (!bracket.hasMatches) return (
       <div className="p-6 text-center text-gray-500 text-sm">
         <p>Pool play not complete yet.</p>
         <p className="text-xs mt-2">Brackets will populate based on pool standings.</p>
       </div>
     );
+
+    const r12Complete = bracket.r12.every(m => m.winner);
+    const qfComplete = bracket.qf.every(m => m.winner);
+    const sfComplete = bracket.sf.every(m => m.winner);
+
+    const qfGenerated = matches.some(m => m.id?.startsWith('cup-qf'));
+    const sfGenerated = matches.some(m => m.id?.startsWith('cup-sf'));
+    const finalGenerated = matches.some(m => m.id === 'cup-final');
+
+    const qfReady = bracket.qf.every(m => !m.player1.includes('Winner') && !m.player2.includes('Winner'));
+    const sfReady = bracket.sf.every(m => !m.player1.includes('Winner') && !m.player2.includes('Winner'));
+    const finalReady = !bracket.final.player1.includes('Winner') && !bracket.final.player2.includes('Winner');
+
     return (
-      <div className="p-4 overflow-x-auto">
-        <div className="flex gap-4 min-w-max">
-          {/* R12 */}
-          <div className="flex-shrink-0 w-40">
-            <div className="text-center font-bold text-xs text-gray-600 mb-3">R12</div>
-            <div className="space-y-2">
-              {bracket.r12.map((m, idx) => (
-                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                  <div className="text-center text-xs font-semibold text-gray-400 mb-1">{m.label}</div>
-                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{formatPlayerName(m.player1)}</div>
-                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{formatPlayerName(m.player2)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* QF */}
-          <div className="flex-shrink-0 w-40">
-            <div className="text-center font-bold text-xs text-gray-600 mb-3">QF</div>
-            <div className="space-y-2">
-              {bracket.qf.map((m, idx) => (
-                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}</div>
-                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* SF */}
-          <div className="flex-shrink-0 w-40">
-            <div className="text-center font-bold text-xs text-gray-600 mb-3">SF</div>
-            <div className="space-y-2">
-              {bracket.sf.map((m, idx) => (
-                <div key={idx} className="bg-gray-50 rounded-lg p-2 text-xs border border-gray-200">
-                  <div className={`font-semibold ${m.winner === m.player1 ? 'text-green-600' : 'text-gray-700'}`}>{m.player1.includes('Winner') ? m.player1 : formatPlayerName(m.player1)}</div>
-                  <div className="text-gray-400 text-center my-0.5">vs</div>
-                  <div className={`font-semibold ${m.winner === m.player2 ? 'text-green-600' : 'text-gray-700'}`}>{m.player2.includes('Winner') ? m.player2 : formatPlayerName(m.player2)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Final */}
-          <div className="flex-shrink-0 w-40">
-            <div className="text-center font-bold text-xs text-gray-600 mb-3">Final</div>
-            <div className="rounded-lg p-3 text-xs border-2" style={{borderColor: BRAND_SECONDARY, backgroundColor: `${BRAND_SECONDARY}10`}}>
-              <div className={`font-bold ${bracket.final.winner === bracket.final.player1 ? 'text-green-600' : 'text-gray-700'}`}>{bracket.final.player1.includes('Winner') ? bracket.final.player1 : formatPlayerName(bracket.final.player1)}</div>
-              <div className="text-gray-400 text-center my-1">vs</div>
-              <div className={`font-bold ${bracket.final.winner === bracket.final.player2 ? 'text-green-600' : 'text-gray-700'}`}>{bracket.final.player2.includes('Winner') ? bracket.final.player2 : formatPlayerName(bracket.final.player2)}</div>
-              {bracket.final.winner && !bracket.final.winner.includes('Winner') && (
-                <div className="mt-2 pt-2 border-t border-gray-300 text-center font-bold" style={{color: BRAND_PRIMARY}}>🏆 {formatPlayerName(bracket.final.winner)}</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <CupBracket
+        bracket={bracket}
+        isAdmin={isAdmin}
+        r12Complete={r12Complete}
+        qfComplete={qfComplete}
+        sfComplete={sfComplete}
+        qfGenerated={qfGenerated}
+        sfGenerated={sfGenerated}
+        finalGenerated={finalGenerated}
+        qfReady={qfReady}
+        sfReady={sfReady}
+        finalReady={finalReady}
+        onGenerateQF={async () => {
+          const matchList = await generateCupMatches('qf', bracket);
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'createMatches', matches: matchList }),
+            mode: 'no-cors'
+          });
+          triggerHaptic('success');
+        }}
+        onGenerateSF={async () => {
+          const matchList = await generateCupMatches('sf', bracket);
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'createMatches', matches: matchList }),
+            mode: 'no-cors'
+          });
+          triggerHaptic('success');
+        }}
+        onGenerateFinal={async () => {
+          const matchList = await generateCupMatches('final', bracket);
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'createMatches', matches: matchList }),
+            mode: 'no-cors'
+          });
+          triggerHaptic('success');
+        }}
+      />
     );
   })()}
 </CollapsibleSection>
