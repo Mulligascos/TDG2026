@@ -1326,11 +1326,13 @@ const useStandingsCalculations = (pools, players, matches) => {
       const playerData = players.find(p => p.name === player.player);
       const status = playerData?.status || 'Active';
       
-      const poolMatches = matches.filter(m => 
-        m.status === 'Completed' && 
-        (m.player1 === player.player || m.player2 === player.player)
-      );
+const POOL_CUTOFF_DATE = '2026-02-28';
 
+const poolMatches = matches.filter(m => 
+  m.status === 'Completed' && 
+  m.date < POOL_CUTOFF_DATE &&
+  (m.player1 === player.player || m.player2 === player.player)
+);
       let holesWon = 0;
       let holesLost = 0;
       let matchWins = 0;
