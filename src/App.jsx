@@ -203,7 +203,7 @@ const MatchCard = ({ match, onClick, showResult = false }) => (
         <Calendar size={14} className="mr-1" />
         <span>{new Date(match.date).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
         <Clock size={14} className="ml-3 mr-1" />
-        <span>{match.startTime}</span>
+<span>{match.startTime ? new Date(match.startTime).toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Pacific/Auckland' }) : ''}</span>
       </div>
       {!showResult && <ChevronRight className="text-blue-600" size={20} />}
     </div>
