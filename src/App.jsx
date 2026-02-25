@@ -2331,7 +2331,7 @@ const StandingsPage = ({
     const qfReady = bracket.qf.every(m => !m.player1.includes('Winner') && !m.player2.includes('Winner'));
     const sfReady = bracket.sf.every(m => !m.player1.includes('Winner') && !m.player2.includes('Winner'));
     const finalReady = !bracket.final.player1.includes('Winner') && !bracket.final.player2.includes('Winner');
-
+console.log(bracket.r12Complete, bracket.r12);
     return (
       <CupBracket
         bracket={bracket}
