@@ -1672,12 +1672,17 @@ const findMatch = (p1, p2) => matches.find(m =>
   return { hasMatches: false };
 };   
 
-const ROUND_ROBIN_DRAW = [
+const ROUND_ROBIN_DRAW_8 = [
   [0, 7], [1, 6], [2, 5], [3, 4], // Round 1
   [0, 4], [1, 5], [2, 6], [3, 7], // Round 2
   [0, 5], [1, 7], [2, 4], [3, 6], // Round 3
 ];
 
+const ROUND_ROBIN_DRAW_7 = [
+  [0, 6], [1, 5], [2, 4],         // Round 1 — seed 4 (idx 3) bye
+  [0, 3], [1, 4], [5, 6],         // Round 2 — seed 3 (idx 2) bye
+  [0, 2], [3, 6], [4, 5],         // Round 3 — seed 2 (idx 1) bye
+];
 const useShieldTournament = (pools, players, matches, calculateStandings) => {
   const seededPlayers = useMemo(() => {
     const poolNames = [...new Set(pools.map(p => p.pool))]
@@ -1742,28 +1747,41 @@ return allPlayers
   .slice(0, 8);
   }, [pools, players, matches]); 
 
-  const roundRobinMatches = useMemo(() => {
-    if (seededPlayers.length < 8) return [];
-    return ROUND_ROBIN_DRAW.map(([i, j], idx) => {
-      const p1 = seededPlayers[i].name;
-      const p2 = seededPlayers[j].name;
-      const round = Math.floor(idx / 4) + 1;
-      const matchNum = (idx % 4) + 1;
-      const result = matches.find(m =>
-        m.id?.endsWith('S') &&
-        ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
-      );
-      let p1Holes = 0, p2Holes = 0;
-      result?.scoresJson?.forEach(score => {
-        if (score.scored) {
-          if (score.p1 < score.p2) p1Holes++;
-          else if (score.p2 < score.p1) p2Holes++;
-        }
-      });
-      if (result && result.player1 === p2) [p1Holes, p2Holes] = [p2Holes, p1Holes];
-      return { id: result?.id || `shield-r${round}-m${matchNum}`, round, matchNum, player1: p1, player2: p2, seed1: i + 1, seed2: j + 1, winner: result?.winner || null, status: result?.status || 'scheduled', p1Holes, p2Holes };
+const roundRobinMatches = useMemo(() => {
+  const count = seededPlayers.length;
+  if (count < 7) return [];
+  const draw = count >= 8 ? ROUND_ROBIN_DRAW_8 : ROUND_ROBIN_DRAW_7;
+  const totalMatches = count >= 8 ? 12 : 9;
+
+  return draw.map(([i, j], idx) => {
+    const p1 = seededPlayers[i].name;
+    const p2 = seededPlayers[j].name;
+    const round = Math.floor(idx / 3) + 1;
+    const matchNum = (idx % 3) + 1;
+    const result = matches.find(m =>
+      m.id?.endsWith('S') &&
+      !m.id?.includes('final') && !m.id?.includes('3rd') &&
+      ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
+    );
+    let p1Holes = 0, p2Holes = 0;
+    result?.scoresJson?.forEach(score => {
+      if (score.scored) {
+        if (score.p1 < score.p2) p1Holes++;
+        else if (score.p2 < score.p1) p2Holes++;
+      }
     });
-  }, [seededPlayers, matches]);
+    if (result && result.player1 === p2) [p1Holes, p2Holes] = [p2Holes, p1Holes];
+    return {
+      id: result?.id || `shield-r${round}-m${matchNum}`,
+      round, matchNum,
+      player1: p1, player2: p2,
+      seed1: i + 1, seed2: j + 1,
+      winner: result?.winner || null,
+      status: result?.status || 'scheduled',
+      p1Holes, p2Holes
+    };
+  });
+}, [seededPlayers, matches]);
 
   const tournamentStandings = useMemo(() => {
     return seededPlayers.map(player => {
@@ -1783,7 +1801,8 @@ return allPlayers
     }).sort((a, b) => b.points !== a.points ? b.points - a.points : b.holeDiff - a.holeDiff);
   }, [seededPlayers, roundRobinMatches]);
 
-  const allRoundsComplete = roundRobinMatches.length === 12 && roundRobinMatches.every(m => m.winner);
+ const totalExpected = seededPlayers.length >= 8 ? 12 : 9;
+const allRoundsComplete = roundRobinMatches.length === totalExpected && roundRobinMatches.every(m => m.winner);
 
   const findFinalMatch = (p1, p2) => matches.find(m =>
     m.id?.endsWith('S') &&
@@ -1862,24 +1881,22 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
     return list;
   };
 
-  const handleGenerateRoundRobin = async () => {
-    setGenerating(true);
-    const matchList = generateRoundRobinMatchList();
-    try {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'createMatches', matches: matchList }),
-        mode: 'no-cors'
-      });
-      triggerHaptic('success');
-      setShowGenerateModal(false);
-    } catch (err) {
-      console.error('Error generating matches:', err);
-    } finally {
-      setGenerating(false);
-    }
-  };
+const generateRoundRobinMatchList = () => {
+  const draw = seededPlayers.length >= 8 ? ROUND_ROBIN_DRAW_8 : ROUND_ROBIN_DRAW_7;
+  return draw.map(([i, j], idx) => {
+    const round = Math.floor(idx / 3) + 1;
+    const matchNum = (idx % 3) + 1;
+    return {
+      id: `shield-r${round}-m${matchNum}`,
+      date: SHIELD_DATE,
+      venue: SHIELD_VENUE,
+      player1: seededPlayers[i]?.name,
+      player2: seededPlayers[j]?.name,
+      round,
+      matchNum,
+    };
+  }).filter(m => m.player1 && m.player2);
+};
 
   const handleGenerateFinals = async () => {
     setGenerating(true);
@@ -1900,10 +1917,10 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
     }
   };
 
-  if (seededPlayers.length < 8) {
+  if (seededPlayers.length < 7) {
     return (
       <div className="p-6 text-center text-gray-500 text-sm">
-        <p>Shield tournament requires 8 players.</p>
+        <p>Shield tournament requires 7 players.</p>
         <p className="text-xs mt-1">Currently {seededPlayers.length} eligible players.</p>
       </div>
     );
