@@ -1850,22 +1850,6 @@ const ShieldTournament = ({ pools, players, matches, currentUser, calculateStand
   const round3Complete = roundRobinMatches.filter(m => m.round === 3).every(m => m.winner);
   const anyRoundComplete = round1Complete || round2Complete || round3Complete;
 
-  const generateRoundRobinMatchList = () => {
-    return ROUND_ROBIN_DRAW.map(([i, j], idx) => {
-      const round = Math.floor(idx / 4) + 1;
-      const matchNum = (idx % 4) + 1;
-      return {
-        id: `shield-r${round}-m${matchNum}`,
-        date: SHIELD_DATE,
-        venue: SHIELD_VENUE,
-        player1: seededPlayers[i]?.name,
-        player2: seededPlayers[j]?.name,
-        round,
-        matchNum,
-      };
-    }).filter(m => m.player1 && m.player2);
-  };
-
   const generateFinalsMatchList = () => {
     const finalist1 = tournamentStandings[0]?.name;
     const finalist2 = tournamentStandings[1]?.name;
@@ -1896,6 +1880,25 @@ const generateRoundRobinMatchList = () => {
       matchNum,
     };
   }).filter(m => m.player1 && m.player2);
+};
+  
+const handleGenerateRoundRobin = async () => {
+  setGenerating(true);
+  const matchList = generateRoundRobinMatchList();
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'createMatches', matches: matchList }),
+      mode: 'no-cors'
+    });
+    triggerHaptic('success');
+    setShowGenerateModal(false);
+  } catch (err) {
+    console.error('Error generating matches:', err);
+  } finally {
+    setGenerating(false);
+  }
 };
 
   const handleGenerateFinals = async () => {
