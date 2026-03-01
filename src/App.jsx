@@ -871,6 +871,8 @@ const MatchesPage = ({
   const [showLiveScores, setShowLiveScores] = useState(false);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [resumeMatchData, setResumeMatchData] = useState(null);
+  const [startingHole, setStartingHole] = useState(1);
+const [totalHoles, setTotalHoles] = useState(18);
 
   // Check for in-progress match on mount
   useEffect(() => {
@@ -893,11 +895,15 @@ const MatchesPage = ({
     checkForInProgressMatch();
   }, [matches, currentUser]);
 
-  const handleResumeMatch = () => {
-    triggerHaptic('medium');
-    onStartMatch(resumeMatchData.match, resumeMatchData.progress.startingHole);
-    setShowResumePrompt(false);
-  };
+const handleResumeMatch = () => {
+  triggerHaptic('medium');
+  onStartMatch(
+    resumeMatchData.match, 
+    resumeMatchData.progress.startingHole,
+    resumeMatchData.progress.totalHoles || 18
+  );
+  setShowResumePrompt(false);
+};
 
   const handleDiscardMatch = () => {
     triggerHaptic('light');
@@ -946,11 +952,11 @@ const MatchesPage = ({
     setShowStartHoleModal(true);
   }, []);
 
-  const confirmStartHole = useCallback(() => {
-    triggerHaptic('medium');
-    onStartMatch(selectedMatch, startingHole);
-    setShowStartHoleModal(false);
-  }, [selectedMatch, startingHole, onStartMatch]);
+const confirmStartHole = useCallback(() => {
+  triggerHaptic('medium');
+  onStartMatch(selectedMatch, startingHole, totalHoles);
+  setShowStartHoleModal(false);
+}, [selectedMatch, startingHole, totalHoles, onStartMatch]);
 
   return (
     <div className="min-h-screen bg-gray-50 transition-colors">
@@ -1096,39 +1102,66 @@ const MatchesPage = ({
         </div>
       )}
 
-      {showStartHoleModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end z-50">
-          <div className="bg-white w-full rounded-t-3xl p-6 max-w-md mx-auto">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Select Starting Hole</h3>
-            <select 
-              value={startingHole}
-              onChange={(e) => setStartingHole(Number(e.target.value))}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {Array.from({length: 18}, (_, i) => i + 1).map(h => (
-                <option key={h} value={h}>Hole {h}</option>
-              ))}
-            </select>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => {
-                  triggerHaptic('light');
-                  setShowStartHoleModal(false);
-                }}
-                className="flex-1 bg-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={confirmStartHole}
-                className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Start Match
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+   {showStartHoleModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-end z-50">
+    <div className="bg-white w-full rounded-t-3xl p-6 max-w-md mx-auto">
+      <h3 className="text-xl font-bold text-gray-900 mb-4">Match Settings</h3>
+      
+      {/* Holes toggle */}
+      <label className="block text-sm font-semibold text-gray-700 mb-2">Number of Holes</label>
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setTotalHoles(9)}
+          className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${
+            totalHoles === 9 ? 'text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+          style={totalHoles === 9 ? { backgroundColor: BRAND_PRIMARY } : {}}
+        >
+          9 Holes
+        </button>
+        <button
+          onClick={() => setTotalHoles(18)}
+          className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${
+            totalHoles === 18 ? 'text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+          style={totalHoles === 18 ? { backgroundColor: BRAND_PRIMARY } : {}}
+        >
+          18 Holes
+        </button>
+      </div>
+
+      {/* Starting hole */}
+      <label className="block text-sm font-semibold text-gray-700 mb-2">Starting Hole</label>
+      <select 
+        value={startingHole}
+        onChange={(e) => setStartingHole(Number(e.target.value))}
+        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        {Array.from({length: 18}, (_, i) => i + 1).map(h => (
+          <option key={h} value={h}>Hole {h}</option>
+        ))}
+      </select>
+
+      <div className="flex gap-3">
+        <button 
+          onClick={() => {
+            triggerHaptic('light');
+            setShowStartHoleModal(false);
+          }}
+          className="flex-1 bg-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          onClick={confirmStartHole}
+          className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+        >
+          Start Match
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {showLiveScores && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1759,10 +1792,10 @@ const roundRobinMatches = useMemo(() => {
     const round = Math.floor(idx / 3) + 1;
     const matchNum = (idx % 3) + 1;
     const result = matches.find(m =>
-      m.id?.endsWith('S') &&
-      !m.id?.includes('final') && !m.id?.includes('3rd') &&
-      ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
-    );
+    const result = matches.find(m =>
+  m.id?.startsWith('shield-r') &&
+  ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
+);
     let p1Holes = 0, p2Holes = 0;
     result?.scoresJson?.forEach(score => {
       if (score.scored) {
@@ -1804,11 +1837,10 @@ const roundRobinMatches = useMemo(() => {
  const totalExpected = seededPlayers.length >= 8 ? 12 : 9;
 const allRoundsComplete = roundRobinMatches.length === totalExpected && roundRobinMatches.every(m => m.winner);
 
-  const findFinalMatch = (p1, p2) => matches.find(m =>
-    m.id?.endsWith('S') &&
-    ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1)) &&
-    (m.id?.includes('final') || m.id?.includes('3rd'))
-  );
+const findFinalMatch = (p1, p2) => matches.find(m =>
+  (m.id === 'shield-final' || m.id === 'shield-3rd') &&
+  ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
+);
 
   const finalist1 = tournamentStandings[0]?.name || 'TBD';
   const finalist2 = tournamentStandings[1]?.name || 'TBD';
@@ -2613,7 +2645,7 @@ const LiveScoresPage = ({ onBack }) => {
 // SCORING PAGE
 // ============================================
 
-const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => {
+const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete totalHoles=18 }) => {
   const [scores, setScores] = useState([]);
   const [currentHole, setCurrentHole] = useState(0);
   const [showLiveScores, setShowLiveScores] = useState(false);
@@ -2631,7 +2663,7 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
       setCurrentHole(progress.currentHole);
     } else {
       const startHoleNum = Number(startingHole);
-      const initScores = Array(18).fill(null).map((_, idx) => {
+      const initScores = Array(totalHoles).fill(null).map((_, idx) => {
         const actualHoleNumber = ((startHoleNum - 1 + idx) % 18) + 1;
         const par = course?.pars[actualHoleNumber] || 3;
         return { p1: par, p2: par, scored: false };
@@ -2667,13 +2699,14 @@ const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete }) => 
 
   useEffect(() => {
     if (scores.length > 0) {
-      localStorage.setItem(`match-progress-${match.id}`, JSON.stringify({
-        matchId: match.id,
-        scores,
-        currentHole,
-        startingHole,
-        timestamp: Date.now()
-      }));
+localStorage.setItem(`match-progress-${match.id}`, JSON.stringify({
+  matchId: match.id,
+  scores,
+  currentHole,
+  startingHole,
+  totalHoles,   // add this
+  timestamp: Date.now()
+}));
     }
   }, [scores, currentHole, match.id, startingHole]);
 
@@ -3333,10 +3366,10 @@ const DiscGolfApp = () => {
           matches={appData.matches}
           onLogout={handleLogout}
           onChangePin={() => setView('changePin')}
-          onStartMatch={(match, startingHole) => {
-            setSelectedMatch({ match, startingHole });
-            setView('scoring');
-          }}
+        onStartMatch={(match, startingHole, totalHoles) => {
+  setSelectedMatch({ match, startingHole, totalHoles });
+  setView('scoring');
+}}
           onReviewMatch={(match) => {
             setSelectedMatch(match);
             setView('review');
@@ -3360,6 +3393,7 @@ const DiscGolfApp = () => {
         <ScoringPage
           match={selectedMatch.match}
           startingHole={selectedMatch.startingHole}
+          totalHoles={selectedMatch.totalHoles}
           courses={appData.courses}
           onCancel={handleCancelMatch}
           onComplete={(scores, winner) => {
