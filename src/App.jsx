@@ -1780,38 +1780,33 @@ return allPlayers
   }, [pools, players, matches]); 
 
 const roundRobinMatches = useMemo(() => {
-  const count = seededPlayers.length;
-  if (count < 7) return [];
-  const draw = count >= 8 ? ROUND_ROBIN_DRAW_8 : ROUND_ROBIN_DRAW_7;
-  const totalMatches = count >= 8 ? 12 : 9;
-
-  return draw.map(([i, j], idx) => {
-    const p1 = seededPlayers[i].name;
-    const p2 = seededPlayers[j].name;
-    const round = Math.floor(idx / 3) + 1;
-    const matchNum = (idx % 3) + 1;
-    const result = matches.find(m =>
-      m.id?.startsWith('shield-r') &&
-      ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
-    );
+  const shieldMatches = matches.filter(m => m.id?.startsWith('shield-r'));
+  
+  return shieldMatches.map(m => {
+    const round = parseInt(m.id.match(/shield-r(\d+)/)?.[1]) || 0;
+    const matchNum = parseInt(m.id.match(/shield-r\d+-m(\d+)/)?.[1]) || 0;
+    
+    const p1Seed = seededPlayers.findIndex(p => p.name === m.player1) + 1;
+    const p2Seed = seededPlayers.findIndex(p => p.name === m.player2) + 1;
+    
     let p1Holes = 0, p2Holes = 0;
-    result?.scoresJson?.forEach(score => {
+    m.scoresJson?.forEach(score => {
       if (score.scored) {
         if (score.p1 < score.p2) p1Holes++;
         else if (score.p2 < score.p1) p2Holes++;
       }
     });
-    if (result && result.player1 === p2) [p1Holes, p2Holes] = [p2Holes, p1Holes];
+
     return {
-      id: result?.id || `shield-r${round}-m${matchNum}`,
+      id: m.id,
       round, matchNum,
-      player1: p1, player2: p2,
-      seed1: i + 1, seed2: j + 1,
-      winner: result?.winner || null,
-      status: result?.status || 'scheduled',
+      player1: m.player1, player2: m.player2,
+      seed1: p1Seed || '?', seed2: p2Seed || '?',
+      winner: m.winner || null,
+      status: m.status || 'scheduled',
       p1Holes, p2Holes
     };
-  });
+  }).sort((a, b) => a.round !== b.round ? a.round - b.round : a.matchNum - b.matchNum);
 }, [seededPlayers, matches]);
 
   const tournamentStandings = useMemo(() => {
@@ -1833,7 +1828,7 @@ const roundRobinMatches = useMemo(() => {
   }, [seededPlayers, roundRobinMatches]);
 
  const totalExpected = seededPlayers.length >= 8 ? 12 : 9;
-const allRoundsComplete = roundRobinMatches.length === totalExpected && roundRobinMatches.every(m => m.winner);
+const allRoundsComplete = totalExpected > 0 && roundRobinMatches.length === totalExpected && roundRobinMatches.every(m => m.winner);
 
 const findFinalMatch = (p1, p2) => matches.find(m =>
   (m.id === 'shield-final' || m.id === 'shield-3rd') &&
