@@ -1791,7 +1791,6 @@ const roundRobinMatches = useMemo(() => {
     const round = Math.floor(idx / 3) + 1;
     const matchNum = (idx % 3) + 1;
     const result = matches.find(m =>
-const result = matches.find(m =>
       m.id?.startsWith('shield-r') &&
       ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
     );
