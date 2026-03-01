@@ -867,7 +867,6 @@ const MatchesPage = ({
   const [selectedFilterPlayer, setSelectedFilterPlayer] = useState(currentUser.name);
   const [showStartHoleModal, setShowStartHoleModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
-  const [startingHole, setStartingHole] = useState(1);
   const [showLiveScores, setShowLiveScores] = useState(false);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [resumeMatchData, setResumeMatchData] = useState(null);
@@ -1792,10 +1791,10 @@ const roundRobinMatches = useMemo(() => {
     const round = Math.floor(idx / 3) + 1;
     const matchNum = (idx % 3) + 1;
     const result = matches.find(m =>
-    const result = matches.find(m =>
-  m.id?.startsWith('shield-r') &&
-  ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
-);
+const result = matches.find(m =>
+      m.id?.startsWith('shield-r') &&
+      ((m.player1 === p1 && m.player2 === p2) || (m.player1 === p2 && m.player2 === p1))
+    );
     let p1Holes = 0, p2Holes = 0;
     result?.scoresJson?.forEach(score => {
       if (score.scored) {
@@ -2645,7 +2644,7 @@ const LiveScoresPage = ({ onBack }) => {
 // SCORING PAGE
 // ============================================
 
-const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete totalHoles=18 }) => {
+const ScoringPage = ({ match, startingHole, courses, onCancel, onComplete, totalHoles=18 }) => {
   const [scores, setScores] = useState([]);
   const [currentHole, setCurrentHole] = useState(0);
   const [showLiveScores, setShowLiveScores] = useState(false);
@@ -2731,8 +2730,8 @@ localStorage.setItem(`match-progress-${match.id}`, JSON.stringify({
                    p2Holes > p1Holes ? match.player2 : null;
     
     const holesRemaining = Math.max(0, scores.length - holesPlayed);
-    const isComplete = (holesPlayed >= 18 && leader !== null) || (lead > holesRemaining && holesPlayed > 0);
-    const needsPlayoff = holesPlayed >= 18 && p1Holes === p2Holes;
+    const isComplete = (holesPlayed >= totalHoles && leader !== null) || (lead > holesRemaining && holesPlayed > 0);
+    const needsPlayoff = holesPlayed >= totalHoles && p1Holes === p2Holes;
     
     return { p1Holes, p2Holes, holesPlayed, lead, leader, isComplete, needsPlayoff };
   }, [scores, match.player1, match.player2]);
@@ -2941,7 +2940,7 @@ localStorage.setItem(`match-progress-${match.id}`, JSON.stringify({
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-1.5 pr-2 font-semibold text-gray-700 sticky left-0 bg-white">Hole</th>
-                  {scores.slice(0, 18).map((_, idx) => {
+                  {scores.slice(0, totalHoles).map((_, idx) => {
                     const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
                     return (
                       <th key={idx} className="px-1 py-1.5 text-center min-w-[28px]">
@@ -3174,7 +3173,7 @@ const ReviewPage = ({ match, onCancel }) => {
               <thead>
                 <tr className="border-b-2 border-gray-200">
                   <th className="text-left py-2 pr-2 font-semibold text-gray-700 text-xs sticky left-0 bg-white">Hole</th>
-                  {scores.slice(0, 18).map((_, idx) => {
+                  {scores.slice(0, totalHoles).map((_, idx) => {
                     const holeNum = ((Number(startingHole) - 1 + idx) % 18) + 1;
                     return (
                       <th key={idx} className="px-1 py-2 text-center font-semibold text-gray-700 text-xs min-w-[32px]">
