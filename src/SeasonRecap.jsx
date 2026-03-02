@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import html2canvas from "html2canvas";
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1o9A_xc6Kd24K0yNiMkFnW7ZX2E0cEHFoUjaZ98Vu_eSTzgaM6HHVGNqOX62viRh2Mw/exec";
@@ -255,25 +256,22 @@ const ShareModal = ({ stats, recap, onClose }) => {
   const [imageUrl, setImageUrl] = useState(null);
   const [copyState, setCopyState] = useState("idle");
 
-  useEffect(() => {
-    const capture = async () => {
-      // Give fonts a moment to load
-      await new Promise(r => setTimeout(r, 300));
-      try {
-        const { default: html2canvas } = await import("https://esm.sh/html2canvas@1.4.1");
-        const canvas = await html2canvas(cardRef.current, {
-          scale: 2, backgroundColor: null, useCORS: true, logging: false,
-        });
-        setImageUrl(canvas.toDataURL("image/png"));
-      } catch (err) {
-        console.error("Capture failed:", err);
-      } finally {
-        setCapturing(false);
-      }
-    };
-    capture();
-  }, []);
-
+useEffect(() => {
+  const capture = async () => {
+    await new Promise(r => setTimeout(r, 400));
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2, backgroundColor: null, useCORS: true, logging: false,
+      });
+      setImageUrl(canvas.toDataURL("image/png"));
+    } catch (err) {
+      console.error("Capture failed:", err);
+    } finally {
+      setCapturing(false);
+    }
+  };
+  capture();
+}, []);
   const getBlob = async () => {
     const res = await fetch(imageUrl);
     return res.blob();
