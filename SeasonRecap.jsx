@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import html2canvas from "html2canvas";
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1o9A_xc6Kd24K0yNiMkFnW7ZX2E0cEHFoUjaZ98Vu_eSTzgaM6HHVGNqOX62viRh2Mw/exec";
@@ -281,7 +282,7 @@ const ShareModal = ({ stats, onClose }) => {
     const capture = async () => {
       await new Promise(r => setTimeout(r, 400)); // wait for fonts
       try {
-        const { default: html2canvas } = await import("https://esm.sh/html2canvas@1.4.1");
+      
         const canvas = await html2canvas(cardRef.current, {
           scale: 2, backgroundColor: null, useCORS: true, logging: false,
         });
